@@ -1,0 +1,144 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\AdministrativeRegionController;
+use App\Http\Controllers\Api\SubjectController;
+use App\Http\Controllers\Api\ExperimentCatalogController;
+use App\Http\Controllers\Api\LaboratoryController;
+use App\Http\Controllers\Api\ExperimentReservationController;
+use App\Http\Controllers\Api\ExperimentRecordController;
+use App\Http\Controllers\Api\ExperimentStatisticsController;
+use App\Http\Controllers\EquipmentCategoryController;
+use App\Http\Controllers\EquipmentController;
+use App\Http\Controllers\EquipmentBorrowController;
+use App\Http\Controllers\EquipmentMaintenanceController;
+use App\Http\Controllers\QrCodeController;
+use App\Http\Controllers\EquipmentQrcodeController;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
+// 认证相关路由
+Route::prefix('auth')->group(function () {
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('register', [AuthController::class, 'register']);
+    
+    Route::middleware('auth:api')->group(function () {
+        Route::get('me', [AuthController::class, 'me']);
+        Route::post('logout', [AuthController::class, 'logout']);
+        Route::post('refresh', [AuthController::class, 'refresh']);
+    });
+});
+
+// 需要认证的API路由
+Route::middleware('auth:api')->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    // 用户管理
+    Route::apiResource('users', UserController::class);
+    Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword']);
+    Route::get('user/profile', [UserController::class, 'profile']);
+    Route::put('user/profile', [UserController::class, 'updateProfile']);
+
+    // 角色管理
+    Route::apiResource('roles', RoleController::class);
+
+    // 角色权限管理
+    Route::get('roles/{role}/permissions', [RoleController::class, 'getPermissions']);
+    Route::post('roles/{role}/permissions', [RoleController::class, 'assignPermissions']);
+
+    // 权限管理
+    Route::get('permissions', [PermissionController::class, 'index']);
+    Route::get('permissions/tree', [PermissionController::class, 'tree']);
+
+    // 行政区域管理
+    Route::apiResource('regions', AdministrativeRegionController::class);
+
+    // 学科管理
+    Route::apiResource('subjects', SubjectController::class);
+    Route::get('subjects-options', [SubjectController::class, 'options']);
+
+    // 实验目录管理
+    Route::apiResource('experiment-catalogs', ExperimentCatalogController::class);
+    Route::post('experiment-catalogs/batch-import', [ExperimentCatalogController::class, 'batchImport']);
+
+    // 实验室管理
+    Route::apiResource('laboratories', LaboratoryController::class);
+    Route::get('laboratories-options', [LaboratoryController::class, 'options']);
+    Route::post('laboratories/{laboratory}/check-availability', [LaboratoryController::class, 'checkAvailability']);
+    Route::get('laboratories/{laboratory}/schedule', [LaboratoryController::class, 'schedule']);
+
+    // 实验预约管理
+    Route::apiResource('experiment-reservations', ExperimentReservationController::class);
+    Route::post('experiment-reservations/{experimentReservation}/cancel', [ExperimentReservationController::class, 'cancel']);
+    Route::post('experiment-reservations/{experimentReservation}/review', [ExperimentReservationController::class, 'review']);
+
+    // 实验记录管理
+    Route::apiResource('experiment-records', ExperimentRecordController::class);
+    Route::post('experiment-records/{experimentRecord}/complete', [ExperimentRecordController::class, 'complete']);
+    Route::post('experiment-records/{experimentRecord}/upload-photos', [ExperimentRecordController::class, 'uploadPhotos']);
+    Route::post('experiment-records/{experimentRecord}/upload-videos', [ExperimentRecordController::class, 'uploadVideos']);
+
+    // 实验统计分析
+    Route::prefix('experiment-statistics')->group(function () {
+        Route::get('completion-rate', [ExperimentStatisticsController::class, 'completionRate']);
+        Route::get('school-ranking', [ExperimentStatisticsController::class, 'schoolRanking']);
+        Route::get('trends', [ExperimentStatisticsController::class, 'trends']);
+        Route::get('subject-statistics', [ExperimentStatisticsController::class, 'subjectStatistics']);
+    });
+
+    // 设备分类管理
+    Route::apiResource('equipment-categories', EquipmentCategoryController::class);
+    Route::get('equipment-categories-options', [EquipmentCategoryController::class, 'options']);
+    Route::get('equipment-categories-tree', [EquipmentCategoryController::class, 'tree']);
+    Route::post('equipment-categories/update-sort', [EquipmentCategoryController::class, 'updateSort']);
+
+    // 设备档案管理
+    Route::apiResource('equipments', EquipmentController::class);
+    Route::post('equipments/batch-import', [EquipmentController::class, 'batchImport']);
+    Route::get('equipments/export', [EquipmentController::class, 'export']);
+    Route::post('equipments/{equipment}/photos', [EquipmentController::class, 'uploadPhoto']);
+    Route::delete('equipments/{equipment}/photos/{photo}', [EquipmentController::class, 'deletePhoto']);
+    Route::get('equipments/{equipment}/availability', [EquipmentController::class, 'checkAvailability']);
+    Route::get('equipments/stats', [EquipmentController::class, 'getStats']);
+    Route::post('equipments/find-by-qr-code', [EquipmentController::class, 'findByQrCode']);
+
+    // 设备借用管理
+    Route::apiResource('equipment-borrows', EquipmentBorrowController::class);
+    Route::post('equipment-borrows/{equipmentBorrow}/review', [EquipmentBorrowController::class, 'review']);
+    Route::post('equipment-borrows/{equipmentBorrow}/return', [EquipmentBorrowController::class, 'returnEquipment']);
+    Route::post('equipment-borrows/batch-action', [EquipmentBorrowController::class, 'batchAction']);
+    Route::post('equipment-borrows/update-overdue-status', [EquipmentBorrowController::class, 'updateOverdueStatus']);
+
+    // 设备维修管理
+    Route::apiResource('equipment-maintenances', EquipmentMaintenanceController::class);
+    Route::post('equipment-maintenances/{equipmentMaintenance}/assign', [EquipmentMaintenanceController::class, 'assignTechnician']);
+    Route::post('equipment-maintenances/{equipmentMaintenance}/start', [EquipmentMaintenanceController::class, 'startMaintenance']);
+    Route::post('equipment-maintenances/{equipmentMaintenance}/complete', [EquipmentMaintenanceController::class, 'completeMaintenance']);
+    Route::get('equipment-maintenances/statistics', [EquipmentMaintenanceController::class, 'getStatistics']);
+    Route::post('equipment-maintenances/batch-action', [EquipmentMaintenanceController::class, 'batchAction']);
+
+    // 设备二维码管理
+    Route::post('equipments/{equipment}/qrcode', [EquipmentQrcodeController::class, 'generate']);
+    Route::get('equipments/{equipment}/qrcode', [EquipmentQrcodeController::class, 'show']);
+    Route::delete('equipments/{equipment}/qrcode', [EquipmentQrcodeController::class, 'destroy']);
+    Route::post('equipments/batch-qrcode', [EquipmentQrcodeController::class, 'batchGenerate']);
+});
+
+// 公开的二维码查询路由（不需要认证）
+Route::get('qrcode/scan/{code}', [EquipmentQrcodeController::class, 'scan']);
