@@ -24,7 +24,8 @@ class RolePermissionSeeder extends Seeder
                 'user', 'user.list', 'user.create', 'user.update', 'user.delete',
                 'role', 'role.list', 'role.create', 'role.update', 'role.delete',
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance'
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
+                'system', 'system.read', 'log', 'log.read'
             ],
             'province_researcher' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
@@ -75,6 +76,15 @@ class RolePermissionSeeder extends Seeder
             'school_teacher' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.borrow'
+            ],
+            'school_admin' => [
+                'user', 'user.list', 'user.create', 'user.update',
+                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance'
+            ],
+            'school_student' => [
+                'experiment', 'experiment.catalog', 'experiment.booking',
+                'equipment', 'equipment.list'
             ]
         ];
 

@@ -45,6 +45,21 @@ class AuthController extends Controller
         // 更新最后登录时间
         $user->update(['last_login_at' => now()]);
 
+        // 获取用户权限
+        $permissions = $user->getPermissions();
+
+        // 获取用户角色信息
+        $roles = $user->roles()->with('permissions')->get();
+        $roleInfo = $roles->map(function ($role) {
+            return [
+                'id' => $role->id,
+                'name' => $role->name,
+                'code' => $role->code,
+                'level' => $role->level,
+                'description' => $role->description
+            ];
+        });
+
         return response()->json([
             'success' => true,
             'message' => '登录成功',
@@ -65,7 +80,9 @@ class AuthController extends Controller
                     'school_id' => $user->school_id,
                     'school_name' => $user->school_name,
                     'status' => $user->status,
-                    'created_at' => $user->created_at
+                    'created_at' => $user->created_at,
+                    'permissions' => $permissions,
+                    'roles' => $roleInfo
                 ]
             ]
         ]);
@@ -129,6 +146,21 @@ class AuthController extends Controller
     {
         $user = auth('api')->user();
 
+        // 获取用户权限
+        $permissions = $user->getPermissions();
+
+        // 获取用户角色信息
+        $roles = $user->roles()->with('permissions')->get();
+        $roleInfo = $roles->map(function ($role) {
+            return [
+                'id' => $role->id,
+                'name' => $role->name,
+                'code' => $role->code,
+                'level' => $role->level,
+                'description' => $role->description
+            ];
+        });
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -147,7 +179,9 @@ class AuthController extends Controller
                 'birthday' => $user->birthday,
                 'status' => $user->status,
                 'last_login_at' => $user->last_login_at,
-                'created_at' => $user->created_at
+                'created_at' => $user->created_at,
+                'permissions' => $permissions,
+                'roles' => $roleInfo
             ]
         ]);
     }

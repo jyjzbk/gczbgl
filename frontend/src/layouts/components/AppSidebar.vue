@@ -26,60 +26,60 @@
       </el-menu-item>
       
       <!-- 用户管理 -->
-      <el-sub-menu index="user" v-if="hasUserPermission">
+      <el-sub-menu v-if="hasUserPermission" index="user">
         <template #title>
           <el-icon><User /></el-icon>
           <span>用户管理</span>
         </template>
-        <el-menu-item index="/users">用户列表</el-menu-item>
-        <el-menu-item index="/roles">角色管理</el-menu-item>
-        <el-menu-item index="/permissions">权限管理</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list'])" index="/users">用户列表</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['role', 'role.list'])" index="/roles">角色管理</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['role', 'role.list'])" index="/permissions">权限管理</el-menu-item>
       </el-sub-menu>
       
       <!-- 基础数据 -->
-      <el-sub-menu index="basic">
+      <el-sub-menu v-if="hasBasicDataPermission" index="basic">
         <template #title>
           <el-icon><Setting /></el-icon>
           <span>基础数据</span>
         </template>
-        <el-menu-item index="/schools">学校管理</el-menu-item>
-        <el-menu-item index="/laboratories">实验室管理</el-menu-item>
-        <el-menu-item index="/subjects">学科管理</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list', 'user.create'])" index="/schools">学校管理</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list', 'user.create'])" index="/laboratories">实验室管理</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list', 'user.create'])" index="/subjects">学科管理</el-menu-item>
       </el-sub-menu>
       
       <!-- 实验管理 -->
-      <el-sub-menu index="experiment">
+      <el-sub-menu v-if="hasExperimentPermission" index="experiment">
         <template #title>
           <el-icon><Operation /></el-icon>
           <span>实验管理</span>
         </template>
-        <el-menu-item index="/experiment-catalogs">实验目录</el-menu-item>
-        <el-menu-item index="/experiment-bookings">实验预约</el-menu-item>
-        <el-menu-item index="/experiment-records">实验记录</el-menu-item>
-        <el-menu-item index="/experiment-statistics">实验统计</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog'])" index="/experiment-catalogs">实验目录</el-menu-item>
+        <el-menu-item v-if="authStore.hasPermission('experiment.booking')" index="/experiment-bookings">实验预约</el-menu-item>
+        <el-menu-item v-if="authStore.hasPermission('experiment.record')" index="/experiment-records">实验记录</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'experiment.record'])" index="/experiment-statistics">实验统计</el-menu-item>
       </el-sub-menu>
-      
+
       <!-- 设备管理 -->
-      <el-sub-menu index="equipment">
+      <el-sub-menu v-if="hasEquipmentPermission" index="equipment">
         <template #title>
           <el-icon><Box /></el-icon>
           <span>设备管理</span>
         </template>
-        <el-menu-item index="/equipment-management">设备档案</el-menu-item>
-        <el-menu-item index="/equipment-borrow">设备借用</el-menu-item>
-        <el-menu-item index="/equipment-maintenance">设备维修</el-menu-item>
-        <el-menu-item index="/equipment-qrcode">二维码管理</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['equipment', 'equipment.list'])" index="/equipment-management">设备档案</el-menu-item>
+        <el-menu-item v-if="authStore.hasPermission('equipment.borrow')" index="/equipment-borrow">设备借用</el-menu-item>
+        <el-menu-item v-if="authStore.hasPermission('equipment.maintenance')" index="/equipment-maintenance">设备维修</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['equipment', 'equipment.list'])" index="/equipment-qrcode">二维码管理</el-menu-item>
       </el-sub-menu>
       
       <!-- 统计报表 -->
-      <el-sub-menu index="statistics">
+      <el-sub-menu v-if="hasStatisticsPermission" index="statistics">
         <template #title>
           <el-icon><DataAnalysis /></el-icon>
           <span>统计报表</span>
         </template>
-        <el-menu-item index="/statistics/experiment">实验统计</el-menu-item>
-        <el-menu-item index="/statistics/equipment">设备统计</el-menu-item>
-        <el-menu-item index="/statistics/region">区域分析</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog'])" index="/statistics/experiment">实验统计</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['equipment', 'equipment.list'])" index="/statistics/equipment">设备统计</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list'])" index="/statistics/region">区域分析</el-menu-item>
       </el-sub-menu>
       
       <!-- 系统管理 -->
@@ -122,11 +122,32 @@ const activeMenu = computed(() => {
 
 // 权限检查
 const hasUserPermission = computed(() => {
-  return authStore.hasAnyPermission(['user:read', 'role:read'])
+  const result = authStore.hasAnyPermission(['user', 'user.list', 'role', 'role.list'])
+  console.log('hasUserPermission:', result, 'permissions:', authStore.permissions)
+  return result
 })
 
 const hasSystemPermission = computed(() => {
-  return authStore.hasAnyPermission(['system:read', 'log:read'])
+  return authStore.hasAnyPermission(['system', 'system.read', 'log', 'log.read'])
+})
+
+const hasEquipmentPermission = computed(() => {
+  return authStore.hasAnyPermission(['equipment', 'equipment.list'])
+})
+
+const hasExperimentPermission = computed(() => {
+  return authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record'])
+})
+
+const hasBasicDataPermission = computed(() => {
+  return authStore.hasAnyPermission(['user', 'user.list', 'user.create'])
+})
+
+const hasStatisticsPermission = computed(() => {
+  // 统计报表权限：有实验或设备权限的用户都可以查看对应的统计
+  return authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'experiment.record']) ||
+         authStore.hasAnyPermission(['equipment', 'equipment.list']) ||
+         authStore.hasAnyPermission(['user', 'user.list'])
 })
 
 // 处理菜单选择

@@ -34,13 +34,13 @@ class PermissionService
 
         foreach ($roles as $role) {
             // 超级管理员拥有所有权限
-            if ($role->name === 'super_admin') {
+            if ($role->code === 'super_admin') {
                 return $this->getAllPermissions();
             }
 
             // 收集角色权限
             foreach ($role->permissions as $permission) {
-                $permissions[] = $permission->name;
+                $permissions[] = $permission->permission_code;
             }
         }
 

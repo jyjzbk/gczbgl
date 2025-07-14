@@ -81,21 +81,26 @@ export const useAuthStore = defineStore('auth', () => {
       if (response.data && response.data.token) {
         // 后端返回的格式: { success: true, data: { token: "...", user: {...} } }
         setToken(response.data.token)
+
+        // 设置用户权限
+        permissions.value = response.data.user.permissions || []
+
         setUserInfo({
           ...response.data.user,
-          role: response.data.user.role || 'admin', // 设置默认角色
-          permissions: response.data.user.permissions || ['user:read', 'user:write']
+          permissions: response.data.user.permissions || []
         } as UserInfo)
       } else if (response.access_token) {
         // Laravel JWT 格式
         setToken(response.access_token)
+        permissions.value = response.user.permissions || []
         setUserInfo({
           ...response.user,
-          permissions: response.user.permissions || ['user:read', 'user:write']
+          permissions: response.user.permissions || []
         } as UserInfo)
       } else if (response.token) {
         // 标准格式
         setToken(response.token)
+        permissions.value = response.user.permissions || []
         setUserInfo(response.user as UserInfo)
       } else {
         throw new Error('登录响应格式错误: ' + JSON.stringify(response))
@@ -144,10 +149,12 @@ export const useAuthStore = defineStore('auth', () => {
 
       console.log('用户信息API响应:', response)
 
+      // 设置用户权限
+      permissions.value = response.data.permissions || []
+
       setUserInfo({
         ...response.data,
-        role: response.data.role || 'admin', // 设置默认角色
-        permissions: response.data.permissions || ['user:read', 'user:write']
+        permissions: response.data.permissions || []
       } as UserInfo)
       return true
     } catch (error) {

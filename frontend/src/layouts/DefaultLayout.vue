@@ -33,22 +33,31 @@
     </el-container>
     
     <!-- 移动端遮罩层 -->
-    <div 
+    <div
       v-if="appStore.isMobile && appStore.sidebarMobileOpen"
       class="mobile-mask"
       @click="appStore.closeMobileSidebar"
     />
+
+    <!-- 权限调试组件 -->
+    <DebugPermissions v-if="isDevelopment" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, computed } from 'vue'
 import { useAppStore } from '@/stores/app'
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
 import AppBreadcrumb from './components/AppBreadcrumb.vue'
+import DebugPermissions from '@/components/DebugPermissions.vue'
 
 const appStore = useAppStore()
+
+// 开发环境检查
+const isDevelopment = computed(() => {
+  return import.meta.env.DEV
+})
 
 // 检测设备类型
 const checkDevice = () => {

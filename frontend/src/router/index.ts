@@ -61,6 +61,21 @@ const router = createRouter({
         }
       ]
     },
+
+    // 权限测试页面 (仅开发环境)
+    {
+      path: '/permission-test',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'PermissionTest',
+          component: () => import('@/views/PermissionTest.vue'),
+          meta: { title: '权限测试' }
+        }
+      ]
+    },
     {
       path: '/profile',
       component: DefaultLayout,
@@ -78,39 +93,39 @@ const router = createRouter({
     {
       path: '/users',
       component: DefaultLayout,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, requiredPermissions: ['user', 'user.list'] },
       children: [
         {
           path: '',
           name: 'UserList',
           component: () => import('@/views/user/UserList.vue'),
-          meta: { title: '用户列表' }
+          meta: { title: '用户列表', requiredPermissions: ['user', 'user.list'] }
         }
       ]
     },
     {
       path: '/roles',
       component: DefaultLayout,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, requiredPermissions: ['role', 'role.list'] },
       children: [
         {
           path: '',
           name: 'RoleManagement',
           component: () => import('@/views/user/RoleManagement.vue'),
-          meta: { title: '角色管理' }
+          meta: { title: '角色管理', requiredPermissions: ['role', 'role.list'] }
         }
       ]
     },
     {
       path: '/permissions',
       component: DefaultLayout,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, requiredPermissions: ['role', 'role.list'] },
       children: [
         {
           path: '',
           name: 'PermissionManagement',
           component: () => import('@/views/user/PermissionManagement.vue'),
-          meta: { title: '权限管理' }
+          meta: { title: '权限管理', requiredPermissions: ['role', 'role.list'] }
         }
       ]
     },
@@ -265,7 +280,7 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
 
   // 如果有token但没有用户信息，尝试获取用户信息
@@ -282,6 +297,21 @@ router.beforeEach(async (to, from, next) => {
         query: { redirect: to.fullPath }
       })
       return
+    }
+
+    // 检查权限
+    const requiredPermissions = to.meta.requiredPermissions as string[]
+    if (requiredPermissions && requiredPermissions.length > 0) {
+      const hasPermission = requiredPermissions.some(permission =>
+        authStore.hasPermission(permission)
+      )
+
+      if (!hasPermission) {
+        // 权限不足，跳转到403页面或首页
+        console.warn('权限不足，无法访问:', to.path, '需要权限:', requiredPermissions, '用户权限:', authStore.permissions)
+        next('/dashboard')
+        return
+      }
     }
   }
 
