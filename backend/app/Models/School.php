@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class School extends Model
 {
@@ -38,6 +39,30 @@ class School extends Model
     public function region(): BelongsTo
     {
         return $this->belongsTo(AdministrativeRegion::class, 'region_id');
+    }
+
+    /**
+     * 获取学校的用户
+     */
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
+    /**
+     * 获取学校的实验室
+     */
+    public function laboratories(): HasMany
+    {
+        return $this->hasMany(Laboratory::class);
+    }
+
+    /**
+     * 获取学校的设备
+     */
+    public function equipments(): HasMany
+    {
+        return $this->hasMany(Equipment::class);
     }
 
     /**

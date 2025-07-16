@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Http\Middleware\DataScopeMiddleware;
 
 class UserController extends Controller
 {
@@ -17,7 +18,10 @@ class UserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = User::query();
+        $query = User::with(['roles', 'school']);
+
+        // 应用数据权限过滤
+        DataScopeMiddleware::applyDataScope($query, $request, 'users');
 
         // 搜索
         if ($request->filled('search')) {
@@ -37,6 +41,11 @@ class UserController extends Controller
         // 状态筛选
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // 组织级别筛选
+        if ($request->filled('organization_level')) {
+            $query->where('organization_level', $request->organization_level);
         }
 
         // 分页
@@ -74,6 +83,7 @@ class UserController extends Controller
             'password' => 'required|string|min:6',
             'department' => 'nullable|string|max:100',
             'position' => 'nullable|string|max:100',
+            'school_id' => 'nullable|exists:schools,id',
         ]);
 
         if ($validator->fails()) {
@@ -82,6 +92,49 @@ class UserController extends Controller
                 'message' => '验证失败',
                 'errors' => $validator->errors()
             ], 422);
+        }
+
+        // 获取当前用户信息，用于设置新用户的组织归属
+        $currentUser = auth()->user();
+        $permissionService = app(\App\Services\PermissionService::class);
+        $currentUserDataScope = $permissionService->getUserDataScope($currentUser);
+
+        // 根据角色确定组织信息
+        $roleInfo = \App\Models\Role::where('code', $request->role)->first();
+        $organizationLevel = $roleInfo ? $roleInfo->level : 5; // 默认为学校级别
+
+        // 设置组织归属信息
+        $organizationId = $request->organization_id;
+        $organizationType = 'region';
+        $schoolId = $request->school_id;
+
+        if ($organizationLevel == 5) {
+            // 学校级用户
+            if ($schoolId) {
+                $organizationId = $schoolId;
+                $organizationType = 'school';
+            } else {
+                // 如果没有指定学校，使用当前用户可管理的第一个学校
+                $manageableSchools = $currentUserDataScope['school_ids'];
+                if (!empty($manageableSchools)) {
+                    $schoolId = $manageableSchools[0];
+                    $organizationId = $schoolId;
+                    $organizationType = 'school';
+                }
+            }
+        } else {
+            // 区域级用户
+            if ($organizationId) {
+                // 使用前端指定的组织ID
+                $organizationType = 'region';
+            } else {
+                // 如果没有指定组织，使用当前用户可管理的区域
+                $manageableRegions = $currentUserDataScope['region_ids'] ?? [];
+                if (!empty($manageableRegions)) {
+                    $organizationId = $manageableRegions[0];
+                    $organizationType = 'region';
+                }
+            }
         }
 
         $user = User::create([
@@ -93,8 +146,25 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
             'department' => $request->department,
             'position' => $request->position,
+            'school_id' => $schoolId,
+            'organization_id' => $organizationId,
+            'organization_type' => $organizationType,
+            'organization_level' => $organizationLevel,
             'status' => 1, // 默认启用
         ]);
+
+        // 分配角色
+        if ($roleInfo) {
+            $user->roles()->attach($roleInfo->id, [
+                'scope_type' => $organizationType,
+                'scope_id' => $organizationId,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+
+        // 重新加载用户数据，包含角色信息
+        $user->load(['roles', 'school']);
 
         return response()->json([
             'success' => true,
@@ -130,6 +200,8 @@ class UserController extends Controller
             'department' => 'nullable|string|max:100',
             'position' => 'nullable|string|max:100',
             'status' => 'nullable|in:0,1',
+            'school_id' => 'nullable|exists:schools,id',
+            'organization_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -140,9 +212,66 @@ class UserController extends Controller
             ], 422);
         }
 
-        $user->update($request->only([
-            'real_name', 'email', 'phone', 'role', 'department', 'position', 'status'
-        ]));
+        // 检查角色是否发生变化，如果变化需要更新组织信息
+        $roleChanged = $request->role !== $user->role;
+        $organizationChanged = $request->filled('organization_id') || $request->filled('school_id');
+
+        if ($roleChanged || $organizationChanged) {
+            // 获取新角色信息
+            $roleInfo = \App\Models\Role::where('code', $request->role)->first();
+            $organizationLevel = $roleInfo ? $roleInfo->level : 5;
+
+            // 设置组织归属信息
+            $organizationId = $request->organization_id ?? $user->organization_id;
+            $organizationType = 'region';
+            $schoolId = $request->school_id ?? $user->school_id;
+
+            if ($organizationLevel == 5) {
+                // 学校级用户
+                if ($schoolId) {
+                    $organizationId = $schoolId;
+                    $organizationType = 'school';
+                }
+            } else {
+                // 区域级用户
+                $organizationType = 'region';
+            }
+
+            // 更新组织信息
+            $user->update([
+                'real_name' => $request->real_name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'role' => $request->role,
+                'department' => $request->department,
+                'position' => $request->position,
+                'status' => $request->status ?? $user->status,
+                'school_id' => $schoolId,
+                'organization_id' => $organizationId,
+                'organization_type' => $organizationType,
+                'organization_level' => $organizationLevel,
+            ]);
+
+            // 更新用户角色关联
+            if ($roleInfo) {
+                $user->roles()->sync([
+                    $roleInfo->id => [
+                        'scope_type' => $organizationType,
+                        'scope_id' => $organizationId,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]
+                ]);
+            }
+        } else {
+            // 只更新基本信息
+            $user->update($request->only([
+                'real_name', 'email', 'phone', 'department', 'position', 'status'
+            ]));
+        }
+
+        // 重新加载用户数据
+        $user->load(['roles', 'school']);
 
         return response()->json([
             'success' => true,

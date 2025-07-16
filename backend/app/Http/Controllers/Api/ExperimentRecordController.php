@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ExperimentRecord;
 use App\Models\ExperimentReservation;
+use App\Http\Middleware\DataScopeMiddleware;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
@@ -18,9 +19,20 @@ class ExperimentRecordController extends Controller
     {
         $query = ExperimentRecord::with(['catalog', 'laboratory', 'teacher', 'reservation']);
 
+        // 应用数据权限过滤
+        DataScopeMiddleware::applyDataScope($query, $request, 'experiment_records');
+
         // 按学校筛选
         if ($request->filled('school_id')) {
-            $query->bySchool($request->school_id);
+            // 验证用户是否可以访问指定学校
+            if (DataScopeMiddleware::canAccess($request, 'school', $request->school_id)) {
+                $query->bySchool($request->school_id);
+            } else {
+                return response()->json([
+                    'code' => 403,
+                    'message' => '无权访问指定学校的数据'
+                ], 403);
+            }
         }
 
         // 按教师筛选
@@ -115,6 +127,14 @@ class ExperimentRecordController extends Controller
             'start_time' => $validated['start_time'] ?? now(),
             'status' => ExperimentRecord::STATUS_IN_PROGRESS
         ];
+
+        // 验证创建权限
+        if (!DataScopeMiddleware::canCreate($request, $recordData)) {
+            return response()->json([
+                'code' => 403,
+                'message' => '无权在指定学校创建实验记录'
+            ], 403);
+        }
 
         $record = ExperimentRecord::create($recordData);
         $record->load(['catalog', 'laboratory', 'teacher', 'reservation']);

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ExperimentReservation;
 use App\Models\Laboratory;
 use App\Models\ExperimentCatalog;
+use App\Http\Middleware\DataScopeMiddleware;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
@@ -20,9 +21,20 @@ class ExperimentReservationController extends Controller
     {
         $query = ExperimentReservation::with(['catalog', 'laboratory', 'teacher', 'reviewer']);
 
+        // 应用数据权限过滤
+        DataScopeMiddleware::applyDataScope($query, $request, 'experiment_reservations');
+
         // 按学校筛选
         if ($request->filled('school_id')) {
-            $query->bySchool($request->school_id);
+            // 验证用户是否可以访问指定学校
+            if (DataScopeMiddleware::canAccess($request, 'school', $request->school_id)) {
+                $query->bySchool($request->school_id);
+            } else {
+                return response()->json([
+                    'code' => 403,
+                    'message' => '无权访问指定学校的数据'
+                ], 403);
+            }
         }
 
         // 按教师筛选
@@ -92,6 +104,14 @@ class ExperimentReservationController extends Controller
             'end_time' => 'required|date_format:H:i|after:start_time',
             'remark' => 'nullable|string'
         ]);
+
+        // 验证创建权限
+        if (!DataScopeMiddleware::canCreate($request, $validated)) {
+            return response()->json([
+                'code' => 403,
+                'message' => '无权在指定学校创建实验预约'
+            ], 403);
+        }
 
         // 检查实验室是否可用
         $laboratory = Laboratory::find($validated['laboratory_id']);
@@ -228,10 +248,7 @@ class ExperimentReservationController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => ['required', 'integer', Rule::in([
-                ExperimentReservation::STATUS_APPROVED,
-                ExperimentReservation::STATUS_REJECTED
-            ])],
+            'status' => ['required', 'integer', Rule::in([2, 3])], // 直接使用数字而不是常量
             'review_remark' => 'nullable|string'
         ]);
 

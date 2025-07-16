@@ -19,6 +19,7 @@ use App\Exports\EquipmentExport;
 use App\Imports\EquipmentImport;
 use App\Http\Requests\EquipmentRequest;
 use App\Services\PermissionService;
+use App\Http\Middleware\DataScopeMiddleware;
 
 class EquipmentController extends Controller
 {
@@ -28,16 +29,8 @@ class EquipmentController extends Controller
     {
         $this->permissionService = $permissionService;
 
-        // 应用权限中间件
-        $this->middleware('auth:api');
-        $this->middleware('equipment.permission:equipment.view')->only(['index', 'show']);
-        $this->middleware('equipment.permission:equipment.create')->only(['store']);
-        $this->middleware('equipment.permission:equipment.edit')->only(['update']);
-        $this->middleware('equipment.permission:equipment.delete')->only(['destroy']);
-        $this->middleware('equipment.permission:equipment.import')->only(['batchImport']);
-        $this->middleware('equipment.permission:equipment.export')->only(['export']);
-        $this->middleware('equipment.permission:equipment.photo.upload')->only(['uploadPhoto']);
-        $this->middleware('equipment.permission:equipment.photo.delete')->only(['deletePhoto']);
+        // 在Laravel 12中，中间件应该在路由中定义，而不是在控制器构造函数中
+        // 权限控制已在路由文件中通过data.scope中间件处理
     }
 
     /**
@@ -45,18 +38,22 @@ class EquipmentController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $user = auth()->user();
         $query = Equipment::with(['category', 'school', 'laboratory', 'manager']);
 
-        // 数据访问权限控制
-        if (!$user->isSuperAdmin() && !$user->isAdmin()) {
-            // 非管理员只能查看自己学校的设备
-            $query->where('school_id', $user->school_id);
-        }
+        // 应用数据权限过滤
+        DataScopeMiddleware::applyDataScope($query, $request, 'equipments');
 
         // 筛选条件
         if ($request->filled('school_id')) {
-            $query->where('school_id', $request->school_id);
+            // 验证用户是否可以访问指定学校
+            if (DataScopeMiddleware::canAccess($request, 'school', $request->school_id)) {
+                $query->where('school_id', $request->school_id);
+            } else {
+                return response()->json([
+                    'code' => 403,
+                    'message' => '无权访问指定学校的数据'
+                ], 403);
+            }
         }
 
         if ($request->filled('laboratory_id')) {
@@ -141,15 +138,14 @@ class EquipmentController extends Controller
     public function store(EquipmentRequest $request): JsonResponse
     {
         $user = auth()->user();
+        $data = $request->validated();
 
-        // 数据访问权限检查
-        if (!$user->isSuperAdmin() && !$user->isAdmin()) {
-            if ($request->school_id !== $user->school_id) {
-                return response()->json([
-                    'code' => 403,
-                    'message' => '无权限为其他学校创建设备'
-                ], 403);
-            }
+        // 验证创建权限
+        if (!DataScopeMiddleware::canCreate($request, $data)) {
+            return response()->json([
+                'code' => 403,
+                'message' => '无权限为指定学校创建设备'
+            ], 403);
         }
 
         try {
@@ -195,8 +191,16 @@ class EquipmentController extends Controller
     /**
      * 获取设备详情
      */
-    public function show(Equipment $equipment): JsonResponse
+    public function show(Request $request, Equipment $equipment): JsonResponse
     {
+        // 验证访问权限
+        if (!DataScopeMiddleware::canAccess($request, 'school', $equipment->school_id)) {
+            return response()->json([
+                'code' => 403,
+                'message' => '无权访问该设备信息'
+            ], 403);
+        }
+
         $equipment->load([
             'category', 'school', 'laboratory', 'manager',
             'borrows' => function($query) {
@@ -261,6 +265,14 @@ class EquipmentController extends Controller
             'manager_id', 'status', 'remark'
         ]);
 
+        // 验证更新权限
+        if (!DataScopeMiddleware::canUpdate($request, $equipment, $data)) {
+            return response()->json([
+                'code' => 403,
+                'message' => '无权限更新该设备或修改其归属'
+            ], 403);
+        }
+
         // 检查数量变更是否会影响借用
         if ($data['quantity'] < $equipment->quantity) {
             $borrowedQuantity = $equipment->borrowed_quantity;
@@ -285,8 +297,16 @@ class EquipmentController extends Controller
     /**
      * 删除设备
      */
-    public function destroy(Equipment $equipment): JsonResponse
+    public function destroy(Request $request, Equipment $equipment): JsonResponse
     {
+        // 验证删除权限
+        if (!DataScopeMiddleware::canAccess($request, 'school', $equipment->school_id)) {
+            return response()->json([
+                'code' => 403,
+                'message' => '无权限删除该设备'
+            ], 403);
+        }
+
         // 检查是否有借用记录
         if ($equipment->borrows()->where('status', '!=', 2)->count() > 0) {
             return response()->json([

@@ -12,7 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // 注册数据权限中间件
+        $middleware->alias([
+            'data.scope' => \App\Http\Middleware\DataScopeMiddleware::class,
+            'equipment.permission' => \App\Http\Middleware\EquipmentPermissionMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

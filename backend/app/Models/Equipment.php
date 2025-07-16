@@ -82,6 +82,22 @@ class Equipment extends Model
     }
 
     /**
+     * 关联实验室
+     */
+    public function laboratory(): BelongsTo
+    {
+        return $this->belongsTo(Laboratory::class, 'laboratory_id');
+    }
+
+    /**
+     * 关联管理员
+     */
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    /**
      * 关联借用记录
      */
     public function borrows(): HasMany

@@ -353,4 +353,65 @@ class RoleController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * 获取角色默认权限配置
+     */
+    public function getDefaultPermissions(string $id): JsonResponse
+    {
+        $role = Role::find($id);
+
+        if (!$role) {
+            return response()->json([
+                'success' => false,
+                'message' => '角色不存在'
+            ], 404);
+        }
+
+        // 根据角色级别返回默认权限配置
+        $defaultPermissions = $this->getDefaultPermissionsByLevel($role->level);
+
+        return response()->json([
+            'success' => true,
+            'data' => $defaultPermissions
+        ]);
+    }
+
+    /**
+     * 根据角色级别获取默认权限
+     */
+    private function getDefaultPermissionsByLevel(int $level): array
+    {
+        $permissionMap = [
+            1 => [ // 省级管理员
+                'user', 'user.list', 'user.create', 'user.update', 'user.delete', 'user.edit', 'user.export', 'user.reset_password',
+                'role', 'role.list', 'role.create', 'role.update', 'role.delete',
+                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
+                'system', 'system.read', 'log', 'log.read'
+            ],
+            2 => [ // 市级管理员
+                'user', 'user.list', 'user.create', 'user.update', 'user.delete', 'user.edit',
+                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance'
+            ],
+            3 => [ // 区县管理员
+                'user', 'user.list', 'user.create', 'user.update', 'user.delete', 'user.edit',
+                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance'
+            ],
+            4 => [ // 学区管理员
+                'user', 'user.list', 'user.create', 'user.update',
+                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update'
+            ],
+            5 => [ // 学校管理员
+                'user', 'user.list', 'user.create', 'user.update',
+                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.borrow'
+            ]
+        ];
+
+        return $permissionMap[$level] ?? [];
+    }
 }

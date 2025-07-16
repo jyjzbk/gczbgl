@@ -259,8 +259,69 @@ class PermissionService
             return true;
         }
 
-        // 同学校用户可以访问
-        return $user->school_id === $borrow->equipment->school_id;
+        // 检查是否在用户的数据访问范围内
+        return $this->canAccessSchool($user, $borrow->equipment->school_id);
+    }
+
+    /**
+     * 获取用户的数据访问范围
+     */
+    public function getUserDataScope(User $user): array
+    {
+        // 超级管理员可以访问所有数据
+        if ($user->hasRole('super_admin')) {
+            return [
+                'type' => 'all',
+                'school_ids' => [],
+                'region_ids' => []
+            ];
+        }
+
+        $scope = [
+            'type' => 'limited',
+            'school_ids' => [],
+            'region_ids' => []
+        ];
+
+        // 根据用户组织级别确定数据范围
+        switch ($user->organization_level) {
+            case 1: // 省级
+                $scope['type'] = 'province';
+                $scope['region_ids'] = $this->getProvinceRegionIds($user->organization_id);
+                $scope['school_ids'] = $this->getProvinceSchoolIds($user->organization_id);
+                break;
+
+            case 2: // 市级
+                $scope['type'] = 'city';
+                $scope['region_ids'] = $this->getCityRegionIds($user->organization_id);
+                $scope['school_ids'] = $this->getCitySchoolIds($user->organization_id);
+                break;
+
+            case 3: // 区县级
+                $scope['type'] = 'county';
+                $scope['region_ids'] = $this->getCountyRegionIds($user->organization_id);
+                $scope['school_ids'] = $this->getCountySchoolIds($user->organization_id);
+                break;
+
+            case 4: // 学区级
+                $scope['type'] = 'district';
+                $scope['school_ids'] = $this->getDistrictSchoolIds($user->organization_id);
+                break;
+
+            case 5: // 学校级
+                $scope['type'] = 'school';
+                $scope['school_ids'] = [$user->organization_id];
+                break;
+
+            default:
+                // 兼容旧数据，使用school_id
+                if ($user->school_id) {
+                    $scope['type'] = 'school';
+                    $scope['school_ids'] = [$user->school_id];
+                }
+        }
+
+        return $scope;
     }
 
     /**
@@ -283,7 +344,142 @@ class PermissionService
             return true;
         }
 
-        // 同学校用户可以访问
-        return $user->school_id === $maintenance->equipment->school_id;
+        // 检查是否在用户的数据访问范围内
+        return $this->canAccessSchool($user, $maintenance->equipment->school_id);
+    }
+
+    /**
+     * 检查用户是否可以访问指定组织
+     */
+    public function canAccessOrganization(User $user, string $organizationType, int $organizationId): bool
+    {
+        // 超级管理员可以访问所有组织
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        $dataScope = $this->getUserDataScope($user);
+
+        if ($organizationType === 'school') {
+            return in_array($organizationId, $dataScope['school_ids']);
+        } elseif ($organizationType === 'region') {
+            return in_array($organizationId, $dataScope['region_ids']);
+        }
+
+        return false;
+    }
+
+    /**
+     * 检查用户是否可以访问指定学校
+     */
+    public function canAccessSchool(User $user, int $schoolId): bool
+    {
+        return $this->canAccessOrganization($user, 'school', $schoolId);
+    }
+
+    /**
+     * 获取用户可管理的学校ID列表
+     */
+    public function getManageableSchoolIds(User $user): array
+    {
+        $dataScope = $this->getUserDataScope($user);
+        return $dataScope['school_ids'];
+    }
+
+    /**
+     * 获取所有下级区域ID（递归）
+     */
+    private function getAllSubRegionIds(int $regionId): array
+    {
+        $allRegionIds = [$regionId]; // 包含自身ID
+        $directSubRegions = \App\Models\AdministrativeRegion::where('parent_id', $regionId)->pluck('id')->toArray();
+
+        foreach ($directSubRegions as $subRegionId) {
+            $allRegionIds = array_merge($allRegionIds, $this->getAllSubRegionIds($subRegionId));
+        }
+
+        return $allRegionIds;
+    }
+
+    /**
+     * 获取省级用户可访问的区域ID
+     */
+    private function getProvinceRegionIds(int $provinceId): array
+    {
+        return $this->getAllSubRegionIds($provinceId);
+    }
+
+    /**
+     * 获取省级用户可访问的学校ID
+     */
+    private function getProvinceSchoolIds(int $provinceId): array
+    {
+        // 获取省及所有下级区域ID
+        $allRegionIds = $this->getAllSubRegionIds($provinceId);
+
+        // 获取所有区域下的学校
+        $allSchools = \App\Models\School::whereIn('region_id', $allRegionIds)
+            ->pluck('id')
+            ->toArray();
+
+        return $allSchools;
+    }
+
+    /**
+     * 获取市级用户可访问的区域ID
+     */
+    private function getCityRegionIds(int $cityId): array
+    {
+        return $this->getAllSubRegionIds($cityId);
+    }
+
+    /**
+     * 获取市级用户可访问的学校ID
+     */
+    private function getCitySchoolIds(int $cityId): array
+    {
+        // 获取市及所有下级区域ID
+        $allRegionIds = $this->getAllSubRegionIds($cityId);
+
+        // 获取所有区域下的学校
+        $allSchools = \App\Models\School::whereIn('region_id', $allRegionIds)
+            ->pluck('id')
+            ->toArray();
+
+        return $allSchools;
+    }
+
+    /**
+     * 获取区县级用户可访问的区域ID
+     */
+    private function getCountyRegionIds(int $countyId): array
+    {
+        return $this->getAllSubRegionIds($countyId);
+    }
+
+    /**
+     * 获取区县级用户可访问的学校ID
+     */
+    private function getCountySchoolIds(int $countyId): array
+    {
+        // 获取区县及所有下级区域ID
+        $allRegionIds = $this->getAllSubRegionIds($countyId);
+
+        // 获取所有区域下的学校
+        $allSchools = \App\Models\School::whereIn('region_id', $allRegionIds)
+            ->pluck('id')
+            ->toArray();
+
+        return $allSchools;
+    }
+
+    /**
+     * 获取学区级用户可访问的学校ID
+     */
+    private function getDistrictSchoolIds(int $districtId): array
+    {
+        return \App\Models\School::where('region_id', $districtId)
+            ->pluck('id')
+            ->toArray();
     }
 }

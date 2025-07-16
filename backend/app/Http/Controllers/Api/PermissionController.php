@@ -22,8 +22,11 @@ class PermissionController extends Controller
                 'children' => [
                     ['id' => 'user.list', 'name' => '用户列表', 'code' => 'user.list', 'type' => 'read'],
                     ['id' => 'user.create', 'name' => '创建用户', 'code' => 'user.create', 'type' => 'write'],
-                    ['id' => 'user.update', 'name' => '编辑用户', 'code' => 'user.update', 'type' => 'write'],
-                    ['id' => 'user.delete', 'name' => '删除用户', 'code' => 'user.delete', 'type' => 'delete']
+                    ['id' => 'user.update', 'name' => '更新用户', 'code' => 'user.update', 'type' => 'write'],
+                    ['id' => 'user.edit', 'name' => '编辑用户', 'code' => 'user.edit', 'type' => 'write'],
+                    ['id' => 'user.delete', 'name' => '删除用户', 'code' => 'user.delete', 'type' => 'delete'],
+                    ['id' => 'user.export', 'name' => '导出用户', 'code' => 'user.export', 'type' => 'advanced', 'level' => 'high'],
+                    ['id' => 'user.reset_password', 'name' => '重置密码', 'code' => 'user.reset_password', 'type' => 'advanced', 'level' => 'high']
                 ]
             ],
             [
@@ -58,6 +61,15 @@ class PermissionController extends Controller
                     ['id' => 'equipment.delete', 'name' => '删除设备', 'code' => 'equipment.delete', 'type' => 'delete'],
                     ['id' => 'equipment.borrow', 'name' => '设备借用', 'code' => 'equipment.borrow', 'type' => 'write'],
                     ['id' => 'equipment.maintenance', 'name' => '设备维修', 'code' => 'equipment.maintenance', 'type' => 'write']
+                ]
+            ],
+            [
+                'id' => 'system',
+                'name' => '系统管理',
+                'code' => 'system',
+                'children' => [
+                    ['id' => 'system.read', 'name' => '系统信息', 'code' => 'system.read', 'type' => 'advanced', 'level' => 'high'],
+                    ['id' => 'log.read', 'name' => '日志查看', 'code' => 'log.read', 'type' => 'advanced', 'level' => 'high']
                 ]
             ]
         ];

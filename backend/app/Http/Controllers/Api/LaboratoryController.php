@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
+use App\Http\Middleware\DataScopeMiddleware;
 
 class LaboratoryController extends Controller
 {
@@ -19,9 +20,20 @@ class LaboratoryController extends Controller
     {
         $query = Laboratory::with(['school', 'manager']);
 
+        // 应用数据权限过滤
+        DataScopeMiddleware::applyDataScope($query, $request, 'laboratories');
+
         // 按学校筛选
         if ($request->filled('school_id')) {
-            $query->bySchool($request->school_id);
+            // 验证用户是否可以访问指定学校
+            if (DataScopeMiddleware::canAccess($request, 'school', $request->school_id)) {
+                $query->bySchool($request->school_id);
+            } else {
+                return response()->json([
+                    'code' => 403,
+                    'message' => '无权访问指定学校的数据'
+                ], 403);
+            }
         }
 
         // 按类型筛选
@@ -81,6 +93,14 @@ class LaboratoryController extends Controller
             'status' => 'boolean'
         ]);
 
+        // 验证创建权限
+        if (!DataScopeMiddleware::canCreate($request, $validated)) {
+            return response()->json([
+                'code' => 403,
+                'message' => '无权限为指定学校创建实验室'
+            ], 403);
+        }
+
         // 检查同一学校内编号是否重复
         $exists = Laboratory::where('school_id', $validated['school_id'])
                            ->where('code', $validated['code'])
@@ -106,8 +126,16 @@ class LaboratoryController extends Controller
     /**
      * 获取实验室详情
      */
-    public function show(Laboratory $laboratory): JsonResponse
+    public function show(Request $request, Laboratory $laboratory): JsonResponse
     {
+        // 验证访问权限
+        if (!DataScopeMiddleware::canAccess($request, 'school', $laboratory->school_id)) {
+            return response()->json([
+                'code' => 403,
+                'message' => '无权访问该实验室信息'
+            ], 403);
+        }
+
         $laboratory->load(['school', 'manager', 'equipments']);
 
         return response()->json([
@@ -136,6 +164,14 @@ class LaboratoryController extends Controller
             'status' => 'boolean'
         ]);
 
+        // 验证更新权限
+        if (!DataScopeMiddleware::canUpdate($request, $laboratory, $validated)) {
+            return response()->json([
+                'code' => 403,
+                'message' => '无权限更新该实验室或修改其归属'
+            ], 403);
+        }
+
         // 检查同一学校内编号是否重复（排除自己）
         $exists = Laboratory::where('school_id', $validated['school_id'])
                            ->where('code', $validated['code'])
@@ -162,8 +198,16 @@ class LaboratoryController extends Controller
     /**
      * 删除实验室
      */
-    public function destroy(Laboratory $laboratory): JsonResponse
+    public function destroy(Request $request, Laboratory $laboratory): JsonResponse
     {
+        // 验证删除权限
+        if (!DataScopeMiddleware::canAccess($request, 'school', $laboratory->school_id)) {
+            return response()->json([
+                'code' => 403,
+                'message' => '无权限删除该实验室'
+            ], 403);
+        }
+
         // 检查是否有关联的预约记录
         if ($laboratory->reservations()->exists()) {
             return response()->json([

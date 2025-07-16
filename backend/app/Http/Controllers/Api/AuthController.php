@@ -60,6 +60,16 @@ class AuthController extends Controller
             ];
         });
 
+        // 获取组织信息
+        $organizationName = null;
+        if ($user->organization_type === 'school' && $user->school) {
+            $organizationName = $user->school->name;
+        } elseif ($user->organization_type === 'region' && $user->organization_id) {
+            // 获取行政区域名称
+            $region = \App\Models\AdministrativeRegion::find($user->organization_id);
+            $organizationName = $region ? $region->name : null;
+        }
+
         return response()->json([
             'success' => true,
             'message' => '登录成功',
@@ -79,6 +89,10 @@ class AuthController extends Controller
                     'position' => $user->position,
                     'school_id' => $user->school_id,
                     'school_name' => $user->school_name,
+                    'organization_id' => $user->organization_id,
+                    'organization_type' => $user->organization_type,
+                    'organization_level' => $user->organization_level,
+                    'organization_name' => $organizationName,
                     'status' => $user->status,
                     'created_at' => $user->created_at,
                     'permissions' => $permissions,
@@ -161,6 +175,16 @@ class AuthController extends Controller
             ];
         });
 
+        // 获取组织信息
+        $organizationName = null;
+        if ($user->organization_type === 'school' && $user->school) {
+            $organizationName = $user->school->name;
+        } elseif ($user->organization_type === 'region' && $user->organization_id) {
+            // 获取行政区域名称
+            $region = \App\Models\AdministrativeRegion::find($user->organization_id);
+            $organizationName = $region ? $region->name : null;
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -175,6 +199,10 @@ class AuthController extends Controller
                 'position' => $user->position,
                 'school_id' => $user->school_id,
                 'school_name' => $user->school_name,
+                'organization_id' => $user->organization_id,
+                'organization_type' => $user->organization_type,
+                'organization_level' => $user->organization_level,
+                'organization_name' => $organizationName,
                 'gender' => $user->gender,
                 'birthday' => $user->birthday,
                 'status' => $user->status,

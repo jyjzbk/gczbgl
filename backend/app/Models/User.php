@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Tymon\JWTAuth\Contracts\JWTSubject;
@@ -37,7 +38,10 @@ class User extends Authenticatable implements JWTSubject
         'position',
         'bio',
         'school_id',
-        'school_name'
+        'school_name',
+        'organization_id',
+        'organization_type',
+        'organization_level'
     ];
 
     /**
@@ -91,6 +95,27 @@ class User extends Authenticatable implements JWTSubject
     public function managedEquipments(): HasMany
     {
         return $this->hasMany(Equipment::class, 'manager_id');
+    }
+
+    /**
+     * 获取用户所属的组织（区域或学校）
+     */
+    public function organization()
+    {
+        if ($this->organization_type === 'region') {
+            return $this->belongsTo(AdministrativeRegion::class, 'organization_id');
+        } elseif ($this->organization_type === 'school') {
+            return $this->belongsTo(School::class, 'organization_id');
+        }
+        return null;
+    }
+
+    /**
+     * 获取用户所属学校（如果是学校级用户或通过school_id）
+     */
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(School::class, 'school_id');
     }
 
     /**
@@ -160,6 +185,48 @@ class User extends Authenticatable implements JWTSubject
     {
         $permissionService = app(\App\Services\PermissionService::class);
         return $permissionService->getUserPermissions($this);
+    }
+
+    /**
+     * 获取用户的数据访问范围
+     */
+    public function getDataScope(): array
+    {
+        $permissionService = app(\App\Services\PermissionService::class);
+        return $permissionService->getUserDataScope($this);
+    }
+
+    /**
+     * 检查用户是否可以访问指定组织的数据
+     */
+    public function canAccessOrganization($organizationType, $organizationId): bool
+    {
+        $permissionService = app(\App\Services\PermissionService::class);
+        return $permissionService->canAccessOrganization($this, $organizationType, $organizationId);
+    }
+
+    /**
+     * 获取用户可管理的学校ID列表
+     */
+    public function getManageableSchoolIds(): array
+    {
+        $permissionService = app(\App\Services\PermissionService::class);
+        return $permissionService->getManageableSchoolIds($this);
+    }
+
+    /**
+     * 获取用户组织级别文本
+     */
+    public function getOrganizationLevelTextAttribute(): string
+    {
+        $levels = [
+            1 => '省级',
+            2 => '市级',
+            3 => '区县级',
+            4 => '学区级',
+            5 => '学校级'
+        ];
+        return $levels[$this->organization_level] ?? '未知';
     }
 
     /**
