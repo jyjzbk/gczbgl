@@ -124,8 +124,22 @@ class OrganizationController extends Controller
         } else {
             // 根据用户权限获取组织树
             $regionIds = $dataScope['region_ids'] ?? [];
-            
-            if (empty($regionIds)) {
+            $schoolIds = $dataScope['school_ids'] ?? [];
+
+            // 如果用户有学校权限但没有区域权限（学校管理员），需要获取学校所在的区域路径
+            if (empty($regionIds) && !empty($schoolIds)) {
+                $schools = School::whereIn('id', $schoolIds)->get();
+                foreach ($schools as $school) {
+                    if ($school->region_id) {
+                        // 获取从根到学校所在区域的完整路径
+                        $regionPath = $this->getRegionPath($school->region_id);
+                        $regionIds = array_merge($regionIds, $regionPath);
+                    }
+                }
+                $regionIds = array_unique($regionIds);
+            }
+
+            if (empty($regionIds) && empty($schoolIds)) {
                 return response()->json([
                     'success' => true,
                     'data' => []
@@ -157,6 +171,13 @@ class OrganizationController extends Controller
         } else {
             // 非超级管理员，从用户可管理的最高级别组织开始构建树
             $tree = $this->buildTreeForUser($regions->toArray(), $regionIds);
+
+            // 如果用户有学校权限，需要将学校添加到树中
+            $schoolIds = $dataScope['school_ids'] ?? [];
+            if (!empty($schoolIds)) {
+                $schools = School::whereIn('id', $schoolIds)->where('status', 1)->get();
+                $tree = $this->addSchoolsToTree($tree, $schools);
+            }
         }
         $tree = $this->addStatsToTree($tree);
 
@@ -1103,5 +1124,62 @@ class OrganizationController extends Controller
         }
 
         return $tree;
+    }
+
+    /**
+     * 将学校添加到组织树中
+     */
+    private function addSchoolsToTree(array $tree, $schools): array
+    {
+        foreach ($schools as $school) {
+            $schoolNode = [
+                'id' => $school->id,
+                'type' => 'school',
+                'name' => $school->name,
+                'code' => $school->code,
+                'level' => 5,
+                'parent_id' => $school->region_id,
+                'region_id' => $school->region_id,
+                'address' => $school->address ?? '',
+                'contact_person' => $school->contact_person ?? '',
+                'contact_phone' => $school->contact_phone ?? '',
+                'student_count' => $school->student_count ?? 0,
+                'class_count' => $school->class_count ?? 0,
+                'teacher_count' => $school->teacher_count ?? 0,
+                'children' => [],
+                'user_count' => 0, // 将在 addStatsToTree 中计算
+                'school_count' => 0,
+                'equipment_count' => 0
+            ];
+
+            // 找到学校所属的区域节点并添加学校
+            $this->addSchoolToTreeNode($tree, $school->region_id, $schoolNode);
+        }
+
+        return $tree;
+    }
+
+    /**
+     * 递归查找区域节点并添加学校
+     */
+    private function addSchoolToTreeNode(array &$tree, int $regionId, array $schoolNode): bool
+    {
+        foreach ($tree as &$node) {
+            if ($node['id'] == $regionId && $node['type'] == 'region') {
+                if (!isset($node['children'])) {
+                    $node['children'] = [];
+                }
+                $node['children'][] = $schoolNode;
+                return true;
+            }
+
+            if (isset($node['children']) && !empty($node['children'])) {
+                if ($this->addSchoolToTreeNode($node['children'], $regionId, $schoolNode)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
