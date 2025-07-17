@@ -133,6 +133,152 @@
       </el-tree>
     </div>
 
+    <!-- 详情对话框 -->
+    <el-dialog
+      v-model="detailDialogVisible"
+      :title="`${currentDetailOrg?.name} - 详细信息`"
+      width="800px"
+      @close="resetDetailDialog"
+    >
+      <div v-if="currentDetailOrg" class="detail-content">
+        <!-- 基本信息 -->
+        <div class="detail-section">
+          <h3 class="section-title">
+            <el-icon><InfoFilled /></el-icon>
+            基本信息
+          </h3>
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="组织名称">
+              {{ currentDetailOrg.name }}
+            </el-descriptions-item>
+            <el-descriptions-item label="组织代码">
+              {{ currentDetailOrg.code || '未设置' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="组织类型">
+              <el-tag :type="getNodeTagType(currentDetailOrg)">
+                {{ getLevelText(currentDetailOrg.level, currentDetailOrg.type) }}
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="组织级别">
+              {{ currentDetailOrg.level }}级
+            </el-descriptions-item>
+            <el-descriptions-item label="联系人">
+              {{ currentDetailOrg.contact_person || '未设置' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="联系电话">
+              {{ currentDetailOrg.contact_phone || '未设置' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="地址" :span="2">
+              {{ currentDetailOrg.address || '未设置' }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <!-- 学校特有信息 -->
+        <div v-if="currentDetailOrg.type === 'school'" class="detail-section">
+          <h3 class="section-title">
+            <el-icon><School /></el-icon>
+            学校信息
+          </h3>
+          <el-descriptions :column="3" border>
+            <el-descriptions-item label="学生人数">
+              {{ currentDetailOrg.student_count || 0 }}人
+            </el-descriptions-item>
+            <el-descriptions-item label="班级数量">
+              {{ currentDetailOrg.class_count || 0 }}个
+            </el-descriptions-item>
+            <el-descriptions-item label="教师人数">
+              {{ currentDetailOrg.teacher_count || 0 }}人
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <!-- 统计信息 -->
+        <div v-if="currentDetailOrg.stats" class="detail-section">
+          <h3 class="section-title">
+            <el-icon><DataAnalysis /></el-icon>
+            统计信息
+          </h3>
+          <el-row :gutter="20">
+            <el-col v-if="currentDetailOrg.stats.sub_regions > 0" :span="8">
+              <el-card class="stat-card">
+                <div class="stat-item">
+                  <div class="stat-icon region-icon">🏛️</div>
+                  <div class="stat-content">
+                    <div class="stat-number">{{ currentDetailOrg.stats.sub_regions }}</div>
+                    <div class="stat-label">下级区域</div>
+                  </div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col v-if="currentDetailOrg.stats.schools > 0" :span="8">
+              <el-card class="stat-card">
+                <div class="stat-item">
+                  <div class="stat-icon school-icon">🏫</div>
+                  <div class="stat-content">
+                    <div class="stat-number">{{ currentDetailOrg.stats.schools }}</div>
+                    <div class="stat-label">所属学校</div>
+                  </div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :span="8">
+              <el-card class="stat-card">
+                <div class="stat-item">
+                  <div class="stat-icon user-icon">👥</div>
+                  <div class="stat-content">
+                    <div class="stat-number">{{ currentDetailOrg.stats.users || 0 }}</div>
+                    <div class="stat-label">用户数量</div>
+                  </div>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+        </div>
+
+        <!-- 权限信息 -->
+        <div class="detail-section">
+          <h3 class="section-title">
+            <el-icon><Lock /></el-icon>
+            权限信息
+          </h3>
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="编辑权限">
+              <el-tag v-if="currentDetailOrg.readonly" type="info">
+                只读（无编辑权限）
+              </el-tag>
+              <el-tag v-else type="success">
+                可编辑
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item v-if="!currentDetailOrg.readonly" label="可编辑字段">
+              <div class="editable-fields">
+                <el-tag
+                  v-for="field in currentDetailOrg.editable_fields"
+                  :key="field"
+                  size="small"
+                  class="field-tag"
+                >
+                  {{ getFieldLabel(field) }}
+                </el-tag>
+              </div>
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button @click="detailDialogVisible = false">关闭</el-button>
+        <el-button
+          v-if="!currentDetailOrg?.readonly && currentDetailOrg?.editable_fields?.length > 0"
+          type="primary"
+          @click="editFromDetail"
+        >
+          编辑信息
+        </el-button>
+      </template>
+    </el-dialog>
+
     <!-- 编辑对话框 -->
     <el-dialog
       v-model="editDialogVisible"
@@ -231,7 +377,10 @@ import {
   OfficeBuilding,
   School,
   Location,
-  QuestionFilled
+  QuestionFilled,
+  InfoFilled,
+  DataAnalysis,
+  Lock
 } from '@element-plus/icons-vue'
 import { getEditableOrganizationsApi, updateOrganizationApi } from '@/api/organization'
 
@@ -241,7 +390,9 @@ const submitting = ref(false)
 const treeData = ref<any[]>([])
 const searchQuery = ref('')
 const editDialogVisible = ref(false)
+const detailDialogVisible = ref(false)
 const currentOrg = ref<any>(null)
+const currentDetailOrg = ref<any>(null)
 const editFormRef = ref<FormInstance>()
 const treeRef = ref<InstanceType<typeof ElTree>>()
 
@@ -416,8 +567,36 @@ const getLevelText = (level: number, type: string) => {
 }
 
 const viewDetails = (data: any) => {
-  ElMessage.info(`查看 ${data.name} 的详细信息`)
-  // 这里可以实现详情查看功能
+  currentDetailOrg.value = data
+  detailDialogVisible.value = true
+}
+
+const resetDetailDialog = () => {
+  currentDetailOrg.value = null
+}
+
+const editFromDetail = () => {
+  if (currentDetailOrg.value) {
+    detailDialogVisible.value = false
+    editOrganization(currentDetailOrg.value)
+  }
+}
+
+const getFieldLabel = (field: string): string => {
+  const fieldLabels: Record<string, string> = {
+    name: '组织名称',
+    code: '组织代码',
+    address: '地址',
+    contact_person: '联系人',
+    contact_phone: '联系电话',
+    level: '组织级别',
+    parent_id: '上级组织',
+    region_id: '所属区域',
+    student_count: '学生人数',
+    class_count: '班级数量',
+    teacher_count: '教师人数'
+  }
+  return fieldLabels[field] || field
 }
 
 const canEditField = (field: string) => {
@@ -658,5 +837,90 @@ onMounted(() => {
 /* 搜索高亮 */
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background-color: #e6f7ff;
+}
+
+/* 详情对话框样式 */
+.detail-content {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.detail-section {
+  margin-bottom: 24px;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  border-bottom: 2px solid #e4e7ed;
+  padding-bottom: 8px;
+}
+
+.stat-card {
+  margin-bottom: 12px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-icon {
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.region-icon {
+  background: #e6f7ff;
+}
+
+.school-icon {
+  background: #f6ffed;
+}
+
+.user-icon {
+  background: #fff7e6;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+}
+
+.editable-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.field-tag {
+  margin: 0;
 }
 </style>
