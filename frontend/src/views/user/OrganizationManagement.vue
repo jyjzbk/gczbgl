@@ -5,13 +5,13 @@
       <p class="page-description">管理您权限范围内的组织和学校信息</p>
     </div>
 
-    <!-- 搜索和筛选 -->
-    <div class="search-section">
+    <!-- 工具栏 -->
+    <div class="toolbar-section">
       <el-row :gutter="20">
         <el-col :span="8">
           <el-input
             v-model="searchQuery"
-            placeholder="搜索组织名称"
+            placeholder="搜索组织名称或代码"
             clearable
             @input="handleSearch"
           >
@@ -20,19 +20,15 @@
             </template>
           </el-input>
         </el-col>
-        <el-col :span="6">
-          <el-select
-            v-model="typeFilter"
-            placeholder="组织类型"
-            clearable
-            @change="handleFilter"
-          >
-            <el-option label="全部" value="" />
-            <el-option label="行政区域" value="region" />
-            <el-option label="学校" value="school" />
-          </el-select>
-        </el-col>
-        <el-col :span="6">
+        <el-col :span="16" class="toolbar-buttons">
+          <el-button @click="expandAll">
+            <el-icon><FolderOpened /></el-icon>
+            展开全部
+          </el-button>
+          <el-button @click="collapseAll">
+            <el-icon><Folder /></el-icon>
+            折叠全部
+          </el-button>
           <el-button type="primary" @click="refreshData">
             <el-icon><Refresh /></el-icon>
             刷新
@@ -41,55 +37,100 @@
       </el-row>
     </div>
 
-    <!-- 组织列表 -->
-    <div class="organization-list">
-      <el-table
+    <!-- 组织树 -->
+    <div class="organization-tree">
+      <el-tree
+        ref="treeRef"
         v-loading="loading"
-        :data="filteredOrganizations"
-        stripe
-        style="width: 100%"
+        :data="treeData"
+        :props="treeProps"
+        :filter-node-method="filterNode"
+        :expand-on-click-node="false"
+        :default-expand-all="false"
+        node-key="id"
+        class="org-tree"
       >
-        <el-table-column prop="name" label="组织名称" min-width="200">
-          <template #default="{ row }">
-            <div class="org-name">
-              <el-tag
-                :type="row.type === 'region' ? 'primary' : 'success'"
-                size="small"
-                style="margin-right: 8px"
-              >
-                {{ row.type === 'region' ? '区域' : '学校' }}
-              </el-tag>
-              {{ row.name }}
+        <template #default="{ node, data }">
+          <div class="tree-node">
+            <div class="node-content">
+              <!-- 组织图标 -->
+              <el-icon class="node-icon" :class="getNodeIconClass(data)">
+                <component :is="getNodeIcon(data)" />
+              </el-icon>
+
+              <!-- 组织信息 -->
+              <div class="node-info">
+                <div class="node-title">
+                  <span class="node-name">{{ data.name }}</span>
+                  <el-tag
+                    :type="getNodeTagType(data)"
+                    size="small"
+                    class="node-tag"
+                  >
+                    {{ getLevelText(data.level, data.type) }}
+                  </el-tag>
+                </div>
+
+                <div class="node-details">
+                  <span v-if="data.code" class="node-code">{{ data.code }}</span>
+                  <span v-if="data.contact_person" class="node-contact">
+                    👤 {{ data.contact_person }}
+                  </span>
+                  <span v-if="data.contact_phone" class="node-phone">
+                    📞 {{ data.contact_phone }}
+                  </span>
+                </div>
+
+                <!-- 统计信息 -->
+                <div v-if="data.stats" class="node-stats">
+                  <span v-if="data.stats.sub_regions > 0" class="stat-item">
+                    🏛️ {{ data.stats.sub_regions }}个下级区域
+                  </span>
+                  <span v-if="data.stats.schools > 0" class="stat-item">
+                    🏫 {{ data.stats.schools }}所学校
+                  </span>
+                  <span v-if="data.stats.users > 0" class="stat-item">
+                    👥 {{ data.stats.users }}个用户
+                  </span>
+                  <span v-if="data.type === 'school'" class="stat-item">
+                    📊 {{ data.student_count || 0 }}/{{ data.class_count || 0 }}/{{ data.teacher_count || 0 }}
+                    <el-tooltip content="学生数/班级数/教师数" placement="top">
+                      <el-icon><QuestionFilled /></el-icon>
+                    </el-tooltip>
+                  </span>
+                </div>
+              </div>
             </div>
-          </template>
-        </el-table-column>
-        
-        <el-table-column prop="code" label="组织代码" width="120" />
-        
-        <el-table-column label="级别" width="80">
-          <template #default="{ row }">
-            <el-tag size="small">
-              {{ getLevelText(row.level, row.type) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        
-        <el-table-column prop="contact_person" label="联系人" width="100" />
-        <el-table-column prop="contact_phone" label="联系电话" width="130" />
-        <el-table-column prop="address" label="地址" min-width="200" show-overflow-tooltip />
-        
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              type="primary"
-              size="small"
-              @click="editOrganization(row)"
-            >
-              编辑
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+
+            <!-- 操作按钮 -->
+            <div class="node-actions">
+              <el-button
+                v-if="!data.readonly && data.editable_fields && data.editable_fields.length > 0"
+                type="primary"
+                size="small"
+                @click.stop="editOrganization(data)"
+              >
+                编辑
+              </el-button>
+              <el-button
+                v-if="data.readonly"
+                size="small"
+                disabled
+                @click.stop="viewDetails(data)"
+              >
+                只读
+              </el-button>
+              <el-button
+                v-if="!data.readonly"
+                size="small"
+                @click.stop="viewDetails(data)"
+              >
+                详情
+              </el-button>
+            </div>
+          </div>
+        </template>
+      </el-tree>
     </div>
 
     <!-- 编辑对话框 -->
@@ -180,20 +221,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Search, Refresh } from '@element-plus/icons-vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type ElTree } from 'element-plus'
+import {
+  Search,
+  Refresh,
+  FolderOpened,
+  Folder,
+  OfficeBuilding,
+  School,
+  Location,
+  QuestionFilled
+} from '@element-plus/icons-vue'
 import { getEditableOrganizationsApi, updateOrganizationApi } from '@/api/organization'
 
 // 响应式数据
 const loading = ref(false)
 const submitting = ref(false)
-const organizations = ref<any[]>([])
+const treeData = ref<any[]>([])
 const searchQuery = ref('')
-const typeFilter = ref('')
 const editDialogVisible = ref(false)
 const currentOrg = ref<any>(null)
 const editFormRef = ref<FormInstance>()
+const treeRef = ref<InstanceType<typeof ElTree>>()
+
+// 树形组件配置
+const treeProps = {
+  children: 'children',
+  label: 'name'
+}
 
 // 编辑表单
 const editForm = reactive({
@@ -227,40 +283,121 @@ const editRules: FormRules = {
   ]
 }
 
-// 计算属性
-const filteredOrganizations = computed(() => {
-  let result = organizations.value
-
-  // 按类型筛选
-  if (typeFilter.value) {
-    result = result.filter(org => org.type === typeFilter.value)
-  }
-
-  // 按名称搜索
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(org => 
-      org.name.toLowerCase().includes(query) ||
-      org.code.toLowerCase().includes(query)
-    )
-  }
-
-  return result
-})
-
 // 方法
 const fetchOrganizations = async () => {
   loading.value = true
   try {
     const response = await getEditableOrganizationsApi()
     if (response.data) {
-      organizations.value = response.data
+      treeData.value = response.data
     }
   } catch (error) {
-    console.error('获取组织列表失败:', error)
-    ElMessage.error('获取组织列表失败')
+    console.error('获取组织树失败:', error)
+    ElMessage.error('获取组织树失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 树形相关方法
+const expandAll = () => {
+  const tree = treeRef.value
+  if (tree) {
+    // 获取所有节点的key
+    const allKeys: string[] = []
+    const collectKeys = (nodes: any[]) => {
+      nodes.forEach(node => {
+        allKeys.push(node.id.toString())
+        if (node.children && node.children.length > 0) {
+          collectKeys(node.children)
+        }
+      })
+    }
+    collectKeys(treeData.value)
+
+    // 展开所有节点
+    allKeys.forEach(key => {
+      tree.setExpanded(key, true)
+    })
+  }
+}
+
+const collapseAll = () => {
+  const tree = treeRef.value
+  if (tree) {
+    // 获取所有节点的key
+    const allKeys: string[] = []
+    const collectKeys = (nodes: any[]) => {
+      nodes.forEach(node => {
+        allKeys.push(node.id.toString())
+        if (node.children && node.children.length > 0) {
+          collectKeys(node.children)
+        }
+      })
+    }
+    collectKeys(treeData.value)
+
+    // 折叠所有节点
+    allKeys.forEach(key => {
+      tree.setExpanded(key, false)
+    })
+  }
+}
+
+const filterNode = (value: string, data: any) => {
+  if (!value) return true
+  const searchValue = value.toLowerCase()
+  return data.name.toLowerCase().includes(searchValue) ||
+         (data.code && data.code.toLowerCase().includes(searchValue))
+}
+
+const handleSearch = () => {
+  const tree = treeRef.value
+  if (tree) {
+    tree.filter(searchQuery.value)
+  }
+}
+
+// 节点样式和图标相关方法
+const getNodeIcon = (data: any) => {
+  if (data.type === 'region') {
+    switch (data.level) {
+      case 1: return OfficeBuilding // 省级
+      case 2: return OfficeBuilding // 市级
+      case 3: return Location       // 区县级
+      case 4: return Location       // 学区级
+      default: return OfficeBuilding
+    }
+  } else {
+    return School // 学校
+  }
+}
+
+const getNodeIconClass = (data: any) => {
+  if (data.type === 'region') {
+    switch (data.level) {
+      case 1: return 'icon-province'
+      case 2: return 'icon-city'
+      case 3: return 'icon-county'
+      case 4: return 'icon-district'
+      default: return 'icon-region'
+    }
+  } else {
+    return 'icon-school'
+  }
+}
+
+const getNodeTagType = (data: any) => {
+  if (data.type === 'region') {
+    switch (data.level) {
+      case 1: return 'danger'   // 省级 - 红色
+      case 2: return 'warning'  // 市级 - 橙色
+      case 3: return 'primary'  // 区县级 - 蓝色
+      case 4: return 'info'     // 学区级 - 灰色
+      default: return 'primary'
+    }
+  } else {
+    return 'success' // 学校 - 绿色
   }
 }
 
@@ -268,7 +405,7 @@ const getLevelText = (level: number, type: string) => {
   if (type === 'region') {
     const levelMap = {
       1: '省级',
-      2: '市级', 
+      2: '市级',
       3: '区县级',
       4: '学区级'
     }
@@ -276,6 +413,11 @@ const getLevelText = (level: number, type: string) => {
   } else {
     return '学校'
   }
+}
+
+const viewDetails = (data: any) => {
+  ElMessage.info(`查看 ${data.name} 的详细信息`)
+  // 这里可以实现详情查看功能
 }
 
 const canEditField = (field: string) => {
@@ -345,14 +487,6 @@ const submitEdit = async () => {
   }
 }
 
-const handleSearch = () => {
-  // 搜索逻辑已在计算属性中处理
-}
-
-const handleFilter = () => {
-  // 筛选逻辑已在计算属性中处理
-}
-
 const refreshData = () => {
   fetchOrganizations()
 }
@@ -383,21 +517,146 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.search-section {
+.toolbar-section {
   margin-bottom: 20px;
   padding: 20px;
   background: #f8f9fa;
   border-radius: 8px;
 }
 
-.organization-list {
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
+.toolbar-buttons {
+  text-align: right;
 }
 
-.org-name {
+.organization-tree {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  min-height: 400px;
+}
+
+.org-tree {
+  font-size: 14px;
+}
+
+/* 树节点样式 */
+.tree-node {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tree-node:hover {
+  background-color: #f5f7fa;
+  border-radius: 4px;
+}
+
+.node-content {
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+  gap: 12px;
+}
+
+.node-icon {
+  margin-top: 2px;
+  font-size: 18px;
+}
+
+.icon-province { color: #f56c6c; }
+.icon-city { color: #e6a23c; }
+.icon-county { color: #409eff; }
+.icon-district { color: #909399; }
+.icon-school { color: #67c23a; }
+
+.node-info {
+  flex: 1;
+}
+
+.node-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.node-name {
+  font-weight: 500;
+  color: #303133;
+  font-size: 15px;
+}
+
+.node-tag {
+  font-size: 12px;
+}
+
+.node-details {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #606266;
+}
+
+.node-code {
+  background: #f0f2f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.node-contact,
+.node-phone {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.node-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.node-actions {
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.tree-node:hover .node-actions {
+  opacity: 1;
+}
+
+/* 深度选择器，修改 el-tree 的样式 */
+:deep(.el-tree-node__content) {
+  height: auto !important;
+  padding: 0 !important;
+}
+
+:deep(.el-tree-node__expand-icon) {
+  color: #409eff;
+}
+
+:deep(.el-tree-node__expand-icon.expanded) {
+  transform: rotate(90deg);
+}
+
+/* 搜索高亮 */
+:deep(.el-tree-node.is-current > .el-tree-node__content) {
+  background-color: #e6f7ff;
 }
 </style>

@@ -167,21 +167,22 @@ class OrganizationController extends Controller
     }
 
     /**
-     * 获取用户可编辑的组织信息
+     * 获取用户可编辑的组织信息（树形结构）
      */
     public function getEditableOrganizations(Request $request): JsonResponse
     {
         $user = auth()->user();
         $dataScope = $this->permissionService->getUserDataScope($user);
 
-        $organizations = [];
-
         // 根据用户权限获取可编辑的组织
+        $regionIds = [];
+        $schoolIds = [];
+
         switch ($dataScope['type']) {
             case 'all':
                 // 超级管理员可以编辑所有组织
-                $regions = AdministrativeRegion::where('status', 1)->get();
-                $schools = School::where('status', 1)->get();
+                $regionIds = AdministrativeRegion::where('status', 1)->pluck('id')->toArray();
+                $schoolIds = School::where('status', 1)->pluck('id')->toArray();
                 break;
 
             case 'province':
@@ -191,29 +192,64 @@ class OrganizationController extends Controller
                 // 区域管理员可以编辑自己管辖的区域和学校
                 $regionIds = $dataScope['region_ids'] ?? [];
                 $schoolIds = $dataScope['school_ids'] ?? [];
-
-                $regions = AdministrativeRegion::whereIn('id', $regionIds)
-                    ->where('status', 1)->get();
-                $schools = School::whereIn('id', $schoolIds)
-                    ->where('status', 1)->get();
                 break;
 
             case 'school':
-                // 学校管理员只能编辑自己的学校
+                // 学校管理员只能编辑自己的学校，但需要显示学校所在的区域路径
                 $schoolIds = $dataScope['school_ids'] ?? [];
-                $regions = collect();
-                $schools = School::whereIn('id', $schoolIds)
-                    ->where('status', 1)->get();
-                break;
+                $regionIds = [];
 
-            default:
-                $regions = collect();
-                $schools = collect();
+                // 获取学校所在的区域路径
+                if (!empty($schoolIds)) {
+                    $schools = School::whereIn('id', $schoolIds)->get();
+                    foreach ($schools as $school) {
+                        if ($school->region_id) {
+                            // 获取从根到学校所在区域的完整路径
+                            $regionPath = $this->getRegionPath($school->region_id);
+                            $regionIds = array_merge($regionIds, $regionPath);
+                        }
+                    }
+                    $regionIds = array_unique($regionIds);
+                }
+                break;
         }
 
-        // 格式化区域数据
+        // 获取区域数据
+        $regions = AdministrativeRegion::whereIn('id', $regionIds)
+            ->where('status', 1)
+            ->orderBy('level')
+            ->orderBy('sort_order')
+            ->get();
+
+        // 获取学校数据
+        $schools = School::whereIn('id', $schoolIds)
+            ->where('status', 1)
+            ->orderBy('name')
+            ->get();
+
+        // 构建树形结构
+        $tree = $this->buildEditableTree($regions, $schools, $user);
+
+        return response()->json([
+            'success' => true,
+            'data' => $tree
+        ]);
+    }
+
+    /**
+     * 构建可编辑的组织树
+     */
+    private function buildEditableTree($regions, $schools, $user): array
+    {
+        $tree = [];
+        $regionMap = [];
+
+        // 首先处理区域数据
         foreach ($regions as $region) {
-            $organizations[] = [
+            // 检查用户是否可以编辑此区域（学校管理员只能查看，不能编辑区域）
+            $canEditRegion = $user->organization_level <= $region->level;
+
+            $nodeData = [
                 'id' => $region->id,
                 'type' => 'region',
                 'name' => $region->name,
@@ -221,33 +257,129 @@ class OrganizationController extends Controller
                 'level' => $region->level,
                 'parent_id' => $region->parent_id,
                 'sort_order' => $region->sort_order,
-                'editable_fields' => $this->getEditableFields('region', $user->organization_level, $region->level)
+                'address' => $region->address ?? '',
+                'contact_person' => $region->contact_person ?? '',
+                'contact_phone' => $region->contact_phone ?? '',
+                'children' => [],
+                'editable_fields' => $canEditRegion ? $this->getEditableFields('region', $user->organization_level, $region->level) : [],
+                'stats' => $this->getRegionStats($region->id),
+                'readonly' => !$canEditRegion
             ];
+
+            $regionMap[$region->id] = $nodeData;
         }
 
-        // 格式化学校数据
+        // 构建区域树形结构
+        foreach ($regionMap as $id => $node) {
+            if ($node['parent_id'] && isset($regionMap[$node['parent_id']])) {
+                $regionMap[$node['parent_id']]['children'][] = &$regionMap[$id];
+            } else {
+                $tree[] = &$regionMap[$id];
+            }
+        }
+
+        // 添加学校到对应的区域节点
         foreach ($schools as $school) {
-            $organizations[] = [
+            $schoolNode = [
                 'id' => $school->id,
                 'type' => 'school',
                 'name' => $school->name,
                 'code' => $school->code,
-                'level' => $school->level,
+                'level' => 5,
                 'region_id' => $school->region_id,
-                'address' => $school->address,
-                'contact_person' => $school->contact_person,
-                'contact_phone' => $school->contact_phone,
-                'student_count' => $school->student_count,
-                'class_count' => $school->class_count,
-                'teacher_count' => $school->teacher_count,
-                'editable_fields' => $this->getEditableFields('school', $user->organization_level, 5)
+                'address' => $school->address ?? '',
+                'contact_person' => $school->contact_person ?? '',
+                'contact_phone' => $school->contact_phone ?? '',
+                'student_count' => $school->student_count ?? 0,
+                'class_count' => $school->class_count ?? 0,
+                'teacher_count' => $school->teacher_count ?? 0,
+                'children' => [],
+                'editable_fields' => $this->getEditableFields('school', $user->organization_level, 5),
+                'stats' => $this->getSchoolStats($school->id)
             ];
+
+            // 找到学校所属的区域节点并添加
+            $this->addSchoolToRegion($tree, $school->region_id, $schoolNode);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $organizations
-        ]);
+        return $tree;
+    }
+
+    /**
+     * 将学校添加到对应的区域节点
+     */
+    private function addSchoolToRegion(array &$tree, int $regionId, array $schoolNode): void
+    {
+        foreach ($tree as &$node) {
+            if ($node['type'] === 'region' && $node['id'] === $regionId) {
+                $node['children'][] = $schoolNode;
+                return;
+            }
+            if (!empty($node['children'])) {
+                $this->addSchoolToRegion($node['children'], $regionId, $schoolNode);
+            }
+        }
+    }
+
+    /**
+     * 获取区域统计信息
+     */
+    private function getRegionStats(int $regionId): array
+    {
+        // 获取下级区域数量
+        $subRegionCount = AdministrativeRegion::where('parent_id', $regionId)
+            ->where('status', 1)
+            ->count();
+
+        // 获取直属学校数量
+        $schoolCount = School::where('region_id', $regionId)
+            ->where('status', 1)
+            ->count();
+
+        // 获取用户数量
+        $userCount = User::where('organization_id', $regionId)
+            ->where('organization_type', 'region')
+            ->count();
+
+        return [
+            'sub_regions' => $subRegionCount,
+            'schools' => $schoolCount,
+            'users' => $userCount
+        ];
+    }
+
+    /**
+     * 获取学校统计信息
+     */
+    private function getSchoolStats(int $schoolId): array
+    {
+        // 获取学校用户数量
+        $userCount = User::where('school_id', $schoolId)->count();
+
+        return [
+            'users' => $userCount
+        ];
+    }
+
+    /**
+     * 获取区域的完整路径（从根到指定区域）
+     */
+    private function getRegionPath(int $regionId): array
+    {
+        $path = [];
+        $currentId = $regionId;
+
+        while ($currentId) {
+            $region = AdministrativeRegion::find($currentId);
+            if (!$region) {
+                break;
+            }
+
+            array_unshift($path, $region->id);
+            $currentId = $region->parent_id;
+        }
+
+        return $path;
     }
 
     /**
