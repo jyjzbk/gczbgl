@@ -116,6 +116,19 @@ const router = createRouter({
         }
       ]
     },
+    {
+      path: '/organization-management',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'OrganizationManagement',
+          component: () => import('@/views/user/OrganizationManagement.vue'),
+          meta: { title: '组织信息管理' }
+        }
+      ]
+    },
     // 基础数据管理路由
     {
       path: '/schools',

@@ -104,3 +104,24 @@ export const getOrganizationUsersApi = (params: {
     params
   })
 }
+
+/**
+ * 获取可编辑的组织列表
+ */
+export const getEditableOrganizationsApi = () => {
+  return request({
+    url: '/organizations/editable',
+    method: 'get'
+  })
+}
+
+/**
+ * 更新组织信息
+ */
+export const updateOrganizationApi = (type: string, id: number, data: any) => {
+  return request({
+    url: `/organizations/${type}/${id}`,
+    method: 'put',
+    data
+  })
+}

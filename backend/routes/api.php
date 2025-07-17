@@ -62,6 +62,8 @@ Route::middleware('auth:api')->group(function () {
     Route::middleware(['data.scope'])->group(function () {
         Route::get('organizations/manageable', [\App\Http\Controllers\Api\OrganizationController::class, 'getManageableOrganizations']);
         Route::get('organizations/manageable-schools', [\App\Http\Controllers\Api\OrganizationController::class, 'getManageableSchools']);
+        Route::get('organizations/editable', [\App\Http\Controllers\Api\OrganizationController::class, 'getEditableOrganizations']);
+        Route::put('organizations/{type}/{id}', [\App\Http\Controllers\Api\OrganizationController::class, 'updateOrganization']);
         Route::get('organizations/schools', [\App\Http\Controllers\Api\OrganizationController::class, 'getOrganizationSchools']);
         Route::get('organizations/tree', [\App\Http\Controllers\Api\OrganizationController::class, 'getOrganizationTree']);
         Route::get('organizations/users', [\App\Http\Controllers\Api\OrganizationController::class, 'getOrganizationUsers']);

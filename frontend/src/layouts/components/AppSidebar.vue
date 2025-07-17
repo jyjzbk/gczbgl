@@ -34,6 +34,7 @@
         <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list'])" index="/users">用户列表</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['role', 'role.list'])" index="/roles">角色管理</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['role', 'role.list'])" index="/permissions">权限管理</el-menu-item>
+        <el-menu-item index="/organization-management">组织信息管理</el-menu-item>
       </el-sub-menu>
       
       <!-- 基础数据 -->

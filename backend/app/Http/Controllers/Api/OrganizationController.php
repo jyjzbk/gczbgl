@@ -167,6 +167,205 @@ class OrganizationController extends Controller
     }
 
     /**
+     * 获取用户可编辑的组织信息
+     */
+    public function getEditableOrganizations(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+        $dataScope = $this->permissionService->getUserDataScope($user);
+
+        $organizations = [];
+
+        // 根据用户权限获取可编辑的组织
+        switch ($dataScope['type']) {
+            case 'all':
+                // 超级管理员可以编辑所有组织
+                $regions = AdministrativeRegion::where('status', 1)->get();
+                $schools = School::where('status', 1)->get();
+                break;
+
+            case 'province':
+            case 'city':
+            case 'county':
+            case 'district':
+                // 区域管理员可以编辑自己管辖的区域和学校
+                $regionIds = $dataScope['region_ids'] ?? [];
+                $schoolIds = $dataScope['school_ids'] ?? [];
+
+                $regions = AdministrativeRegion::whereIn('id', $regionIds)
+                    ->where('status', 1)->get();
+                $schools = School::whereIn('id', $schoolIds)
+                    ->where('status', 1)->get();
+                break;
+
+            case 'school':
+                // 学校管理员只能编辑自己的学校
+                $schoolIds = $dataScope['school_ids'] ?? [];
+                $regions = collect();
+                $schools = School::whereIn('id', $schoolIds)
+                    ->where('status', 1)->get();
+                break;
+
+            default:
+                $regions = collect();
+                $schools = collect();
+        }
+
+        // 格式化区域数据
+        foreach ($regions as $region) {
+            $organizations[] = [
+                'id' => $region->id,
+                'type' => 'region',
+                'name' => $region->name,
+                'code' => $region->code,
+                'level' => $region->level,
+                'parent_id' => $region->parent_id,
+                'sort_order' => $region->sort_order,
+                'editable_fields' => $this->getEditableFields('region', $user->organization_level, $region->level)
+            ];
+        }
+
+        // 格式化学校数据
+        foreach ($schools as $school) {
+            $organizations[] = [
+                'id' => $school->id,
+                'type' => 'school',
+                'name' => $school->name,
+                'code' => $school->code,
+                'level' => $school->level,
+                'region_id' => $school->region_id,
+                'address' => $school->address,
+                'contact_person' => $school->contact_person,
+                'contact_phone' => $school->contact_phone,
+                'student_count' => $school->student_count,
+                'class_count' => $school->class_count,
+                'teacher_count' => $school->teacher_count,
+                'editable_fields' => $this->getEditableFields('school', $user->organization_level, 5)
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $organizations
+        ]);
+    }
+
+    /**
+     * 获取可编辑字段列表
+     */
+    private function getEditableFields(string $orgType, int $userLevel, int $targetLevel): array
+    {
+        $baseFields = ['name', 'address', 'contact_person', 'contact_phone'];
+        $restrictedFields = ['code', 'level', 'parent_id', 'region_id'];
+
+        // 同级或上级可以编辑更多字段
+        if ($userLevel <= $targetLevel) {
+            return array_merge($baseFields, $restrictedFields);
+        }
+
+        // 下级只能编辑基础字段
+        return $baseFields;
+    }
+
+    /**
+     * 更新组织信息
+     */
+    public function updateOrganization(Request $request, string $type, int $id): JsonResponse
+    {
+        $user = auth()->user();
+
+        // 验证权限
+        if (!$this->canEditOrganization($user, $type, $id)) {
+            return response()->json([
+                'success' => false,
+                'message' => '没有权限编辑此组织信息'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'code' => 'sometimes|string|max:50',
+            'address' => 'sometimes|string|max:500',
+            'contact_person' => 'sometimes|string|max:100',
+            'contact_phone' => 'sometimes|string|max:20',
+            'student_count' => 'sometimes|integer|min:0',
+            'class_count' => 'sometimes|integer|min:0',
+            'teacher_count' => 'sometimes|integer|min:0',
+        ]);
+
+        try {
+            if ($type === 'region') {
+                $organization = AdministrativeRegion::findOrFail($id);
+            } else {
+                $organization = School::findOrFail($id);
+            }
+
+            // 获取可编辑字段
+            $editableFields = $this->getEditableFields($type, $user->organization_level,
+                $type === 'region' ? $organization->level : 5);
+
+            // 只更新允许编辑的字段
+            foreach ($validated as $field => $value) {
+                if (in_array($field, $editableFields)) {
+                    $organization->$field = $value;
+                }
+            }
+
+            $organization->save();
+
+            // 记录操作日志
+            $this->logOrganizationChange($user, $organization, $validated, $type);
+
+            return response()->json([
+                'success' => true,
+                'message' => '组织信息更新成功',
+                'data' => $organization
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => '更新失败：' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * 检查是否可以编辑组织
+     */
+    private function canEditOrganization($user, string $type, int $id): bool
+    {
+        $dataScope = $this->permissionService->getUserDataScope($user);
+
+        if ($dataScope['type'] === 'all') {
+            return true;
+        }
+
+        if ($type === 'region') {
+            return in_array($id, $dataScope['region_ids'] ?? []);
+        } else {
+            return in_array($id, $dataScope['school_ids'] ?? []);
+        }
+    }
+
+    /**
+     * 记录组织变更日志
+     */
+    private function logOrganizationChange($user, $organization, array $changes, string $type): void
+    {
+        // 这里可以实现详细的日志记录
+        \Log::info('组织信息变更', [
+            'user_id' => $user->id,
+            'user_name' => $user->real_name,
+            'organization_type' => $type,
+            'organization_id' => $organization->id,
+            'organization_name' => $organization->name,
+            'changes' => $changes,
+            'timestamp' => now()
+        ]);
+    }
+
+    /**
      * 获取组织下的用户列表
      */
     public function getOrganizationUsers(Request $request): JsonResponse
