@@ -61,6 +61,7 @@ Route::middleware('auth:api')->group(function () {
     // 组织管理
     Route::middleware(['data.scope'])->group(function () {
         Route::get('organizations/manageable', [\App\Http\Controllers\Api\OrganizationController::class, 'getManageableOrganizations']);
+        Route::get('organizations/manageable-schools', [\App\Http\Controllers\Api\OrganizationController::class, 'getManageableSchools']);
         Route::get('organizations/schools', [\App\Http\Controllers\Api\OrganizationController::class, 'getOrganizationSchools']);
         Route::get('organizations/tree', [\App\Http\Controllers\Api\OrganizationController::class, 'getOrganizationTree']);
         Route::get('organizations/users', [\App\Http\Controllers\Api\OrganizationController::class, 'getOrganizationUsers']);

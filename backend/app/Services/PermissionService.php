@@ -310,7 +310,7 @@ class PermissionService
 
             case 5: // 学校级
                 $scope['type'] = 'school';
-                $scope['school_ids'] = [$user->organization_id];
+                $scope['school_ids'] = [$user->school_id];
                 break;
 
             default:

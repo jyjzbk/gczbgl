@@ -482,13 +482,18 @@ const handleOrganizationChange = (value: any) => {
 const fetchSchoolOptions = async () => {
   schoolLoading.value = true
   try {
-    // 获取组织树形数据，然后构建学校树形结构
-    const { getOrganizationTreeApi } = await import('@/api/organization')
-    const response = await getOrganizationTreeApi()
+    // 直接获取用户可管理的学校列表
+    const { getManageableSchoolsApi } = await import('@/api/organization')
+    const response = await getManageableSchoolsApi()
 
     if (response.data) {
-      // 构建学校树形数据（按组织层级分组）
-      schoolTreeData.value = buildSchoolTree(response.data)
+      // 直接使用学校数据，不需要复杂的树形结构
+      schoolTreeData.value = response.data.map((school: any) => ({
+        id: school.id,
+        name: school.name,
+        level: 5,
+        disabled: false
+      }))
     } else {
       schoolTreeData.value = []
     }

@@ -44,6 +44,16 @@ export const getManageableOrganizationsApi = (params: { level: number }) => {
  */
 export const getManageableSchoolsApi = () => {
   return request({
+    url: '/organizations/manageable-schools',
+    method: 'get'
+  })
+}
+
+/**
+ * 获取组织下的学校列表
+ */
+export const getOrganizationSchoolsApi = () => {
+  return request({
     url: '/organizations/schools',
     method: 'get'
   })
