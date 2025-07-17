@@ -257,9 +257,9 @@ class OrganizationController extends Controller
                 'level' => $region->level,
                 'parent_id' => $region->parent_id,
                 'sort_order' => $region->sort_order,
-                'address' => $region->address ?? '',
-                'contact_person' => $region->contact_person ?? '',
-                'contact_phone' => $region->contact_phone ?? '',
+                'address' => '', // 区域表没有address字段
+                'contact_person' => '', // 区域表没有contact_person字段
+                'contact_phone' => '', // 区域表没有contact_phone字段
                 'children' => [],
                 'editable_fields' => $canEditRegion ? $this->getEditableFields('region', $user->organization_level, $region->level) : [],
                 'stats' => $this->getRegionStats($region->id),
@@ -387,8 +387,15 @@ class OrganizationController extends Controller
      */
     private function getEditableFields(string $orgType, int $userLevel, int $targetLevel): array
     {
-        $baseFields = ['name', 'address', 'contact_person', 'contact_phone'];
-        $restrictedFields = ['code', 'level', 'parent_id', 'region_id'];
+        if ($orgType === 'region') {
+            // 区域的可编辑字段
+            $baseFields = ['name'];
+            $restrictedFields = ['code', 'level', 'parent_id'];
+        } else {
+            // 学校的可编辑字段
+            $baseFields = ['name', 'address', 'contact_person', 'contact_phone'];
+            $restrictedFields = ['code', 'level', 'region_id', 'student_count', 'class_count', 'teacher_count'];
+        }
 
         // 同级或上级可以编辑更多字段
         if ($userLevel <= $targetLevel) {
@@ -414,16 +421,24 @@ class OrganizationController extends Controller
             ], 403);
         }
 
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'code' => 'sometimes|string|max:50',
-            'address' => 'sometimes|string|max:500',
-            'contact_person' => 'sometimes|string|max:100',
-            'contact_phone' => 'sometimes|string|max:20',
-            'student_count' => 'sometimes|integer|min:0',
-            'class_count' => 'sometimes|integer|min:0',
-            'teacher_count' => 'sometimes|integer|min:0',
-        ]);
+        // 根据类型设置不同的验证规则
+        if ($type === 'region') {
+            $validated = $request->validate([
+                'name' => 'sometimes|string|max:255',
+                'code' => 'sometimes|string|max:50',
+            ]);
+        } else {
+            $validated = $request->validate([
+                'name' => 'sometimes|string|max:255',
+                'code' => 'sometimes|string|max:50',
+                'address' => 'sometimes|string|max:500',
+                'contact_person' => 'sometimes|string|max:100',
+                'contact_phone' => 'sometimes|string|max:20',
+                'student_count' => 'sometimes|integer|min:0',
+                'class_count' => 'sometimes|integer|min:0',
+                'teacher_count' => 'sometimes|integer|min:0',
+            ]);
+        }
 
         try {
             if ($type === 'region') {
@@ -436,9 +451,9 @@ class OrganizationController extends Controller
             $editableFields = $this->getEditableFields($type, $user->organization_level,
                 $type === 'region' ? $organization->level : 5);
 
-            // 只更新允许编辑的字段
+            // 只更新允许编辑的字段，并且字段必须存在于模型中
             foreach ($validated as $field => $value) {
-                if (in_array($field, $editableFields)) {
+                if (in_array($field, $editableFields) && $organization->isFillable($field)) {
                     $organization->$field = $value;
                 }
             }
