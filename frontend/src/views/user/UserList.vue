@@ -1,120 +1,190 @@
 <template>
   <div class="user-list-page">
+    <!-- 页面头部 -->
     <div class="page-header">
       <div class="header-content">
-        <h2>用户列表</h2>
-        <p>管理系统用户信息和权限</p>
+        <h2>用户管理</h2>
+        <p>按组织架构管理系统用户信息和权限</p>
       </div>
       <div class="header-actions">
-        <el-button type="primary" :icon="Plus" @click="showCreateDialog">
-          新增用户
+        <PermissionTooltip permission="user.create">
+          <el-button type="primary" :icon="Plus" @click="showCreateDialog">
+            新增用户
+          </el-button>
+        </PermissionTooltip>
+        <PermissionTooltip permission="user.export">
+          <el-button type="success" :icon="Download" @click="handleExport">
+            导出用户
+          </el-button>
+        </PermissionTooltip>
+        <el-button :icon="Refresh" @click="refreshData">
+          刷新
         </el-button>
       </div>
     </div>
 
-    <!-- 搜索筛选 -->
-    <div class="search-section">
-      <el-form :model="searchForm" inline>
-        <el-form-item label="搜索">
-          <el-input
-            v-model="searchForm.search"
-            placeholder="用户名、姓名、邮箱"
-            :prefix-icon="Search"
-            clearable
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="角色">
-          <el-select v-model="searchForm.role" placeholder="选择角色" clearable>
-            <el-option
-              v-for="role in roleOptions"
-              :key="role.id"
-              :label="role.name"
-              :value="role.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="searchForm.status" placeholder="选择状态" clearable>
-            <el-option label="正常" value="1" />
-            <el-option label="禁用" value="0" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-
-    <!-- 用户表格 -->
-    <div class="table-section">
-      <el-table
-        v-loading="loading"
-        :data="userList"
-        stripe
-        style="width: 100%"
-      >
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column label="头像" width="80">
-          <template #default="{ row }">
-            <el-avatar :size="40" :src="row.avatar">
-              {{ row.real_name?.charAt(0) || 'U' }}
-            </el-avatar>
-          </template>
-        </el-table-column>
-        <el-table-column prop="username" label="用户名" />
-        <el-table-column prop="real_name" label="真实姓名" />
-        <el-table-column prop="email" label="邮箱" />
-        <el-table-column prop="phone" label="手机号" />
-        <el-table-column label="角色" width="120">
-          <template #default="{ row }">
-            <el-tag :type="getRoleType(row.role)">
-              {{ getRoleLabel(row.role) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? '正常' : '禁用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="240" fixed="right">
-          <template #default="{ row }">
-            <div class="action-buttons">
-              <el-button type="primary" size="small" @click="handleEdit(row)">
-                编辑
-              </el-button>
-              <el-button type="warning" size="small" @click="handleResetPassword(row)">
-                重置密码
-              </el-button>
-              <el-button
-                type="danger"
-                size="small"
-                @click="handleDelete(row)"
-                :disabled="row.id === currentUserId"
-              >
-                删除
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <div class="pagination-section">
-        <el-pagination
-          v-model:current-page="pagination.current_page"
-          v-model:page-size="pagination.per_page"
-          :total="pagination.total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
+    <!-- 主要内容区域 -->
+    <div class="main-content">
+      <!-- 左侧组织树 -->
+      <div class="left-panel">
+        <OrganizationTree
+          ref="organizationTreeRef"
+          :show-stats="true"
+          :default-expand-level="2"
+          :selected-node-id="selectedOrganizationId"
+          @node-click="handleOrganizationSelect"
         />
+      </div>
+
+      <!-- 右侧用户列表 -->
+      <div class="right-panel">
+        <!-- 当前组织信息 -->
+        <div class="current-organization" v-if="selectedOrganization">
+          <div class="org-info">
+            <div class="org-header">
+              <el-icon :color="getOrganizationColor(selectedOrganization.level)">
+                <component :is="getOrganizationIcon(selectedOrganization.level)" />
+              </el-icon>
+              <div class="org-details">
+                <h3>{{ selectedOrganization.name }}</h3>
+                <el-tag :type="getOrganizationTagType(selectedOrganization.level)" size="small">
+                  {{ getOrganizationLevelName(selectedOrganization.level) }}
+                </el-tag>
+              </div>
+            </div>
+            <div class="org-stats" v-if="organizationStats">
+              <div class="stat-item">
+                <span class="stat-label">总用户数</span>
+                <span class="stat-value">{{ organizationStats.total_users }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">正常用户</span>
+                <span class="stat-value success">{{ organizationStats.active_users }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">禁用用户</span>
+                <span class="stat-value danger">{{ organizationStats.disabled_users }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 搜索筛选 -->
+        <div class="search-section" v-if="selectedOrganization">
+          <el-form :model="searchForm" inline>
+            <el-form-item label="搜索">
+              <el-input
+                v-model="searchForm.search"
+                placeholder="用户名、姓名、邮箱"
+                :prefix-icon="Search"
+                clearable
+                @keyup.enter="handleSearch"
+              />
+            </el-form-item>
+            <el-form-item label="角色">
+              <el-select v-model="searchForm.role" placeholder="选择角色" clearable>
+                <el-option
+                  v-for="role in roleOptions"
+                  :key="role.id"
+                  :label="role.name"
+                  :value="role.code"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="状态">
+              <el-select v-model="searchForm.status" placeholder="选择状态" clearable>
+                <el-option label="正常" value="1" />
+                <el-option label="禁用" value="0" />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="handleSearch">搜索</el-button>
+              <el-button @click="handleReset">重置</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+
+        <!-- 用户表格 -->
+        <div class="table-section" v-if="selectedOrganization">
+          <el-table
+            v-loading="loading"
+            :data="userList"
+            stripe
+            style="width: 100%"
+          >
+            <el-table-column prop="id" label="ID" width="80" />
+            <el-table-column label="头像" width="80">
+              <template #default="{ row }">
+                <el-avatar :size="40" :src="row.avatar">
+                  {{ row.real_name?.charAt(0) || 'U' }}
+                </el-avatar>
+              </template>
+            </el-table-column>
+            <el-table-column prop="username" label="用户名" />
+            <el-table-column prop="real_name" label="真实姓名" />
+            <el-table-column prop="email" label="邮箱" />
+            <el-table-column prop="phone" label="手机号" />
+            <el-table-column label="角色" width="120">
+              <template #default="{ row }">
+                <el-tag :type="getRoleType(row.role)">
+                  {{ getRoleLabel(row.role) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+                  {{ row.status === 1 ? '正常' : '禁用' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="created_at" label="创建时间" width="180" />
+            <el-table-column label="操作" width="240" fixed="right">
+              <template #default="{ row }">
+                <div class="action-buttons">
+                  <PermissionTooltip permission="user.edit" size="small">
+                    <el-button type="primary" size="small" @click="handleEdit(row)">
+                      编辑
+                    </el-button>
+                  </PermissionTooltip>
+                  <PermissionTooltip permission="user.reset_password" size="small">
+                    <el-button type="warning" size="small" @click="handleResetPassword(row)">
+                      重置密码
+                    </el-button>
+                  </PermissionTooltip>
+                  <PermissionTooltip permission="user.delete" size="small">
+                    <el-button
+                      type="danger"
+                      size="small"
+                      @click="handleDelete(row)"
+                      :disabled="row.id === currentUserId"
+                    >
+                      删除
+                    </el-button>
+                  </PermissionTooltip>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <!-- 分页 -->
+          <div class="pagination-section">
+            <el-pagination
+              v-model:current-page="pagination.current_page"
+              v-model:page-size="pagination.per_page"
+              :total="pagination.total"
+              :page-sizes="[10, 20, 50, 100]"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+            />
+          </div>
+        </div>
+
+        <!-- 空状态 -->
+        <div class="empty-state" v-if="!selectedOrganization">
+          <el-empty description="请选择左侧组织架构查看用户列表" />
+        </div>
       </div>
     </div>
 
@@ -130,11 +200,28 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus } from '@element-plus/icons-vue'
-import { getUserListApi, deleteUserApi, type UserProfile } from '@/api/user'
+import {
+  Search,
+  Plus,
+  Download,
+  Refresh,
+  OfficeBuilding,
+  Operation,
+  MapLocation,
+  Location,
+  House
+} from '@element-plus/icons-vue'
+import { getOrganizationUsersApi, deleteUserApi, type UserProfile } from '@/api/user'
 import { getRoleListApi, type Role } from '@/api/role'
+import {
+  getOrganizationStatsApi,
+  type OrganizationNode,
+  type OrganizationStats
+} from '@/api/organization'
 import { useAuthStore } from '@/stores/auth'
 import SimpleUserDialog from './components/SimpleUserDialog.vue'
+import OrganizationTree from '@/components/OrganizationTree.vue'
+import PermissionTooltip from '@/components/PermissionTooltip.vue'
 
 const authStore = useAuthStore()
 
@@ -144,6 +231,12 @@ const dialogVisible = ref(false)
 const userList = ref<UserProfile[]>([])
 const currentUser = ref<UserProfile | null>(null)
 const roleOptions = ref<Role[]>([])
+const organizationTreeRef = ref()
+
+// 组织相关数据
+const selectedOrganization = ref<OrganizationNode | null>(null)
+const selectedOrganizationId = ref<number | undefined>(undefined)
+const organizationStats = ref<OrganizationStats | null>(null)
 
 // 搜索表单
 const searchForm = reactive({
@@ -163,16 +256,66 @@ const pagination = reactive({
 // 当前用户ID
 const currentUserId = computed(() => authStore.userInfo?.id)
 
+// 组织相关辅助函数
+const getOrganizationIcon = (level: number) => {
+  const icons = {
+    1: Operation,     // 省级
+    2: MapLocation,   // 市级
+    3: Location,      // 区县级
+    4: OfficeBuilding, // 学区级
+    5: House          // 学校级
+  }
+  return icons[level as keyof typeof icons] || OfficeBuilding
+}
+
+const getOrganizationColor = (level: number) => {
+  const colors = {
+    1: '#409EFF', // 省级 - 蓝色
+    2: '#67C23A', // 市级 - 绿色
+    3: '#E6A23C', // 区县级 - 橙色
+    4: '#F56C6C', // 学区级 - 红色
+    5: '#909399'  // 学校级 - 灰色
+  }
+  return colors[level as keyof typeof colors] || '#909399'
+}
+
+const getOrganizationTagType = (level: number) => {
+  const types = {
+    1: 'primary',
+    2: 'success',
+    3: 'warning',
+    4: 'danger',
+    5: 'info'
+  }
+  return types[level as keyof typeof types] || 'info'
+}
+
+const getOrganizationLevelName = (level: number) => {
+  const names = {
+    1: '省级',
+    2: '市级',
+    3: '区县级',
+    4: '学区级',
+    5: '学校级'
+  }
+  return names[level as keyof typeof names] || '未知'
+}
+
 // 获取角色类型
 const getRoleType = (role: string) => {
   const typeMap: Record<string, string> = {
     'super_admin': 'danger',
+    'province_admin': 'danger',
+    'city_admin': 'warning',
+    'county_admin': 'warning',
+    'district_admin': 'info',
+    'school_admin': 'info',
     'admin': 'warning',
     'lab_manager': 'info',
     'teacher': 'success',
-    'student': ''
+    'student': 'primary'
   }
-  return typeMap[role] || ''
+  return typeMap[role] || 'info'
 }
 
 // 获取角色标签
@@ -236,10 +379,18 @@ const fetchRoleList = async () => {
 
 // 获取用户列表
 const fetchUserList = async () => {
+  if (!selectedOrganization.value) {
+    userList.value = []
+    pagination.total = 0
+    return
+  }
+
   try {
     loading.value = true
 
     const params = {
+      organization_id: selectedOrganization.value.id,
+      organization_level: selectedOrganization.value.level,
       page: pagination.current_page,
       per_page: pagination.per_page,
       search: searchForm.search || undefined,
@@ -249,13 +400,12 @@ const fetchUserList = async () => {
 
     console.log('正在获取用户列表，参数:', params)
 
-    const response = await getUserListApi(params)
+    const response = await getOrganizationUsersApi(params)
 
     console.log('API响应结构:', response)
-    console.log('response.data:', (response as any).data)
 
-    // 使用类型断言来处理响应数据
-    const responseData = (response as any).data
+    // 处理后端返回的数据结构
+    const responseData = response.success ? response.data : response.data
 
     // 检查响应数据结构
     if (!responseData || !responseData.items) {
@@ -270,10 +420,10 @@ const fetchUserList = async () => {
     pagination.last_page = responseData.pagination.last_page
 
     console.log('用户列表加载成功:', {
+      organization: selectedOrganization.value.name,
       total: pagination.total,
       currentPage: pagination.current_page,
-      userCount: userList.value.length,
-      users: userList.value
+      userCount: userList.value.length
     })
 
     // 真实API调用代码（暂时注释）
@@ -300,6 +450,51 @@ const fetchUserList = async () => {
     ElMessage.error('获取用户列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 组织选择处理
+const handleOrganizationSelect = async (organization: OrganizationNode) => {
+  console.log('选择组织:', organization)
+  selectedOrganization.value = organization
+  selectedOrganizationId.value = organization.id
+
+  // 重置分页
+  pagination.current_page = 1
+
+  // 重置搜索条件
+  searchForm.search = ''
+  searchForm.role = ''
+  searchForm.status = ''
+
+  // 获取组织统计信息
+  await fetchOrganizationStats(organization.id)
+
+  // 获取用户列表
+  await fetchUserList()
+}
+
+// 获取组织统计信息
+const fetchOrganizationStats = async (organizationId: number) => {
+  try {
+    const response = await getOrganizationStatsApi(organizationId)
+    if (response.success) {
+      organizationStats.value = response.data
+    }
+  } catch (error) {
+    console.error('获取组织统计信息失败:', error)
+    organizationStats.value = null
+  }
+}
+
+// 刷新数据
+const refreshData = () => {
+  if (organizationTreeRef.value) {
+    organizationTreeRef.value.refreshTree()
+  }
+  if (selectedOrganization.value) {
+    fetchOrganizationStats(selectedOrganization.value.id)
+    fetchUserList()
   }
 }
 
@@ -401,6 +596,119 @@ const handleDelete = async (user: UserProfile) => {
   }
 }
 
+// 导出用户
+const handleExport = async () => {
+  if (!selectedOrganization.value) {
+    ElMessage.warning('请先选择要导出的组织')
+    return
+  }
+
+  try {
+    ElMessage.info('正在导出用户数据...')
+
+    // 构建导出参数（不包含搜索条件，导出所有用户）
+    const exportParams = {
+      organization_id: selectedOrganization.value.id,
+      organization_level: selectedOrganization.value.level,
+      page: 1,
+      per_page: 1000 // 获取大量数据
+    }
+
+    console.log('导出参数:', exportParams)
+
+    // 获取所有用户数据
+    const allUsers = await getOrganizationUsersApi(exportParams)
+
+    console.log('API响应:', allUsers)
+    console.log('用户数据:', allUsers.data)
+
+    // 检查数据结构
+    if (!allUsers.data || !allUsers.data.items) {
+      console.error('数据结构错误:', allUsers)
+      ElMessage.error('获取用户数据失败，数据格式错误')
+      return
+    }
+
+    if (allUsers.data.items.length === 0) {
+      ElMessage.warning('该组织下没有用户数据可导出')
+      return
+    }
+
+    console.log('用户数量:', allUsers.data.items.length)
+
+    // 准备导出数据
+    const exportData = allUsers.data.items.map((user: UserProfile) => ({
+      '用户ID': user.id,
+      '用户名': user.username,
+      '真实姓名': user.real_name,
+      '邮箱': user.email,
+      '手机号': user.phone || '',
+      '角色': getRoleLabel(user.role),
+      '所属学校': user.school_name || '',
+      '状态': user.status === 1 ? '正常' : '禁用',
+      '创建时间': new Date(user.created_at).toLocaleString()
+    }))
+
+    console.log('导出数据:', exportData)
+
+    // 转换为CSV格式
+    const csvContent = convertToCSV(exportData)
+
+    console.log('CSV内容长度:', csvContent.length)
+
+    if (!csvContent) {
+      ElMessage.error('生成CSV内容失败')
+      return
+    }
+
+    // 下载文件
+    const organizationName = selectedOrganization.value.name.replace(/[^\w\s]/gi, '')
+    downloadCSV(csvContent, `${organizationName}_用户列表_${new Date().toISOString().split('T')[0]}.csv`)
+
+    ElMessage.success(`成功导出 ${allUsers.data.items.length} 条用户数据`)
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败，请稍后重试')
+  }
+}
+
+// 转换为CSV格式
+const convertToCSV = (data: any[]) => {
+  if (data.length === 0) return ''
+
+  const headers = Object.keys(data[0])
+  const csvRows = []
+
+  // 添加表头
+  csvRows.push(headers.join(','))
+
+  // 添加数据行
+  for (const row of data) {
+    const values = headers.map(header => {
+      const value = row[header]
+      return `"${value}"`
+    })
+    csvRows.push(values.join(','))
+  }
+
+  return csvRows.join('\n')
+}
+
+// 下载CSV文件
+const downloadCSV = (content: string, filename: string) => {
+  const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+
+  link.setAttribute('href', url)
+  link.setAttribute('download', filename)
+  link.style.visibility = 'hidden'
+
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
 // 对话框成功回调
 const handleDialogSuccess = (user: any) => {
   console.log('对话框操作成功:', user)
@@ -412,13 +720,17 @@ const handleDialogSuccess = (user: any) => {
 // 初始化
 onMounted(() => {
   fetchRoleList()
-  fetchUserList()
+  // 用户列表将在选择组织后加载
 })
 </script>
 
 <style scoped>
 .user-list-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
   padding: 20px;
+  background: #f5f5f5;
 }
 
 .page-header {
@@ -426,8 +738,88 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #ebeef5;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  gap: 20px;
+  min-height: 0;
+}
+
+.left-panel {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* 当前组织信息样式 */
+.current-organization {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.org-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.org-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.org-details h3 {
+  margin: 0 0 8px 0;
+  color: #303133;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.org-stats {
+  display: flex;
+  gap: 24px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #909399;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.stat-value.success {
+  color: #67c23a;
+}
+
+.stat-value.danger {
+  color: #f56c6c;
 }
 
 .header-content h2 {
@@ -452,8 +844,26 @@ onMounted(() => {
 }
 
 .table-section {
+  flex: 1;
   background: #fff;
   padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.table-section .el-table {
+  flex: 1;
+}
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -473,5 +883,59 @@ onMounted(() => {
 
 .action-buttons .el-button {
   margin-left: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .main-content {
+    flex-direction: column;
+  }
+
+  .left-panel {
+    width: 100%;
+    height: 300px;
+  }
+
+  .right-panel {
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-list-page {
+    padding: 10px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    justify-content: center;
+  }
+
+  .org-stats {
+    justify-content: space-around;
+  }
+
+  .search-section .el-form {
+    flex-direction: column;
+  }
+
+  .search-section .el-form-item {
+    margin-right: 0;
+    margin-bottom: 16px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .action-buttons .el-button {
+    width: 100%;
+  }
 }
 </style>

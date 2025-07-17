@@ -235,13 +235,22 @@ const resetForm = () => {
 const loadReservations = async () => {
   try {
     // 只加载已通过的预约
-    const response = await getExperimentReservationsApi({ 
-      status: 1, 
-      per_page: 1000 
+    const response = await getExperimentReservationsApi({
+      status: 2, // 修正：已通过状态应该是2，不是1
+      per_page: 1000
     })
-    reservations.value = response.data.data
+    // 检查响应数据结构
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      reservations.value = response.data.data
+    } else if (response.data && Array.isArray(response.data)) {
+      reservations.value = response.data
+    } else {
+      console.warn('预约数据格式不正确:', response.data)
+      reservations.value = []
+    }
   } catch (error) {
     console.error('加载预约列表失败:', error)
+    reservations.value = []
   }
 }
 

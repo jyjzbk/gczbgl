@@ -15,6 +15,26 @@
       <el-tabs v-model="activeTab" type="border-card">
         <!-- 基本信息 -->
         <el-tab-pane label="基本信息" name="basic">
+          <el-row :gutter="20" v-if="canSelectSchool">
+            <el-col :span="24">
+              <el-form-item label="所属学校" prop="school_id">
+                <el-select
+                  v-model="form.school_id"
+                  placeholder="请选择学校"
+                  filterable
+                  style="width: 100%"
+                >
+                  <el-option
+                    v-for="school in schoolOptions"
+                    :key="school.id"
+                    :label="school.name"
+                    :value="school.id"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="设备分类" prop="category_id">
@@ -259,6 +279,7 @@ import {
   type EquipmentCategory,
   type CreateEquipmentParams
 } from '@/api/equipment'
+import { getManageableSchoolsApi } from '@/api/organization'
 import { useAuthStore } from '@/stores/auth'
 
 interface Props {
@@ -287,6 +308,12 @@ const submitting = ref(false)
 const activeTab = ref('basic')
 const categories = ref<EquipmentCategory[]>([])
 const photoList = ref<any[]>([])
+const schoolOptions = ref<any[]>([])
+
+// 是否可以选择学校
+const canSelectSchool = computed(() => {
+  return authStore.userInfo?.organization_level && authStore.userInfo.organization_level < 5
+})
 
 // 表单数据
 const form = reactive<CreateEquipmentParams>({
@@ -326,6 +353,9 @@ const conditionOptions = [
 
 // 表单验证规则
 const rules: FormRules = {
+  school_id: [
+    { required: true, message: '请选择学校', trigger: 'change' }
+  ],
   category_id: [
     { required: true, message: '请选择设备分类', trigger: 'change' }
   ],
@@ -534,9 +564,22 @@ const handleClose = () => {
   emit('update:modelValue', false)
 }
 
+// 加载学校选项
+const loadSchoolOptions = async () => {
+  if (canSelectSchool.value) {
+    try {
+      const response = await getManageableSchoolsApi()
+      schoolOptions.value = response.data || []
+    } catch (error) {
+      console.error('加载学校选项失败:', error)
+    }
+  }
+}
+
 // 初始化
 onMounted(() => {
   loadCategories()
+  loadSchoolOptions()
 })
 </script>
 

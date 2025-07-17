@@ -342,9 +342,18 @@ const loadData = async () => {
 const loadSubjects = async () => {
   try {
     const response = await getSubjectsApi()
-    subjects.value = response.data
+    // 检查响应数据结构
+    if (response.data && Array.isArray(response.data.data)) {
+      subjects.value = response.data.data
+    } else if (response.data && Array.isArray(response.data)) {
+      subjects.value = response.data
+    } else {
+      console.warn('学科数据格式不正确:', response.data)
+      subjects.value = []
+    }
   } catch (error) {
     console.error('加载学科列表失败:', error)
+    subjects.value = []
   }
 }
 

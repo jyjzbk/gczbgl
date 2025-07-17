@@ -36,17 +36,33 @@
       <!-- 用户菜单 -->
       <el-dropdown class="header-item" @command="handleUserCommand">
         <div class="user-info">
-          <el-avatar 
-            :src="authStore.userInfo?.avatar" 
+          <el-avatar
+            :src="authStore.userInfo?.avatar"
             :size="32"
           >
             {{ authStore.userName.charAt(0) }}
           </el-avatar>
-          <span class="username">{{ authStore.userName }}</span>
+          <div class="user-details">
+            <span class="username">{{ authStore.userName }}</span>
+            <span class="user-org" v-if="userOrganization">{{ userOrganization }}</span>
+          </div>
           <el-icon><ArrowDown /></el-icon>
         </div>
         <template #dropdown>
           <el-dropdown-menu>
+            <!-- 用户信息头部 -->
+            <div class="dropdown-header">
+              <div class="user-role">
+                <el-tag :type="getRoleType(authStore.userInfo?.role)" size="small">
+                  {{ getRoleLabel(authStore.userInfo?.role) }}
+                </el-tag>
+              </div>
+              <div class="user-level" v-if="authStore.userInfo?.organization_level">
+                <span class="level-text">{{ getOrganizationLevelText(authStore.userInfo.organization_level) }}</span>
+              </div>
+            </div>
+            <el-divider style="margin: 8px 0;" />
+
             <el-dropdown-item command="profile">
               <el-icon><User /></el-icon>
               个人资料
@@ -71,15 +87,16 @@
 </template>
 
 <script setup lang="ts">
-import { 
-  Fold, 
-  FullScreen, 
-  Bell, 
-  ArrowDown, 
-  User, 
-  Setting, 
-  Lock, 
-  SwitchButton 
+import { computed } from 'vue'
+import {
+  Fold,
+  FullScreen,
+  Bell,
+  ArrowDown,
+  User,
+  Setting,
+  Lock,
+  SwitchButton
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAppStore } from '@/stores/app'
@@ -89,6 +106,64 @@ import { useRouter } from 'vue-router'
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const router = useRouter()
+
+// 计算用户组织信息
+const userOrganization = computed(() => {
+  const userInfo = authStore.userInfo
+  if (!userInfo) return ''
+
+  // 根据组织类型和级别显示组织信息
+  if (userInfo.organization_type === 'school' && userInfo.school_name) {
+    return userInfo.school_name
+  } else if (userInfo.organization_type === 'region') {
+    // 这里可以根据实际需要显示区域名称
+    return getOrganizationLevelText(userInfo.organization_level || 5)
+  }
+
+  return userInfo.school_name || ''
+})
+
+// 获取角色类型样式
+const getRoleType = (role?: string) => {
+  const roleMap: Record<string, string> = {
+    'super_admin': 'danger',
+    'province_admin': 'danger',
+    'city_admin': 'warning',
+    'county_admin': 'warning',
+    'district_admin': 'info',
+    'school_admin': 'info',
+    'teacher': 'success',
+    'student': ''
+  }
+  return roleMap[role || ''] || 'info'
+}
+
+// 获取角色标签
+const getRoleLabel = (role?: string) => {
+  const roleMap: Record<string, string> = {
+    'super_admin': '超级管理员',
+    'province_admin': '省级管理员',
+    'city_admin': '市级管理员',
+    'county_admin': '区县管理员',
+    'district_admin': '学区管理员',
+    'school_admin': '学校管理员',
+    'teacher': '教师',
+    'student': '学生'
+  }
+  return roleMap[role || ''] || '用户'
+}
+
+// 获取组织级别文本
+const getOrganizationLevelText = (level: number) => {
+  const levelMap: Record<number, string> = {
+    1: '省级',
+    2: '市级',
+    3: '区县级',
+    4: '学区级',
+    5: '学校级'
+  }
+  return levelMap[level] || '未知级别'
+}
 
 // 全屏切换
 const toggleFullscreen = () => {
@@ -187,13 +262,45 @@ const handleLogout = async () => {
   background-color: #f5f7fa;
 }
 
+.user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 120px;
+}
+
 .username {
   font-size: 14px;
   color: #606266;
-  max-width: 100px;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  width: 100%;
+}
+
+.user-org {
+  font-size: 12px;
+  color: #909399;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.dropdown-header {
+  padding: 8px 16px;
+  background-color: #f8f9fa;
+  margin: -8px -16px 0;
+}
+
+.user-role {
+  margin-bottom: 4px;
+}
+
+.level-text {
+  font-size: 12px;
+  color: #909399;
 }
 
 @media (max-width: 768px) {

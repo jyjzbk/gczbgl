@@ -157,35 +157,37 @@
             <el-button type="primary" link @click="handleView(row)">
               查看
             </el-button>
-            <el-button 
-              v-if="row.status === 0" 
-              type="primary" 
-              link 
+            <el-button
+              v-if="row.status === 1"
+              type="primary"
+              link
               @click="handleEdit(row)"
+              :title="canEdit(row) ? '编辑预约' : '只有待审核状态的预约可以编辑'"
             >
               编辑
             </el-button>
-            <el-button 
-              v-if="row.status === 0" 
-              type="success" 
-              link 
+            <el-button
+              v-if="row.status === 1"
+              type="success"
+              link
               @click="handleApprove(row)"
             >
               通过
             </el-button>
-            <el-button 
-              v-if="row.status === 0" 
-              type="danger" 
-              link 
+            <el-button
+              v-if="row.status === 1"
+              type="danger"
+              link
               @click="handleReject(row)"
             >
               拒绝
             </el-button>
-            <el-button 
-              v-if="row.status === 0" 
-              type="danger" 
-              link 
+            <el-button
+              v-if="[1, 2].includes(row.status)"
+              type="danger"
+              link
               @click="handleCancel(row)"
+              :title="canCancel(row) ? '取消预约' : '只有待审核或已通过的预约可以取消'"
             >
               取消
             </el-button>
@@ -301,10 +303,11 @@ const statusOptions = [
 // 获取状态标签类型
 const getStatusTagType = (status: number) => {
   const statusMap: Record<number, string> = {
-    0: 'warning',
-    1: 'success',
-    2: 'danger',
-    3: 'info'
+    1: 'warning',  // 待审核
+    2: 'success',  // 已通过
+    3: 'danger',   // 已拒绝
+    4: 'info',     // 已完成
+    5: 'info'      // 已取消
   }
   return statusMap[status] || 'info'
 }
@@ -312,12 +315,23 @@ const getStatusTagType = (status: number) => {
 // 获取状态标签文本
 const getStatusLabel = (status: number) => {
   const statusMap: Record<number, string> = {
-    0: '待审核',
-    1: '已通过',
-    2: '已拒绝',
-    3: '已取消'
+    1: '待审核',
+    2: '已通过',
+    3: '已拒绝',
+    4: '已完成',
+    5: '已取消'
   }
   return statusMap[status] || '未知'
+}
+
+// 检查是否可以编辑
+const canEdit = (booking: ExperimentReservation) => {
+  return booking.status === 1 && new Date(booking.reservation_date) >= new Date()
+}
+
+// 检查是否可以取消
+const canCancel = (booking: ExperimentReservation) => {
+  return [1, 2].includes(booking.status) && new Date(booking.reservation_date) >= new Date()
 }
 
 // 格式化日期时间
@@ -352,9 +366,18 @@ const loadData = async () => {
 const loadSchools = async () => {
   try {
     const response = await getSchoolsApi()
-    schools.value = response.data
+    // 检查响应数据结构
+    if (response.data && Array.isArray(response.data.data)) {
+      schools.value = response.data.data
+    } else if (response.data && Array.isArray(response.data)) {
+      schools.value = response.data
+    } else {
+      console.warn('学校数据格式不正确:', response.data)
+      schools.value = []
+    }
   } catch (error) {
     console.error('加载学校列表失败:', error)
+    schools.value = []
   }
 }
 
@@ -362,9 +385,18 @@ const loadSchools = async () => {
 const loadLaboratories = async () => {
   try {
     const response = await getLaboratoriesApi()
-    laboratories.value = response.data
+    // 检查响应数据结构
+    if (response.data && Array.isArray(response.data.data)) {
+      laboratories.value = response.data.data
+    } else if (response.data && Array.isArray(response.data)) {
+      laboratories.value = response.data
+    } else {
+      console.warn('实验室数据格式不正确:', response.data)
+      laboratories.value = []
+    }
   } catch (error) {
     console.error('加载实验室列表失败:', error)
+    laboratories.value = []
   }
 }
 

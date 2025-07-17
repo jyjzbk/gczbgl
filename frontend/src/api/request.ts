@@ -41,11 +41,24 @@ request.interceptors.response.use(
     }
     
     // 检查业务状态码
-    if (data.code !== undefined && data.code !== 200) {
-      ElMessage.error(data.message || '请求失败')
-      return Promise.reject(new Error(data.message || '请求失败'))
+    // 支持两种格式：{code: 200, data: ...} 和 {success: true, data: ...}
+    if (data.code !== undefined) {
+      // 旧格式：code字段
+      if (data.code !== 200 && data.code !== 201) {
+        ElMessage.error(data.message || '请求失败')
+        return Promise.reject(new Error(data.message || '请求失败'))
+      }
+      return data
+    } else if (data.success !== undefined) {
+      // 新格式：success字段
+      if (!data.success) {
+        ElMessage.error(data.message || '请求失败')
+        return Promise.reject(new Error(data.message || '请求失败'))
+      }
+      return data
     }
-    
+
+    // 如果没有业务状态码，直接返回数据
     return data
   },
   (error) => {

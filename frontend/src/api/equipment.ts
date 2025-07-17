@@ -72,6 +72,34 @@ export const getEquipmentsApi = (params: EquipmentListParams) => {
   return request.get('/equipments', { params })
 }
 
+// 按组织获取设备列表接口
+export interface OrganizationEquipmentListParams {
+  organization_id?: number
+  organization_level?: number
+  page?: number
+  per_page?: number
+  search?: string
+  category_id?: number
+  status?: number
+  condition?: number
+  location?: string
+}
+
+export const getOrganizationEquipmentsApi = (params: OrganizationEquipmentListParams) => {
+  return request.get<{
+    success: boolean
+    data: {
+      items: Equipment[]
+      pagination: {
+        current_page: number
+        last_page: number
+        per_page: number
+        total: number
+      }
+    }
+  }>('/organizations/equipments', { params })
+}
+
 // 创建设备
 export const createEquipmentApi = (data: CreateEquipmentParams) => {
   return request.post('/equipments', data)

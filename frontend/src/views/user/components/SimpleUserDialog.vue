@@ -43,7 +43,12 @@
       </el-form-item>
       
       <el-form-item label="角色" prop="role">
-        <el-select v-model="form.role" placeholder="请选择角色" style="width: 100%">
+        <el-select
+          v-model="form.role"
+          placeholder="请选择角色"
+          style="width: 100%"
+          @change="handleRoleChange"
+        >
           <el-option
             v-for="role in roleOptions"
             :key="role.id"
@@ -51,6 +56,46 @@
             :value="role.code"
           />
         </el-select>
+      </el-form-item>
+
+      <!-- 组织归属选择 -->
+      <el-form-item
+        v-if="showOrganizationSelect"
+        :label="organizationSelectLabel"
+        prop="organization_id"
+      >
+        <el-tree-select
+          v-model="form.organization_id"
+          :data="organizationTreeData"
+          :props="treeProps"
+          :placeholder="organizationSelectPlaceholder"
+          style="width: 100%"
+          :loading="organizationLoading"
+          check-strictly
+          :render-after-expand="false"
+          node-key="id"
+          @change="handleOrganizationChange"
+        />
+      </el-form-item>
+
+      <!-- 学校选择（仅学校级用户） -->
+      <el-form-item
+        v-if="showSchoolSelect"
+        label="所属学校"
+        prop="school_id"
+      >
+        <el-tree-select
+          v-model="form.school_id"
+          :data="schoolTreeData"
+          :props="schoolTreeProps"
+          placeholder="请选择学校"
+          style="width: 100%"
+          :loading="schoolLoading"
+          check-strictly
+          :render-after-expand="false"
+          node-key="id"
+          @change="handleSchoolChange"
+        />
       </el-form-item>
       
       <el-form-item label="部门" prop="department">
@@ -121,6 +166,26 @@ const emit = defineEmits<Emits>()
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
 const roleOptions = ref<Role[]>([])
+const organizationOptions = ref<any[]>([])
+const organizationTreeData = ref<any[]>([])
+const schoolOptions = ref<any[]>([])
+const schoolTreeData = ref<any[]>([])
+const organizationLoading = ref(false)
+const schoolLoading = ref(false)
+const selectedRoleLevel = ref<number>(5)
+
+// 树形选择器配置
+const treeProps = {
+  children: 'children',
+  label: 'name',
+  value: 'id'
+}
+
+const schoolTreeProps = {
+  children: 'children',
+  label: 'name',
+  value: 'id'
+}
 
 // 表单数据
 const form = reactive({
@@ -129,6 +194,8 @@ const form = reactive({
   email: '',
   phone: '',
   role: '',
+  organization_id: '',
+  school_id: '',
   department: '',
   position: '',
   password: '',
@@ -142,6 +209,38 @@ const visible = computed({
 })
 
 const isEdit = computed(() => !!props.user)
+
+// 是否显示组织选择
+const showOrganizationSelect = computed(() => {
+  return !isEdit.value && form.role && selectedRoleLevel.value < 5
+})
+
+// 是否显示学校选择
+const showSchoolSelect = computed(() => {
+  return !isEdit.value && form.role && selectedRoleLevel.value === 5
+})
+
+// 组织选择标签
+const organizationSelectLabel = computed(() => {
+  switch (selectedRoleLevel.value) {
+    case 1: return '所属省份'
+    case 2: return '所属市'
+    case 3: return '所属区县'
+    case 4: return '所属学区'
+    default: return '所属组织'
+  }
+})
+
+// 组织选择占位符
+const organizationSelectPlaceholder = computed(() => {
+  switch (selectedRoleLevel.value) {
+    case 1: return '请选择省份'
+    case 2: return '请选择市'
+    case 3: return '请选择区县'
+    case 4: return '请选择学区'
+    default: return '请选择组织'
+  }
+})
 
 // 表单验证规则
 const rules: FormRules = {
@@ -188,11 +287,18 @@ const resetForm = () => {
   form.email = ''
   form.phone = ''
   form.role = ''
+  form.organization_id = ''
+  form.school_id = ''
   form.department = ''
   form.position = ''
   form.password = ''
   form.password_confirmation = ''
-  
+
+  // 重置选项
+  organizationOptions.value = []
+  schoolOptions.value = []
+  selectedRoleLevel.value = 5
+
   if (formRef.value) {
     formRef.value.clearValidate()
   }
@@ -251,6 +357,8 @@ const handleSubmit = async () => {
         email: form.email,
         phone: form.phone || undefined,
         role: form.role,
+        organization_id: form.organization_id || undefined,
+        school_id: form.school_id || undefined,
         department: form.department || undefined,
         position: form.position || undefined
       }
@@ -258,7 +366,7 @@ const handleSubmit = async () => {
       const response = await createUserApi(createData)
       console.log('创建用户响应:', response)
 
-      ElMessage.success('用户创建成功')
+      ElMessage.success(`用户创建成功！用户名: ${createData.username}，密码: ${createData.password}`)
       emit('success', response.data)
     }
 
@@ -305,6 +413,148 @@ const fetchRoleList = async () => {
       { id: 10, name: '实验员', code: 'school_experimenter', description: '', level: 5, status: 1, created_at: '', updated_at: '' },
       { id: 11, name: '任课教师', code: 'school_teacher', description: '', level: 5, status: 1, created_at: '', updated_at: '' }
     ]
+  }
+}
+
+// 角色变化处理
+const handleRoleChange = (roleCode: string) => {
+  const selectedRole = roleOptions.value.find(role => role.code === roleCode)
+  if (selectedRole) {
+    selectedRoleLevel.value = selectedRole.level
+
+    // 清空之前的选择
+    form.organization_id = ''
+    form.school_id = ''
+
+    // 根据角色级别加载对应的组织选项
+    if (selectedRole.level < 5) {
+      fetchOrganizationOptions(selectedRole.level)
+    } else if (selectedRole.level === 5) {
+      fetchSchoolOptions()
+    }
+  }
+}
+
+// 获取组织选项
+const fetchOrganizationOptions = async (level: number) => {
+  organizationLoading.value = true
+  try {
+    // 获取组织树形数据
+    const { getOrganizationTreeApi } = await import('@/api/organization')
+    const response = await getOrganizationTreeApi()
+
+    if (response.data) {
+      // 根据用户角色级别过滤可选择的组织
+      organizationTreeData.value = filterOrganizationsByLevel(response.data, level)
+    } else {
+      organizationTreeData.value = []
+    }
+  } catch (error) {
+    console.error('获取组织选项失败:', error)
+    organizationTreeData.value = []
+  } finally {
+    organizationLoading.value = false
+  }
+}
+
+// 根据角色级别过滤组织
+const filterOrganizationsByLevel = (organizations: any[], targetLevel: number): any[] => {
+  return organizations.filter(org => {
+    // 只显示目标级别及以上的组织
+    if (org.level <= targetLevel) {
+      // 递归过滤子组织
+      if (org.children && org.children.length > 0) {
+        org.children = filterOrganizationsByLevel(org.children, targetLevel)
+      }
+      return true
+    }
+    return false
+  })
+}
+
+// 处理组织选择变化
+const handleOrganizationChange = (value: any) => {
+  console.log('选择的组织:', value)
+  // 可以在这里添加额外的逻辑，比如根据选择的组织自动填充其他字段
+}
+
+// 获取学校选项
+const fetchSchoolOptions = async () => {
+  schoolLoading.value = true
+  try {
+    // 获取组织树形数据，然后构建学校树形结构
+    const { getOrganizationTreeApi } = await import('@/api/organization')
+    const response = await getOrganizationTreeApi()
+
+    if (response.data) {
+      // 构建学校树形数据（按组织层级分组）
+      schoolTreeData.value = buildSchoolTree(response.data)
+    } else {
+      schoolTreeData.value = []
+    }
+  } catch (error) {
+    console.error('获取学校选项失败:', error)
+    schoolTreeData.value = []
+  } finally {
+    schoolLoading.value = false
+  }
+}
+
+// 构建学校树形数据
+const buildSchoolTree = (organizations: any[]): any[] => {
+  const result: any[] = []
+
+  const processOrganization = (org: any) => {
+    const orgNode = {
+      id: `org_${org.id}`,
+      name: org.name,
+      level: org.level,
+      disabled: true, // 组织节点不可选择
+      children: []
+    }
+
+    // 添加该组织下的学校
+    if (org.schools && org.schools.length > 0) {
+      org.schools.forEach((school: any) => {
+        orgNode.children.push({
+          id: school.id,
+          name: school.name,
+          level: 5,
+          disabled: false
+        })
+      })
+    }
+
+    // 递归处理子组织
+    if (org.children && org.children.length > 0) {
+      org.children.forEach((child: any) => {
+        const childNode = processOrganization(child)
+        if (childNode.children.length > 0) {
+          orgNode.children.push(childNode)
+        }
+      })
+    }
+
+    return orgNode
+  }
+
+  organizations.forEach(org => {
+    const orgNode = processOrganization(org)
+    if (orgNode.children.length > 0) {
+      result.push(orgNode)
+    }
+  })
+
+  return result
+}
+
+// 处理学校选择变化
+const handleSchoolChange = (value: any) => {
+  console.log('选择的学校:', value)
+  // 自动设置组织信息
+  if (value) {
+    // 可以根据学校ID查找对应的组织信息并自动填充
+    form.organization_id = value
   }
 }
 

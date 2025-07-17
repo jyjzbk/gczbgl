@@ -153,10 +153,23 @@
                     {{ userInfo?.username }}
                   </el-descriptions-item>
                   <el-descriptions-item label="角色">
-                    {{ getRoleLabel(userInfo?.role) }}
+                    <el-tag :type="getRoleType(userInfo?.role)">
+                      {{ getRoleLabel(userInfo?.role) }}
+                    </el-tag>
                   </el-descriptions-item>
-                  <el-descriptions-item label="所属学校">
-                    {{ userInfo?.school_name || '未设置' }}
+                  <el-descriptions-item label="组织级别" v-if="userInfo?.organization_level">
+                    <el-tag type="info">
+                      {{ getOrganizationLevelText(userInfo.organization_level) }}
+                    </el-tag>
+                  </el-descriptions-item>
+                  <el-descriptions-item label="组织类型" v-if="userInfo?.organization_type">
+                    {{ userInfo.organization_type === 'school' ? '学校' : '行政区域' }}
+                  </el-descriptions-item>
+                  <el-descriptions-item label="所属组织">
+                    {{ userInfo?.organization_name || userInfo?.school_name || '未设置' }}
+                  </el-descriptions-item>
+                  <el-descriptions-item label="数据权限范围">
+                    {{ getDataScopeText(userInfo?.organization_level) }}
                   </el-descriptions-item>
                   <el-descriptions-item label="注册时间">
                     {{ formatDate(userInfo?.created_at) }}
@@ -284,9 +297,14 @@ const profileRules: FormRules = {
 // 获取角色类型
 const getRoleType = (role?: string) => {
   const roleMap: Record<string, string> = {
-    admin: 'danger',
-    teacher: 'warning',
-    student: 'info'
+    'super_admin': 'danger',
+    'province_admin': 'danger',
+    'city_admin': 'warning',
+    'county_admin': 'warning',
+    'district_admin': 'info',
+    'school_admin': 'info',
+    'teacher': 'success',
+    'student': ''
   }
   return roleMap[role || ''] || 'info'
 }
@@ -294,11 +312,42 @@ const getRoleType = (role?: string) => {
 // 获取角色标签
 const getRoleLabel = (role?: string) => {
   const roleMap: Record<string, string> = {
-    admin: '管理员',
-    teacher: '教师',
-    student: '学生'
+    'super_admin': '超级管理员',
+    'province_admin': '省级管理员',
+    'city_admin': '市级管理员',
+    'county_admin': '区县管理员',
+    'district_admin': '学区管理员',
+    'school_admin': '学校管理员',
+    'teacher': '教师',
+    'student': '学生'
   }
   return roleMap[role || ''] || '未知'
+}
+
+// 获取组织级别文本
+const getOrganizationLevelText = (level: number) => {
+  const levelMap: Record<number, string> = {
+    1: '省级',
+    2: '市级',
+    3: '区县级',
+    4: '学区级',
+    5: '学校级'
+  }
+  return levelMap[level] || '未知级别'
+}
+
+// 获取数据权限范围文本
+const getDataScopeText = (level?: number) => {
+  if (!level) return '未设置'
+
+  const scopeMap: Record<number, string> = {
+    1: '全省数据',
+    2: '本市及下级数据',
+    3: '本区县及下级数据',
+    4: '本学区学校数据',
+    5: '仅本校数据'
+  }
+  return scopeMap[level] || '未知范围'
 }
 
 // 格式化日期

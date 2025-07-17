@@ -21,6 +21,7 @@
               filterable
               style="width: 100%"
               @change="handleSchoolChange"
+              :disabled="!canSelectSchool"
             >
               <el-option
                 v-for="school in schools"
@@ -223,6 +224,7 @@ import {
   type Laboratory
 } from '@/api/experiment'
 import { getSchoolsApi, getUserListApi, type School } from '@/api/user'
+import { useAuthStore } from '@/stores/auth'
 import dayjs from 'dayjs'
 
 interface Props {
@@ -239,6 +241,9 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
+// 权限检查
+const authStore = useAuthStore()
+
 // 表单引用
 const formRef = ref<FormInstance>()
 
@@ -253,6 +258,11 @@ const teachers = ref<any[]>([])
 
 // 对话框显示状态
 const visible = ref(false)
+
+// 是否可以选择学校（学校级用户不能选择）
+const canSelectSchool = computed(() => {
+  return authStore.userInfo?.organization_level && authStore.userInfo.organization_level < 5
+})
 
 // 表单数据
 const form = reactive({
@@ -401,27 +411,51 @@ const handleCatalogChange = () => {
 const loadSchools = async () => {
   try {
     const response = await getSchoolsApi()
-    schools.value = response.data
+    // 检查响应数据结构
+    if (response.data && Array.isArray(response.data.data)) {
+      schools.value = response.data.data
+    } else if (response.data && Array.isArray(response.data)) {
+      schools.value = response.data
+    } else {
+      console.warn('学校数据格式不正确:', response.data)
+      schools.value = []
+    }
   } catch (error) {
     console.error('加载学校列表失败:', error)
+    schools.value = []
   }
 }
 
 const loadLaboratories = async () => {
   try {
     const response = await getLaboratoriesApi()
-    laboratories.value = response.data
+    // 检查响应数据结构
+    if (response.data && Array.isArray(response.data.data)) {
+      laboratories.value = response.data.data
+    } else if (response.data && Array.isArray(response.data)) {
+      laboratories.value = response.data
+    } else {
+      console.warn('实验室数据格式不正确:', response.data)
+      laboratories.value = []
+    }
   } catch (error) {
     console.error('加载实验室列表失败:', error)
+    laboratories.value = []
   }
 }
 
 const loadCatalogs = async () => {
   try {
     const response = await getExperimentCatalogsApi({ per_page: 1000 })
-    catalogs.value = response.data.data
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      catalogs.value = response.data.data
+    } else {
+      console.warn('实验目录数据格式不正确:', response.data)
+      catalogs.value = []
+    }
   } catch (error) {
     console.error('加载实验目录失败:', error)
+    catalogs.value = []
   }
 }
 

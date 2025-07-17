@@ -123,9 +123,11 @@ const loginRules: FormRules = {
 
 // 演示账号
 const demoAccounts = [
-  { username: 'admin', password: '123456', label: '管理员' },
-  { username: 'teacher', password: '123456', label: '教师' },
-  { username: 'student', password: '123456', label: '学生' }
+  { username: 'province_admin_test', password: 'password', label: '省级管理员' },
+  { username: 'city_admin_test', password: 'password', label: '市级管理员' },
+  { username: 'county_admin_test', password: 'password', label: '区县管理员' },
+  { username: 'district_admin_test', password: 'password', label: '学区管理员' },
+  { username: 'school_admin_test', password: 'password', label: '学校管理员' }
 ]
 
 // 处理登录

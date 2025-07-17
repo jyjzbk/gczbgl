@@ -50,6 +50,9 @@
                 <el-button type="success" size="small" @click="savePermissions" :loading="saving">
                   保存权限
                 </el-button>
+                <el-button type="warning" size="small" @click="loadDefaultPermissions" :loading="loading">
+                  恢复默认
+                </el-button>
                 <el-button type="primary" size="small" @click="refreshCurrentRolePermissions">
                   刷新权限
                 </el-button>
@@ -79,7 +82,10 @@
                   </div>
                   <div class="node-actions">
                     <el-tag v-if="data.type" :type="getPermissionType(data.type)" size="small">
-                      {{ data.type }}
+                      {{ getPermissionTypeLabel(data.type) }}
+                    </el-tag>
+                    <el-tag v-if="data.level === 'high'" type="danger" size="small">
+                      高级
                     </el-tag>
                   </div>
                 </div>
@@ -259,6 +265,48 @@ const refreshCurrentRolePermissions = async () => {
   }
 }
 
+// 加载默认权限配置
+const loadDefaultPermissions = async () => {
+  if (!selectedRole.value) return
+
+  try {
+    loading.value = true
+    const response = await fetch(`http://localhost:8000/api/roles/${selectedRole.value.id}/default-permissions`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Accept': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error('获取默认权限失败')
+    }
+
+    const data = await response.json()
+
+    if (data.success) {
+      // 设置默认权限
+      rolePermissions.value = data.data
+
+      // 更新树形组件选中状态
+      if (permissionTreeRef.value) {
+        permissionTreeRef.value.setCheckedKeys([])
+        await nextTick()
+        permissionTreeRef.value.setCheckedKeys(data.data, false)
+      }
+
+      ElMessage.success('已恢复默认权限配置')
+    } else {
+      throw new Error(data.message || '获取默认权限失败')
+    }
+  } catch (error) {
+    console.error('加载默认权限失败:', error)
+    ElMessage.error('加载默认权限失败')
+  } finally {
+    loading.value = false
+  }
+}
+
 // 调试：打印权限树结构
 const debugPermissionTree = () => {
   console.log('权限树结构:', permissionTree.value)
@@ -296,8 +344,11 @@ const fetchPermissionTree = async () => {
         children: [
           { id: 'user.list', name: '用户列表', code: 'user.list', type: 'read' },
           { id: 'user.create', name: '创建用户', code: 'user.create', type: 'write' },
-          { id: 'user.update', name: '编辑用户', code: 'user.update', type: 'write' },
-          { id: 'user.delete', name: '删除用户', code: 'user.delete', type: 'delete' }
+          { id: 'user.update', name: '更新用户', code: 'user.update', type: 'write' },
+          { id: 'user.edit', name: '编辑用户', code: 'user.edit', type: 'write' },
+          { id: 'user.delete', name: '删除用户', code: 'user.delete', type: 'delete' },
+          { id: 'user.export', name: '导出用户', code: 'user.export', type: 'advanced', level: 'high' },
+          { id: 'user.reset_password', name: '重置密码', code: 'user.reset_password', type: 'advanced', level: 'high' }
         ]
       },
       {
@@ -333,6 +384,15 @@ const fetchPermissionTree = async () => {
           { id: 'equipment.borrow', name: '设备借用', code: 'equipment.borrow', type: 'write' },
           { id: 'equipment.maintenance', name: '设备维修', code: 'equipment.maintenance', type: 'write' }
         ]
+      },
+      {
+        id: 'system',
+        name: '系统管理',
+        code: 'system',
+        children: [
+          { id: 'system.read', name: '系统信息', code: 'system.read', type: 'advanced', level: 'high' },
+          { id: 'log.read', name: '日志查看', code: 'log.read', type: 'advanced', level: 'high' }
+        ]
       }
     ]
   } finally {
@@ -344,9 +404,20 @@ const getPermissionType = (type: string) => {
   const typeMap: Record<string, string> = {
     'read': 'info',
     'write': 'success',
-    'delete': 'danger'
+    'delete': 'danger',
+    'advanced': 'warning'
   }
   return typeMap[type] || ''
+}
+
+const getPermissionTypeLabel = (type: string) => {
+  const labelMap: Record<string, string> = {
+    'read': '查看',
+    'write': '操作',
+    'delete': '删除',
+    'advanced': '高级'
+  }
+  return labelMap[type] || type
 }
 
 // 获取角色级别对应的标签类型

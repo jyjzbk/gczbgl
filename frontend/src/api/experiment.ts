@@ -330,3 +330,91 @@ export interface Laboratory {
 export const getLaboratoriesApi = (params?: { school_id?: number; search?: string }) => {
   return request.get<{ data: Laboratory[] }>('/laboratories', { params })
 }
+
+// 实验统计相关接口
+export interface ExperimentStatistics {
+  total_experiments: number
+  completed_experiments: number
+  completion_rate: number
+  avg_quality_score: number
+  type_stats: {
+    required: number
+    optional: number
+    demo: number
+    group: number
+  }
+  grade_stats: Array<{
+    grade: number
+    total: number
+    completed: number
+    rate: number
+  }>
+}
+
+export interface TrendData {
+  period_type: string
+  date_range: {
+    start_date: string
+    end_date: string
+  }
+  trends: Array<{
+    period: string
+    total_count: number
+    avg_completion_rate: number
+    avg_quality_score: number
+  }>
+}
+
+export interface SubjectStatistics {
+  period: {
+    start_date: string
+    end_date: string
+  }
+  statistics: Array<{
+    subject_id: number
+    subject_name: string
+    subject_code: string
+    total_experiments: number
+    avg_completion_rate: number
+    avg_quality_score: number
+  }>
+}
+
+// 获取实验开出率统计
+export const getExperimentCompletionRateApi = (params?: {
+  school_id?: number
+  subject_id?: number
+  start_date?: string
+  end_date?: string
+  grade?: number
+}) => {
+  return request.get<{ data: ExperimentStatistics }>('/experiment-statistics/completion-rate', { params })
+}
+
+// 获取学校排名统计
+export const getSchoolRankingApi = (params?: {
+  start_date?: string
+  end_date?: string
+  limit?: number
+}) => {
+  return request.get('/experiment-statistics/school-ranking', { params })
+}
+
+// 获取实验趋势分析
+export const getExperimentTrendsApi = (params?: {
+  school_id?: number
+  period?: 'week' | 'month' | 'quarter' | 'year'
+  start_date?: string
+  end_date?: string
+}) => {
+  return request.get<{ data: TrendData }>('/experiment-statistics/trends', { params })
+}
+
+// 获取学科实验统计
+export const getSubjectStatisticsApi = (params?: {
+  school_id?: number
+  start_date?: string
+  end_date?: string
+}) => {
+  return request.get<{ data: SubjectStatistics }>('/experiment-statistics/subject-statistics', { params })
+}

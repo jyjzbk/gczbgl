@@ -71,6 +71,21 @@ export const getUserListApi = (params: UserListParams) => {
   return request.get<UserListResponse>('/users', { params })
 }
 
+// 获取组织下的用户列表接口
+export interface OrganizationUserListParams {
+  organization_id?: number
+  organization_level?: number
+  page?: number
+  per_page?: number
+  search?: string
+  role?: string
+  status?: string
+}
+
+export const getOrganizationUsersApi = (params: OrganizationUserListParams) => {
+  return request.get<UserListResponse>('/organizations/users', { params })
+}
+
 // 创建用户接口（管理员功能）
 export interface CreateUserParams {
   username: string

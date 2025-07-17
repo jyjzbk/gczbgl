@@ -365,9 +365,18 @@ const loadData = async () => {
 const loadSchools = async () => {
   try {
     const response = await getSchoolsApi()
-    schools.value = response.data
+    // 检查响应数据结构
+    if (response.data && Array.isArray(response.data.data)) {
+      schools.value = response.data.data
+    } else if (response.data && Array.isArray(response.data)) {
+      schools.value = response.data
+    } else {
+      console.warn('学校数据格式不正确:', response.data)
+      schools.value = []
+    }
   } catch (error) {
     console.error('加载学校列表失败:', error)
+    schools.value = []
   }
 }
 
@@ -375,9 +384,18 @@ const loadSchools = async () => {
 const loadLaboratories = async () => {
   try {
     const response = await getLaboratoriesApi()
-    laboratories.value = response.data
+    // 检查响应数据结构
+    if (response.data && Array.isArray(response.data.data)) {
+      laboratories.value = response.data.data
+    } else if (response.data && Array.isArray(response.data)) {
+      laboratories.value = response.data
+    } else {
+      console.warn('实验室数据格式不正确:', response.data)
+      laboratories.value = []
+    }
   } catch (error) {
     console.error('加载实验室列表失败:', error)
+    laboratories.value = []
   }
 }
 

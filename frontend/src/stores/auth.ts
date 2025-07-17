@@ -15,8 +15,15 @@ export interface UserInfo {
   role: string
   school_id?: number
   school_name?: string
+  organization_id?: number
+  organization_type?: string
+  organization_level?: number
+  organization_name?: string
+  department?: string
+  position?: string
   permissions: string[]
   created_at: string
+  updated_at?: string
 }
 
 export const useAuthStore = defineStore('auth', () => {

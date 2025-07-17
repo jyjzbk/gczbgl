@@ -38,26 +38,26 @@
       >
         <el-form-item label="审核结果" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio :label="1" :disabled="action === 'reject'">
+            <el-radio :label="2" :disabled="action === 'reject'">
               <el-icon color="#67c23a"><Check /></el-icon>
               通过
             </el-radio>
-            <el-radio :label="2" :disabled="action === 'approve'">
+            <el-radio :label="3" :disabled="action === 'approve'">
               <el-icon color="#f56c6c"><Close /></el-icon>
               拒绝
             </el-radio>
           </el-radio-group>
         </el-form-item>
         
-        <el-form-item 
-          :label="form.status === 1 ? '通过意见' : '拒绝原因'" 
+        <el-form-item
+          :label="form.status === 2 ? '通过意见' : '拒绝原因'"
           prop="review_remark"
         >
           <el-input
             v-model="form.review_remark"
             type="textarea"
             :rows="4"
-            :placeholder="form.status === 1 ? '请输入通过意见（可选）' : '请输入拒绝原因'"
+            :placeholder="form.status === 2 ? '请输入通过意见（可选）' : '请输入拒绝原因'"
             maxlength="500"
             show-word-limit
           />
@@ -84,7 +84,7 @@
         </div>
         
         <!-- 容量检查提醒 -->
-        <div v-if="form.status === 1 && capacityWarning" class="capacity-warning">
+        <div v-if="form.status === 2 && capacityWarning" class="capacity-warning">
           <el-alert
             title="容量提醒"
             type="info"
@@ -108,11 +108,11 @@
     <template #footer>
       <el-button @click="handleClose">取消</el-button>
       <el-button
-        :type="form.status === 1 ? 'success' : 'danger'"
+        :type="form.status === 2 ? 'success' : 'danger'"
         :loading="loading"
         @click="handleSubmit"
       >
-        {{ loading ? '处理中...' : (form.status === 1 ? '确认通过' : '确认拒绝') }}
+        {{ loading ? '处理中...' : (form.status === 2 ? '确认通过' : '确认拒绝') }}
       </el-button>
     </template>
   </el-dialog>
@@ -180,7 +180,8 @@ const rules: FormRules = {
   review_remark: [
     {
       validator: (rule: any, value: string, callback: any) => {
-        if (form.status === 2 && !value.trim()) {
+        // 修正：拒绝状态是3，不是2
+        if (form.status === 3 && !value.trim()) {
           callback(new Error('拒绝时必须填写拒绝原因'))
         } else {
           callback()
@@ -211,7 +212,8 @@ watch(visible, (newVal) => {
 
 // 初始化表单
 const initForm = () => {
-  form.status = props.action === 'approve' ? 1 : 2
+  // 状态值：2=已通过，3=已拒绝
+  form.status = props.action === 'approve' ? 2 : 3
   form.review_remark = ''
   formRef.value?.clearValidate()
 }
@@ -242,13 +244,18 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     
     loading.value = true
-    
-    await reviewExperimentReservationApi(props.booking.id, {
+
+    const reviewData = {
       status: form.status,
       review_remark: form.review_remark.trim() || undefined
-    })
+    }
+
+    console.log('发送审核数据:', reviewData)
+
+    await reviewExperimentReservationApi(props.booking.id, reviewData)
     
-    const actionText = form.status === 1 ? '通过' : '拒绝'
+    // 修正状态判断：2=通过，3=拒绝
+    const actionText = form.status === 2 ? '通过' : '拒绝'
     ElMessage.success(`${actionText}成功`)
     
     emit('success')

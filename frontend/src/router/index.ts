@@ -62,20 +62,7 @@ const router = createRouter({
       ]
     },
 
-    // 权限测试页面 (仅开发环境)
-    {
-      path: '/permission-test',
-      component: DefaultLayout,
-      meta: { requiresAuth: true },
-      children: [
-        {
-          path: '',
-          name: 'PermissionTest',
-          component: () => import('@/views/PermissionTest.vue'),
-          meta: { title: '权限测试' }
-        }
-      ]
-    },
+
     {
       path: '/profile',
       component: DefaultLayout,
@@ -93,7 +80,7 @@ const router = createRouter({
     {
       path: '/users',
       component: DefaultLayout,
-      meta: { requiresAuth: true, requiredPermissions: ['user', 'user.list'] },
+      meta: { requiresAuth: true },
       children: [
         {
           path: '',
@@ -209,6 +196,19 @@ const router = createRouter({
         }
       ]
     },
+    {
+      path: '/experiment-statistics',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'ExperimentStatistics',
+          component: () => import('@/views/experiment/ExperimentStatistics.vue'),
+          meta: { title: '实验统计' }
+        }
+      ]
+    },
     // 设备管理路由
     {
       path: '/equipment-management',
@@ -263,18 +263,14 @@ const router = createRouter({
       ]
     },
     // TODO: 其他实验管理页面待开发
+    // 调试页面
     {
-      path: '/icon-test',
-      component: DefaultLayout,
-      children: [
-        {
-          path: '',
-          name: 'IconTest',
-          component: () => import('@/views/IconTest.vue'),
-          meta: { title: '图标测试' }
-        }
-      ]
+      path: '/debug/auth',
+      name: 'AuthDebug',
+      component: () => import('@/views/debug/AuthDebug.vue'),
+      meta: { title: '认证调试' }
     },
+
     // 这里后续会添加更多路由
   ],
 })
