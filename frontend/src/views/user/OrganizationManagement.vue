@@ -684,11 +684,28 @@ const submitEdit = async () => {
       : ['name', 'code', 'address', 'contact_person', 'contact_phone', 'student_count', 'class_count', 'teacher_count']
 
     editableFields.forEach((field: string) => {
-      if (allowedFields.includes(field) && editForm[field as keyof typeof editForm] !== undefined) {
-        updateData[field] = editForm[field as keyof typeof editForm]
+      if (allowedFields.includes(field)) {
+        const value = editForm[field as keyof typeof editForm]
+
+        // 只提交有值的字段，并确保字符串字段不为空
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'string') {
+            // 字符串字段：只有非空字符串才提交
+            if (value.trim() !== '') {
+              updateData[field] = value.trim()
+            }
+          } else {
+            // 数字字段：直接提交
+            updateData[field] = value
+          }
+        }
       }
     })
-    
+
+    console.log('提交的数据:', updateData)
+    console.log('组织类型:', currentOrg.value.type)
+    console.log('组织ID:', currentOrg.value.id)
+
     await updateOrganizationApi(currentOrg.value.type, currentOrg.value.id, updateData)
     
     ElMessage.success('组织信息更新成功')

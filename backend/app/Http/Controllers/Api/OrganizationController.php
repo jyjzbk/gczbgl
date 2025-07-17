@@ -428,11 +428,11 @@ class OrganizationController extends Controller
             $validated = $request->validate([
                 'name' => 'sometimes|string|max:255',
                 'code' => 'sometimes|string|max:50',
-                'address' => 'sometimes|string|max:500',
-                'contact_person' => 'sometimes|string|max:100',
-                'contact_phone' => 'sometimes|string|max:20',
-                'email' => 'sometimes|email|max:100',
-                'description' => 'sometimes|string|max:1000',
+                'address' => 'sometimes|nullable|string|max:500',
+                'contact_person' => 'sometimes|nullable|string|max:100',
+                'contact_phone' => 'sometimes|nullable|string|max:20',
+                'email' => 'sometimes|nullable|email|max:100',
+                'description' => 'sometimes|nullable|string|max:1000',
             ]);
         } else {
             $validated = $request->validate([
