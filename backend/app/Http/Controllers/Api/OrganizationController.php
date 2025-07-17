@@ -257,9 +257,11 @@ class OrganizationController extends Controller
                 'level' => $region->level,
                 'parent_id' => $region->parent_id,
                 'sort_order' => $region->sort_order,
-                'address' => '', // 区域表没有address字段
-                'contact_person' => '', // 区域表没有contact_person字段
-                'contact_phone' => '', // 区域表没有contact_phone字段
+                'address' => $region->address ?? '',
+                'contact_person' => $region->contact_person ?? '',
+                'contact_phone' => $region->contact_phone ?? '',
+                'email' => $region->email ?? '',
+                'description' => $region->description ?? '',
                 'children' => [],
                 'editable_fields' => $canEditRegion ? $this->getEditableFields('region', $user->organization_level, $region->level) : [],
                 'stats' => $this->getRegionStats($region->id),
@@ -389,7 +391,7 @@ class OrganizationController extends Controller
     {
         if ($orgType === 'region') {
             // 区域的可编辑字段
-            $baseFields = ['name'];
+            $baseFields = ['name', 'address', 'contact_person', 'contact_phone', 'email', 'description'];
             $restrictedFields = ['code', 'level', 'parent_id'];
         } else {
             // 学校的可编辑字段
@@ -426,6 +428,11 @@ class OrganizationController extends Controller
             $validated = $request->validate([
                 'name' => 'sometimes|string|max:255',
                 'code' => 'sometimes|string|max:50',
+                'address' => 'sometimes|string|max:500',
+                'contact_person' => 'sometimes|string|max:100',
+                'contact_phone' => 'sometimes|string|max:20',
+                'email' => 'sometimes|email|max:100',
+                'description' => 'sometimes|string|max:1000',
             ]);
         } else {
             $validated = $request->validate([

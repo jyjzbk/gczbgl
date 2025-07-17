@@ -296,22 +296,23 @@
           <el-input v-model="editForm.name" placeholder="请输入组织名称" />
         </el-form-item>
         
-        <el-form-item 
+        <el-form-item
           v-if="canEditField('code')"
-          label="组织代码" 
+          label="组织代码"
           prop="code"
         >
           <el-input v-model="editForm.code" placeholder="请输入组织代码" />
         </el-form-item>
-        
+
+        <!-- 联系信息字段（区域和学校都有） -->
         <el-form-item label="联系人" prop="contact_person">
           <el-input v-model="editForm.contact_person" placeholder="请输入联系人" />
         </el-form-item>
-        
+
         <el-form-item label="联系电话" prop="contact_phone">
           <el-input v-model="editForm.contact_phone" placeholder="请输入联系电话" />
         </el-form-item>
-        
+
         <el-form-item label="地址" prop="address">
           <el-input
             v-model="editForm.address"
@@ -320,6 +321,22 @@
             placeholder="请输入详细地址"
           />
         </el-form-item>
+
+        <!-- 区域特有字段 -->
+        <template v-if="currentOrg?.type === 'region'">
+          <el-form-item label="邮箱地址" prop="email">
+            <el-input v-model="editForm.email" placeholder="请输入邮箱地址" />
+          </el-form-item>
+
+          <el-form-item label="机构描述" prop="description">
+            <el-input
+              v-model="editForm.description"
+              type="textarea"
+              :rows="3"
+              placeholder="请输入机构描述"
+            />
+          </el-form-item>
+        </template>
         
         <!-- 学校特有字段 -->
         <template v-if="currentOrg?.type === 'school'">
@@ -409,6 +426,8 @@ const editForm = reactive({
   contact_person: '',
   contact_phone: '',
   address: '',
+  email: '',
+  description: '',
   student_count: 0,
   class_count: 0,
   teacher_count: 0
@@ -431,6 +450,13 @@ const editRules: FormRules = {
   ],
   address: [
     { max: 500, message: '长度不能超过 500 个字符', trigger: 'blur' }
+  ],
+  email: [
+    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' },
+    { max: 100, message: '长度不能超过 100 个字符', trigger: 'blur' }
+  ],
+  description: [
+    { max: 1000, message: '长度不能超过 1000 个字符', trigger: 'blur' }
   ]
 }
 
@@ -589,6 +615,8 @@ const getFieldLabel = (field: string): string => {
     address: '地址',
     contact_person: '联系人',
     contact_phone: '联系电话',
+    email: '邮箱地址',
+    description: '机构描述',
     level: '组织级别',
     parent_id: '上级组织',
     region_id: '所属区域',
@@ -612,6 +640,8 @@ const editOrganization = (org: any) => {
   editForm.contact_person = org.contact_person || ''
   editForm.contact_phone = org.contact_phone || ''
   editForm.address = org.address || ''
+  editForm.email = org.email || ''
+  editForm.description = org.description || ''
   editForm.student_count = org.student_count || 0
   editForm.class_count = org.class_count || 0
   editForm.teacher_count = org.teacher_count || 0
@@ -627,6 +657,8 @@ const resetEditForm = () => {
     contact_person: '',
     contact_phone: '',
     address: '',
+    email: '',
+    description: '',
     student_count: 0,
     class_count: 0,
     teacher_count: 0
@@ -642,12 +674,17 @@ const submitEdit = async () => {
     
     submitting.value = true
     
-    // 只提交可编辑的字段
+    // 只提交可编辑的字段，并且根据组织类型过滤
     const updateData: any = {}
     const editableFields = currentOrg.value.editable_fields || []
-    
+
+    // 根据组织类型定义允许的字段
+    const allowedFields = currentOrg.value.type === 'region'
+      ? ['name', 'code']
+      : ['name', 'code', 'address', 'contact_person', 'contact_phone', 'student_count', 'class_count', 'teacher_count']
+
     editableFields.forEach((field: string) => {
-      if (editForm[field as keyof typeof editForm] !== undefined) {
+      if (allowedFields.includes(field) && editForm[field as keyof typeof editForm] !== undefined) {
         updateData[field] = editForm[field as keyof typeof editForm]
       }
     })

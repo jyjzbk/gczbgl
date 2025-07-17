@@ -14,7 +14,12 @@ class AdministrativeRegion extends Model
         'level',
         'parent_id',
         'sort_order',
-        'status'
+        'status',
+        'address',
+        'contact_person',
+        'contact_phone',
+        'email',
+        'description'
     ];
 
     protected $casts = [
