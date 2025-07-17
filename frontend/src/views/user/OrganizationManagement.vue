@@ -680,7 +680,7 @@ const submitEdit = async () => {
 
     // 根据组织类型定义允许的字段
     const allowedFields = currentOrg.value.type === 'region'
-      ? ['name', 'code']
+      ? ['name', 'code', 'address', 'contact_person', 'contact_phone', 'email', 'description']
       : ['name', 'code', 'address', 'contact_person', 'contact_phone', 'student_count', 'class_count', 'teacher_count']
 
     editableFields.forEach((field: string) => {
