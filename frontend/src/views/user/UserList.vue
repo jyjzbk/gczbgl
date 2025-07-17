@@ -718,9 +718,31 @@ const handleDialogSuccess = (user: any) => {
 }
 
 // 初始化
-onMounted(() => {
-  fetchRoleList()
-  // 用户列表将在选择组织后加载
+onMounted(async () => {
+  await fetchRoleList()
+
+  // 自动选择当前用户所属的组织
+  const authStore = useAuthStore()
+  const currentUser = authStore.user
+
+  if (currentUser && currentUser.school_id) {
+    // 学校管理员：自动选择所属学校
+    console.log('当前用户学校ID:', currentUser.school_id)
+
+    // 等待组织树加载完成后自动选择
+    setTimeout(() => {
+      if (organizationTreeRef.value) {
+        // 触发组织树的节点选择
+        const schoolNode = {
+          id: currentUser.school_id,
+          name: currentUser.school_name || '当前学校',
+          level: 5,
+          type: 'school'
+        }
+        handleOrganizationSelect(schoolNode)
+      }
+    }, 1000)
+  }
 })
 </script>
 

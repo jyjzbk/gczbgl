@@ -532,12 +532,24 @@ class OrganizationController extends Controller
         $dataScope = $this->permissionService->getUserDataScope($user);
 
         if ($dataScope['type'] !== 'all') {
-            $regionIds = $dataScope['region_ids'] ?? [];
-            if (!in_array($organizationId, $regionIds)) {
-                return response()->json([
-                    'code' => 403,
-                    'message' => '无权访问该组织的用户数据'
-                ], 403);
+            // 对于学校级组织，检查school_ids权限
+            if ($organizationLevel == 5) {
+                $schoolIds = $dataScope['school_ids'] ?? [];
+                if (!in_array($organizationId, $schoolIds)) {
+                    return response()->json([
+                        'code' => 403,
+                        'message' => '无权访问该学校的用户数据'
+                    ], 403);
+                }
+            } else {
+                // 对于区域级组织，检查region_ids权限
+                $regionIds = $dataScope['region_ids'] ?? [];
+                if (!in_array($organizationId, $regionIds)) {
+                    return response()->json([
+                        'code' => 403,
+                        'message' => '无权访问该组织的用户数据'
+                    ], 403);
+                }
             }
         }
 
