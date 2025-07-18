@@ -169,6 +169,32 @@ const router = createRouter({
         }
       ]
     },
+    {
+      path: '/laboratory-types',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'LaboratoryTypeManagement',
+          component: () => import('@/views/basic/LaboratoryTypeManagement.vue'),
+          meta: { title: '实验室类型管理' }
+        }
+      ]
+    },
+    {
+      path: '/equipment-standards',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'EquipmentStandardManagement',
+          component: () => import('@/views/basic/EquipmentStandardManagement.vue'),
+          meta: { title: '教学仪器配备标准' }
+        }
+      ]
+    },
     // 实验管理路由
     {
       path: '/experiment-catalogs',

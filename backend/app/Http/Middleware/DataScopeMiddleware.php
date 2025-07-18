@@ -95,22 +95,37 @@ class DataScopeMiddleware
                 $regionIds = $dataScope['region_ids'] ?? [];
 
                 if (!empty($schoolIds) || !empty($regionIds)) {
-                    $query->where(function($q) use ($schoolIds, $regionIds) {
-                        // 学校用户
+                    $query->where(function($q) use ($schoolIds, $regionIds, $dataScope) {
+                        // 学校用户 - 只显示管理范围内的学校用户
                         if (!empty($schoolIds)) {
                             $q->orWhere(function($sq) use ($schoolIds) {
                                 $sq->where('organization_type', 'school')
                                    ->whereIn('organization_id', $schoolIds);
                             });
-                            // 兼容旧数据
-                            $q->orWhereIn('school_id', $schoolIds);
+                            // 兼容旧数据 - 只显示管理范围内的学校用户
+                            $q->orWhere(function($sq) use ($schoolIds) {
+                                $sq->whereIn('school_id', $schoolIds)
+                                   ->where(function($ssq) {
+                                       $ssq->whereNull('organization_type')
+                                          ->orWhere('organization_type', 'school');
+                                   });
+                            });
                         }
 
-                        // 区域用户
+                        // 区域用户 - 根据数据范围类型决定显示哪些区域用户
                         if (!empty($regionIds)) {
-                            $q->orWhere(function($sq) use ($regionIds) {
-                                $sq->where('organization_type', 'region')
-                                   ->whereIn('organization_id', $regionIds);
+                            $q->orWhere(function($sq) use ($regionIds, $dataScope) {
+                                $sq->where('organization_type', 'region');
+
+                                // 根据用户级别决定可以看到的区域用户
+                                switch ($dataScope['type']) {
+                                    case 'district': // 学区级管理员
+                                        // 学区级管理员不应该看到区域用户，只看学校用户
+                                        $sq->whereRaw('1 = 0');
+                                        break;
+                                    default:
+                                        $sq->whereIn('organization_id', $regionIds);
+                                }
                             });
                         }
                     });

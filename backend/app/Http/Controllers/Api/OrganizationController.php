@@ -149,10 +149,13 @@ class OrganizationController extends Controller
             // 获取用户可管理的组织及其下级组织
             $allRegionIds = $regionIds;
 
-            // 递归获取所有下级组织ID
-            foreach ($regionIds as $regionId) {
-                $childIds = $this->getChildRegionIds($regionId);
-                $allRegionIds = array_merge($allRegionIds, $childIds);
+            // 对于学校管理员，不需要获取下级组织（学校是最底层）
+            if ($dataScope['type'] !== 'school') {
+                // 递归获取所有下级组织ID
+                foreach ($regionIds as $regionId) {
+                    $childIds = $this->getChildRegionIds($regionId);
+                    $allRegionIds = array_merge($allRegionIds, $childIds);
+                }
             }
 
             $allRegionIds = array_unique($allRegionIds);
@@ -167,10 +170,12 @@ class OrganizationController extends Controller
         // 构建树结构并添加统计信息
         if ($dataScope['type'] === 'all') {
             // 超级管理员，从根节点开始构建完整树
-            $tree = $this->buildTree($regions->toArray());
+            $regionsArray = $this->formatRegionsForTree($regions);
+            $tree = $this->buildTree($regionsArray);
         } else {
             // 非超级管理员，从用户可管理的最高级别组织开始构建树
-            $tree = $this->buildTreeForUser($regions->toArray(), $regionIds);
+            $regionsArray = $this->formatRegionsForTree($regions);
+            $tree = $this->buildTreeForUser($regionsArray, $regionIds);
 
             // 如果用户有学校权限，需要将学校添加到树中
             $schoolIds = $dataScope['school_ids'] ?? [];
@@ -310,6 +315,8 @@ class OrganizationController extends Controller
                 'code' => $school->code,
                 'level' => 5,
                 'region_id' => $school->region_id,
+                'school_type' => $school->type, // 添加学校类型字段
+                'school_level' => $school->level, // 添加学校管理级别字段
                 'address' => $school->address ?? '',
                 'contact_person' => $school->contact_person ?? '',
                 'contact_phone' => $school->contact_phone ?? '',
@@ -668,6 +675,14 @@ class OrganizationController extends Controller
         // 验证权限
         $dataScope = $this->permissionService->getUserDataScope($user);
 
+        // 首先检查是否是学校ID
+        $school = School::find($organizationId);
+        if ($school) {
+            // 这是学校节点，返回学校统计信息
+            return $this->getSchoolStatsForOrganization($school, $user, $dataScope);
+        }
+
+        // 不是学校，检查是否是区域
         if ($dataScope['type'] !== 'all') {
             $regionIds = $dataScope['region_ids'] ?? [];
             if (!in_array($organizationId, $regionIds)) {
@@ -727,6 +742,62 @@ class OrganizationController extends Controller
         $totalLaboratories = 0;
         if (class_exists(Laboratory::class) && $schoolIds->isNotEmpty()) {
             $totalLaboratories = Laboratory::whereIn('school_id', $schoolIds)->count();
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total_users' => $totalUsers,
+                'active_users' => $activeUsers,
+                'disabled_users' => $disabledUsers,
+                'total_schools' => $totalSchools,
+                'total_equipments' => $totalEquipments,
+                'total_laboratories' => $totalLaboratories
+            ]
+        ]);
+    }
+
+    /**
+     * 获取学校详细统计信息（用于组织统计API）
+     */
+    private function getSchoolStatsForOrganization(School $school, $user, array $dataScope): JsonResponse
+    {
+        // 验证权限：检查用户是否有权限访问该学校
+        if ($dataScope['type'] !== 'all') {
+            $schoolIds = $dataScope['school_ids'] ?? [];
+            $regionIds = $dataScope['region_ids'] ?? [];
+
+            // 检查是否有直接的学校权限或者区域权限
+            $hasPermission = in_array($school->id, $schoolIds) ||
+                           in_array($school->region_id, $regionIds);
+
+            if (!$hasPermission) {
+                return response()->json([
+                    'code' => 403,
+                    'message' => '无权访问该学校的统计数据'
+                ], 403);
+            }
+        }
+
+        // 统计该学校的用户数据
+        $userQuery = User::where('school_id', $school->id);
+        $totalUsers = $userQuery->count();
+        $activeUsers = (clone $userQuery)->where('status', 1)->count();
+        $disabledUsers = (clone $userQuery)->where('status', 0)->count();
+
+        // 学校数量固定为1（自己）
+        $totalSchools = 1;
+
+        // 统计设备数量
+        $totalEquipments = 0;
+        if (class_exists(Equipment::class)) {
+            $totalEquipments = Equipment::where('school_id', $school->id)->count();
+        }
+
+        // 统计实验室数量
+        $totalLaboratories = 0;
+        if (class_exists(Laboratory::class)) {
+            $totalLaboratories = Laboratory::where('school_id', $school->id)->count();
         }
 
         return response()->json([
@@ -1107,6 +1178,34 @@ class OrganizationController extends Controller
     }
 
     /**
+     * 格式化区域数据为树结构所需的格式
+     */
+    private function formatRegionsForTree($regions): array
+    {
+        $regionsArray = [];
+        foreach ($regions as $region) {
+            $regionsArray[] = [
+                'id' => $region->id,
+                'type' => 'region',
+                'name' => $region->name,
+                'code' => $region->code,
+                'level' => $region->level,
+                'parent_id' => $region->parent_id,
+                'sort_order' => $region->sort_order,
+                'address' => $region->address ?? '',
+                'contact_person' => $region->contact_person ?? '',
+                'contact_phone' => $region->contact_phone ?? '',
+                'email' => $region->email ?? '',
+                'description' => $region->description ?? '',
+                'status' => $region->status,
+                'created_at' => $region->created_at,
+                'updated_at' => $region->updated_at,
+            ];
+        }
+        return $regionsArray;
+    }
+
+    /**
      * 构建树结构
      */
     private function buildTree(array $items, int $parentId = 0): array
@@ -1140,6 +1239,8 @@ class OrganizationController extends Controller
                 'level' => 5,
                 'parent_id' => $school->region_id,
                 'region_id' => $school->region_id,
+                'school_type' => $school->type, // 添加学校类型字段
+                'school_level' => $school->level, // 添加学校管理级别字段
                 'address' => $school->address ?? '',
                 'contact_person' => $school->contact_person ?? '',
                 'contact_phone' => $school->contact_phone ?? '',

@@ -11,6 +11,7 @@ export interface OrganizationNode {
   parent_id: number | null
   sort_order: number
   status: number
+  type?: string // 'school' 表示学校节点
   children?: OrganizationNode[]
   user_count?: number
   school_count?: number

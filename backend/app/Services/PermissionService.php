@@ -306,6 +306,7 @@ class PermissionService
             case 4: // 学区级
                 $scope['type'] = 'district';
                 $scope['school_ids'] = $this->getDistrictSchoolIds($user->organization_id);
+                $scope['region_ids'] = [$user->organization_id]; // 学区管理员可以看到自己的学区
                 break;
 
             case 5: // 学校级

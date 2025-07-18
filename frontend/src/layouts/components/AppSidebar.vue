@@ -45,7 +45,9 @@
         </template>
         <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list', 'user.create'])" index="/schools">学校管理</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list', 'user.create'])" index="/laboratories">实验室管理</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['laboratory_type', 'laboratory_type.list'])" index="/laboratory-types">实验室类型管理</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list', 'user.create'])" index="/subjects">学科管理</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['equipment_standard', 'equipment_standard.list'])" index="/equipment-standards">教学仪器配备标准</el-menu-item>
       </el-sub-menu>
       
       <!-- 实验管理 -->

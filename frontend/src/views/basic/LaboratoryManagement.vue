@@ -80,10 +80,12 @@
                 clearable
                 style="width: 150px"
               >
-                <el-option label="物理实验室" :value="1" />
-                <el-option label="化学实验室" :value="2" />
-                <el-option label="生物实验室" :value="3" />
-                <el-option label="综合实验室" :value="4" />
+                <el-option
+                  v-for="type in laboratoryTypes"
+                  :key="type.id"
+                  :label="type.name"
+                  :value="type.id"
+                />
               </el-select>
             </el-form-item>
             <el-form-item label="状态">
@@ -115,7 +117,20 @@
             <el-table-column prop="id" label="ID" width="80" />
             <el-table-column prop="name" label="实验室名称" />
             <el-table-column prop="code" label="实验室编号" />
-            <el-table-column prop="type_name" label="实验室类型" />
+            <el-table-column label="实验室类型" width="120">
+              <template #default="{ row }">
+                <div class="type-display">
+                  <el-icon
+                    v-if="row.laboratory_type?.icon"
+                    :style="{ color: row.laboratory_type?.color || '#409EFF' }"
+                    class="type-icon"
+                  >
+                    <component :is="row.laboratory_type.icon" />
+                  </el-icon>
+                  <span>{{ row.laboratory_type?.name || row.type_name || '未知类型' }}</span>
+                </div>
+              </template>
+            </el-table-column>
             <el-table-column prop="school_name" label="所属学校" />
             <el-table-column prop="location" label="位置" show-overflow-tooltip />
             <el-table-column prop="capacity" label="容量" width="80" />
@@ -185,12 +200,14 @@
         <el-form-item label="实验室编号" prop="code">
           <el-input v-model="laboratoryForm.code" placeholder="请输入实验室编号" />
         </el-form-item>
-        <el-form-item label="实验室类型" prop="type">
-          <el-select v-model="laboratoryForm.type" placeholder="请选择实验室类型" style="width: 100%">
-            <el-option label="物理实验室" :value="1" />
-            <el-option label="化学实验室" :value="2" />
-            <el-option label="生物实验室" :value="3" />
-            <el-option label="综合实验室" :value="4" />
+        <el-form-item label="实验室类型" prop="type_id">
+          <el-select v-model="laboratoryForm.type_id" placeholder="请选择实验室类型" style="width: 100%">
+            <el-option
+              v-for="type in laboratoryTypes"
+              :key="type.id"
+              :label="type.name"
+              :value="type.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="位置" prop="location">
@@ -250,15 +267,19 @@ import {
   House
 } from '@element-plus/icons-vue'
 import {
+  getLaboratoryListApi,
   getOrganizationLaboratoriesApi,
   createLaboratoryApi,
   updateLaboratoryApi,
   deleteLaboratoryApi,
   type Laboratory,
   type CreateLaboratoryParams,
-  type UpdateLaboratoryParams,
-  LABORATORY_TYPES
+  type UpdateLaboratoryParams
 } from '@/api/laboratory'
+import {
+  getLaboratoryTypesApi,
+  type LaboratoryType
+} from '@/api/laboratoryType'
 import { getManageableSchoolsApi } from '@/api/organization'
 import {
   getOrganizationStatsApi,
@@ -290,6 +311,9 @@ const organizationStats = ref<OrganizationStats | null>(null)
 // 学校选项
 const schoolOptions = ref<any[]>([])
 
+// 实验室类型选项
+const laboratoryTypes = ref<LaboratoryType[]>([])
+
 // 是否可以选择学校
 const canSelectSchool = computed(() => {
   return authStore.userInfo?.organization_level && authStore.userInfo.organization_level < 5
@@ -315,7 +339,7 @@ const laboratoryForm = reactive({
   school_id: authStore.userInfo?.school_id || 0,
   name: '',
   code: '',
-  type: 1,
+  type_id: undefined as number | undefined,
   location: '',
   area: 0,
   capacity: 30,
@@ -337,7 +361,7 @@ const formRules: FormRules = {
     { required: true, message: '请输入实验室编号', trigger: 'blur' },
     { min: 2, max: 50, message: '实验室编号长度在 2 到 50 个字符', trigger: 'blur' }
   ],
-  type: [
+  type_id: [
     { required: true, message: '请选择实验室类型', trigger: 'change' }
   ],
   capacity: [
@@ -391,6 +415,17 @@ const getOrganizationLevelName = (level: number) => {
   return names[level as keyof typeof names] || '未知'
 }
 
+// 加载实验室类型
+const loadLaboratoryTypes = async () => {
+  try {
+    const response = await getLaboratoryTypesApi({ status: 1 }) // 只获取启用的类型
+    laboratoryTypes.value = response.data.data || response.data
+  } catch (error) {
+    console.error('加载实验室类型失败:', error)
+    ElMessage.error('加载实验室类型失败')
+  }
+}
+
 // 获取实验室列表
 const fetchLaboratoryList = async () => {
   if (!selectedOrganization.value) {
@@ -401,20 +436,48 @@ const fetchLaboratoryList = async () => {
 
   try {
     loading.value = true
-    const params = {
-      organization_id: selectedOrganization.value.id,
-      organization_level: selectedOrganization.value.level,
-      page: pagination.current_page,
-      per_page: pagination.per_page,
-      ...searchForm
-    }
 
-    const response = await getOrganizationLaboratoriesApi(params)
-    laboratoryList.value = response.data.items || response.data.data
+    // 判断是否是学校节点（通过 type 字段或 level === 5 来判断）
+    // 如果是学校节点，直接按学校ID过滤；否则按组织层级过滤
+    const isSchoolNode = (selectedOrganization.value as any).type === 'school' ||
+                        selectedOrganization.value.level === 5
 
-    // 更新分页信息
-    if (response.data.pagination) {
-      Object.assign(pagination, response.data.pagination)
+    let params: any
+
+    if (isSchoolNode) {
+      // 学校节点：直接按学校ID过滤
+      params = {
+        school_id: selectedOrganization.value.id,
+        page: pagination.current_page,
+        per_page: pagination.per_page,
+        ...searchForm
+      }
+
+      // 使用普通的实验室列表API
+      const response = await getLaboratoryListApi(params)
+      laboratoryList.value = response.data.data || response.data
+
+      // 更新分页信息
+      if (response.data.pagination) {
+        Object.assign(pagination, response.data.pagination)
+      }
+    } else {
+      // 区域节点：按组织层级过滤
+      params = {
+        organization_id: selectedOrganization.value.id,
+        organization_level: selectedOrganization.value.level,
+        page: pagination.current_page,
+        per_page: pagination.per_page,
+        ...searchForm
+      }
+
+      const response = await getOrganizationLaboratoriesApi(params)
+      laboratoryList.value = response.data.items || response.data.data
+
+      // 更新分页信息
+      if (response.data.pagination) {
+        Object.assign(pagination, response.data.pagination)
+      }
     }
   } catch (error) {
     console.error('获取实验室列表失败:', error)
@@ -516,7 +579,7 @@ const handleEdit = (laboratory: Laboratory) => {
     id: laboratory.id,
     name: laboratory.name,
     code: laboratory.code,
-    type: laboratory.type,
+    type_id: laboratory.type_id || laboratory.type, // 优先使用type_id，兼容旧数据
     location: laboratory.location,
     area: laboratory.area,
     capacity: laboratory.capacity,
@@ -563,7 +626,7 @@ const handleSubmit = async () => {
       school_id: authStore.userInfo?.school_id || laboratoryForm.school_id,
       name: laboratoryForm.name,
       code: laboratoryForm.code,
-      type: laboratoryForm.type,
+      type_id: laboratoryForm.type_id,
       location: laboratoryForm.location,
       area: laboratoryForm.area,
       capacity: laboratoryForm.capacity,
@@ -596,7 +659,7 @@ const resetForm = () => {
     id: 0,
     name: '',
     code: '',
-    type: 1,
+    type_id: undefined,
     location: '',
     area: 0,
     capacity: 30,
@@ -622,6 +685,7 @@ const loadSchoolOptions = async () => {
 // 初始化
 onMounted(() => {
   loadSchoolOptions()
+  loadLaboratoryTypes()
   // 实验室列表将在选择组织后加载
 })
 </script>
@@ -815,5 +879,16 @@ onMounted(() => {
     margin-right: 0;
     margin-bottom: 16px;
   }
+}
+
+/* 实验室类型显示样式 */
+.type-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.type-icon {
+  font-size: 14px;
 }
 </style>

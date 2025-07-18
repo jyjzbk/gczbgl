@@ -53,6 +53,12 @@
                 <el-button type="warning" size="small" @click="loadDefaultPermissions" :loading="loading">
                   恢复默认
                 </el-button>
+                <el-button size="small" @click="expandAllPermissions">
+                  展开全部
+                </el-button>
+                <el-button size="small" @click="collapseAllPermissions">
+                  折叠全部
+                </el-button>
                 <el-button type="primary" size="small" @click="refreshCurrentRolePermissions">
                   刷新权限
                 </el-button>
@@ -304,6 +310,30 @@ const loadDefaultPermissions = async () => {
     ElMessage.error('加载默认权限失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 展开全部权限
+const expandAllPermissions = () => {
+  if (permissionTreeRef.value) {
+    const allKeys: string[] = []
+    const collectKeys = (nodes: any[]) => {
+      nodes.forEach(node => {
+        allKeys.push(node.id)
+        if (node.children && node.children.length > 0) {
+          collectKeys(node.children)
+        }
+      })
+    }
+    collectKeys(permissionTree.value)
+    permissionTreeRef.value.setExpandedKeys(allKeys)
+  }
+}
+
+// 折叠全部权限
+const collapseAllPermissions = () => {
+  if (permissionTreeRef.value) {
+    permissionTreeRef.value.setExpandedKeys([])
   }
 }
 

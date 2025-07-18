@@ -18,7 +18,7 @@ class LaboratoryController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Laboratory::with(['school', 'manager']);
+        $query = Laboratory::with(['school', 'manager', 'laboratoryType']);
 
         // 应用数据权限过滤
         DataScopeMiddleware::applyDataScope($query, $request, 'laboratories');
@@ -83,7 +83,8 @@ class LaboratoryController extends Controller
             'school_id' => 'required|exists:schools,id',
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:50',
-            'type' => ['required', 'integer', Rule::in([1, 2, 3, 4])],
+            'type' => ['nullable', 'integer', Rule::in([1, 2, 3, 4])], // 兼容旧数据
+            'type_id' => 'nullable|exists:laboratory_types,id', // 新的类型关联
             'location' => 'nullable|string|max:200',
             'area' => 'nullable|numeric|min:0',
             'capacity' => 'integer|min:1|max:200',
@@ -92,6 +93,19 @@ class LaboratoryController extends Controller
             'safety_rules' => 'nullable|string',
             'status' => 'boolean'
         ]);
+
+        // 如果提供了type_id，则使用type_id；否则使用type（兼容性）
+        if (!isset($validated['type_id']) && !isset($validated['type'])) {
+            return response()->json([
+                'code' => 400,
+                'message' => '请选择实验室类型'
+            ], 400);
+        }
+
+        // 如果只提供了type_id，设置type为null（新的方式）
+        if (isset($validated['type_id']) && !isset($validated['type'])) {
+            $validated['type'] = null;
+        }
 
         // 验证创建权限
         if (!DataScopeMiddleware::canCreate($request, $validated)) {
@@ -114,7 +128,7 @@ class LaboratoryController extends Controller
         }
 
         $laboratory = Laboratory::create($validated);
-        $laboratory->load(['school', 'manager']);
+        $laboratory->load(['school', 'manager', 'laboratoryType']);
 
         return response()->json([
             'code' => 201,
@@ -154,7 +168,8 @@ class LaboratoryController extends Controller
             'school_id' => 'required|exists:schools,id',
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:50',
-            'type' => ['required', 'integer', Rule::in([1, 2, 3, 4])],
+            'type' => ['nullable', 'integer', Rule::in([1, 2, 3, 4])], // 兼容旧数据
+            'type_id' => 'nullable|exists:laboratory_types,id', // 新的类型关联
             'location' => 'nullable|string|max:200',
             'area' => 'nullable|numeric|min:0',
             'capacity' => 'integer|min:1|max:200',
@@ -163,6 +178,19 @@ class LaboratoryController extends Controller
             'safety_rules' => 'nullable|string',
             'status' => 'boolean'
         ]);
+
+        // 如果提供了type_id，则使用type_id；否则使用type（兼容性）
+        if (!isset($validated['type_id']) && !isset($validated['type'])) {
+            return response()->json([
+                'code' => 400,
+                'message' => '请选择实验室类型'
+            ], 400);
+        }
+
+        // 如果只提供了type_id，设置type为null（新的方式）
+        if (isset($validated['type_id']) && !isset($validated['type'])) {
+            $validated['type'] = null;
+        }
 
         // 验证更新权限
         if (!DataScopeMiddleware::canUpdate($request, $laboratory, $validated)) {
@@ -186,7 +214,7 @@ class LaboratoryController extends Controller
         }
 
         $laboratory->update($validated);
-        $laboratory->load(['school', 'manager']);
+        $laboratory->load(['school', 'manager', 'laboratoryType']);
 
         return response()->json([
             'code' => 200,

@@ -25,66 +25,92 @@ class RolePermissionSeeder extends Seeder
                 'role', 'role.list', 'role.create', 'role.update', 'role.delete',
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
+                'laboratory_type', 'laboratory_type.list', 'laboratory_type.create', 'laboratory_type.update', 'laboratory_type.delete',
+                'equipment_standard', 'equipment_standard.list', 'equipment_standard.create', 'equipment_standard.update', 'equipment_standard.delete',
                 'system', 'system.read', 'log', 'log.read'
             ],
             'province_researcher' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list'
+                'equipment', 'equipment.list',
+                'laboratory_type', 'laboratory_type.list',
+                'equipment_standard', 'equipment_standard.list'
             ],
 
             // 市级角色
             'city_admin' => [
                 'user', 'user.list', 'user.create', 'user.update',
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.borrow', 'equipment.maintenance'
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.borrow', 'equipment.maintenance',
+                'laboratory_type', 'laboratory_type.list',
+                'equipment_standard', 'equipment_standard.list'
             ],
             'city_researcher' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list'
+                'equipment', 'equipment.list',
+                'laboratory_type', 'laboratory_type.list',
+                'equipment_standard', 'equipment_standard.list'
             ],
 
             // 区县级角色
             'county_admin' => [
                 'user', 'user.list', 'user.create', 'user.update',
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.borrow', 'equipment.maintenance'
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.borrow', 'equipment.maintenance',
+                'laboratory_type', 'laboratory_type.list',
+                'equipment_standard', 'equipment_standard.list'
             ],
             'county_researcher' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list'
+                'equipment', 'equipment.list',
+                'laboratory_type', 'laboratory_type.list',
+                'equipment_standard', 'equipment_standard.list'
             ],
 
             // 学区级角色
             'district_admin' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list', 'equipment.borrow', 'equipment.maintenance'
+                'equipment', 'equipment.list', 'equipment.borrow', 'equipment.maintenance',
+                'laboratory_type', 'laboratory_type.list',
+                'equipment_standard', 'equipment_standard.list'
             ],
 
             // 学校级角色
             'school_principal' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list'
+                'equipment', 'equipment.list',
+                'laboratory_type', 'laboratory_type.list',
+                'equipment_standard', 'equipment_standard.list'
             ],
             'school_dean' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list', 'equipment.borrow', 'equipment.maintenance'
+                'equipment', 'equipment.list', 'equipment.borrow', 'equipment.maintenance',
+                'laboratory_type', 'laboratory_type.list',
+                'equipment_standard', 'equipment_standard.list'
             ],
             'school_experimenter' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list', 'equipment.borrow', 'equipment.maintenance'
+                'equipment', 'equipment.list', 'equipment.borrow', 'equipment.maintenance',
+                'laboratory_type', 'laboratory_type.list',
+                'equipment_standard', 'equipment_standard.list'
             ],
             'school_teacher' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list', 'equipment.borrow'
+                'equipment', 'equipment.list', 'equipment.borrow',
+                'laboratory_type', 'laboratory_type.list',
+                'equipment_standard', 'equipment_standard.list'
             ],
             'school_admin' => [
                 'user', 'user.list', 'user.create', 'user.update',
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance'
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
+                'laboratory_type', 'laboratory_type.list',
+                'equipment_standard', 'equipment_standard.list'
             ],
             'school_student' => [
                 'experiment', 'experiment.catalog', 'experiment.booking',
-                'equipment', 'equipment.list'
+                'equipment', 'equipment.list',
+                'laboratory_type', 'laboratory_type.list',
+                'equipment_standard', 'equipment_standard.list'
             ]
         ];
 

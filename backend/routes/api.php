@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\SchoolController;
 use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\Api\ExperimentCatalogController;
 use App\Http\Controllers\Api\LaboratoryController;
+use App\Http\Controllers\Api\LaboratoryTypeController;
+use App\Http\Controllers\Api\EquipmentStandardController;
 use App\Http\Controllers\Api\ExperimentReservationController;
 use App\Http\Controllers\Api\ExperimentRecordController;
 use App\Http\Controllers\Api\ExperimentStatisticsController;
@@ -114,6 +116,15 @@ Route::middleware('auth:api')->group(function () {
         Route::post('laboratories/{laboratory}/check-availability', [LaboratoryController::class, 'checkAvailability']);
         Route::get('laboratories/{laboratory}/schedule', [LaboratoryController::class, 'schedule']);
     });
+
+    // 实验室类型管理
+    Route::apiResource('laboratory-types', LaboratoryTypeController::class);
+    Route::post('laboratory-types/update-sort', [LaboratoryTypeController::class, 'updateSort']);
+
+    // 设备配备标准管理
+    Route::apiResource('equipment-standards', EquipmentStandardController::class);
+    Route::get('equipment-standards-subjects', [EquipmentStandardController::class, 'getSubjects']);
+    Route::post('equipment-standards/check-compliance', [EquipmentStandardController::class, 'checkCompliance']);
 
     // 实验预约管理
     Route::middleware(['data.scope'])->group(function () {

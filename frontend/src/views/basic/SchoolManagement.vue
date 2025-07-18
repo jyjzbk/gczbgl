@@ -16,158 +16,156 @@
       </div>
     </div>
 
-    <!-- 主要内容区域 -->
-    <div class="main-content">
-      <!-- 左侧组织树 -->
-      <div class="left-panel">
-        <OrganizationTree
-          ref="organizationTreeRef"
-          :show-stats="true"
-          :default-expand-level="2"
-          :selected-node-id="selectedOrganizationId"
-          @node-click="handleOrganizationSelect"
+    <!-- 工具栏区域 -->
+    <div class="toolbar-section">
+      <div class="search-area">
+        <el-input
+          v-model="searchQuery"
+          placeholder="搜索学校名称或代码"
+          :prefix-icon="Search"
+          clearable
+          style="width: 300px"
+          @input="handleSearch"
         />
       </div>
-
-      <!-- 右侧学校列表 -->
-      <div class="right-panel">
-        <!-- 当前组织信息 -->
-        <div class="current-organization" v-if="selectedOrganization">
-          <div class="org-info">
-            <div class="org-header">
-              <el-icon :color="getOrganizationColor(selectedOrganization.level)">
-                <component :is="getOrganizationIcon(selectedOrganization.level)" />
-              </el-icon>
-              <div class="org-details">
-                <h3>{{ selectedOrganization.name }}</h3>
-                <el-tag :type="getOrganizationTagType(selectedOrganization.level)" size="small">
-                  {{ getOrganizationLevelName(selectedOrganization.level) }}
-                </el-tag>
-              </div>
-            </div>
-            <div class="org-stats" v-if="organizationStats">
-              <div class="stat-item">
-                <span class="stat-label">学校总数</span>
-                <span class="stat-value">{{ organizationStats.total_schools }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">用户总数</span>
-                <span class="stat-value">{{ organizationStats.total_users }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">设备总数</span>
-                <span class="stat-value">{{ organizationStats.total_equipments }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 搜索区域 -->
-        <div class="search-section" v-if="selectedOrganization">
-          <el-form :model="searchForm" inline>
-            <el-form-item label="学校名称">
-              <el-input
-                v-model="searchForm.search"
-                placeholder="请输入学校名称"
-                clearable
-                style="width: 200px"
-              />
-            </el-form-item>
-            <el-form-item label="学校类型">
-              <el-select
-                v-model="searchForm.type"
-                placeholder="请选择学校类型"
-                clearable
-                style="width: 150px"
-              >
-                <el-option label="小学" :value="1" />
-                <el-option label="初中" :value="2" />
-                <el-option label="高中" :value="3" />
-                <el-option label="九年一贯制" :value="4" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="状态">
-              <el-select
-                v-model="searchForm.status"
-                placeholder="请选择状态"
-                clearable
-                style="width: 120px"
-              >
-                <el-option label="正常" :value="1" />
-                <el-option label="禁用" :value="0" />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="handleSearch">搜索</el-button>
-              <el-button @click="handleReset">重置</el-button>
-            </el-form-item>
-          </el-form>
-        </div>
-
-        <!-- 学校列表 -->
-        <div class="table-section" v-if="selectedOrganization">
-          <el-table
-            v-loading="loading"
-            :data="schoolList"
-            stripe
-            style="width: 100%"
-          >
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="name" label="学校名称" />
-            <el-table-column prop="code" label="学校代码" />
-            <el-table-column prop="type_name" label="学校类型" />
-            <el-table-column prop="region_name" label="所属区域" />
-            <el-table-column prop="address" label="地址" show-overflow-tooltip />
-            <el-table-column prop="contact_person" label="联系人" />
-            <el-table-column prop="contact_phone" label="联系电话" />
-            <el-table-column label="状态" width="100">
-              <template #default="{ row }">
-                <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-                  {{ row.status === 1 ? '正常' : '禁用' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="180" fixed="right">
-              <template #default="{ row }">
-                <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-                <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <!-- 分页 -->
-          <div class="pagination-section">
-            <el-pagination
-              v-model:current-page="pagination.current_page"
-              v-model:page-size="pagination.per_page"
-              :page-sizes="[10, 20, 50, 100]"
-              :total="pagination.total"
-              layout="total, sizes, prev, pager, next, jumper"
-              @size-change="handleSizeChange"
-              @current-change="handleCurrentChange"
-            />
-          </div>
-        </div>
-
-        <!-- 空状态 -->
-        <div class="empty-state" v-if="!selectedOrganization">
-          <el-empty description="请选择左侧组织架构查看学校列表" />
-        </div>
+      <div class="toolbar-buttons">
+        <el-button :icon="Plus" @click="expandAll">展开全部</el-button>
+        <el-button :icon="Minus" @click="collapseAll">折叠全部</el-button>
+        <el-button :icon="Refresh" @click="refreshData">刷新</el-button>
       </div>
     </div>
 
-    <!-- 新增/编辑对话框 -->
+    <!-- 学校树形结构 -->
+    <div class="school-tree">
+      <el-tree
+        ref="treeRef"
+        v-loading="loading"
+        :data="treeData"
+        :props="treeProps"
+        :filter-node-method="filterNode"
+        :expand-on-click-node="false"
+        :default-expand-all="false"
+        node-key="id"
+        class="school-tree-component"
+      >
+        <template #default="{ node, data }">
+          <div class="tree-node">
+            <div class="node-content">
+              <!-- 组织/学校图标 -->
+              <el-icon class="node-icon" :class="getNodeIconClass(data)">
+                <component :is="getNodeIcon(data)" />
+              </el-icon>
+
+              <!-- 节点信息 -->
+              <div class="node-info">
+                <div class="node-name">{{ data.name }}</div>
+                <el-tag
+                  :type="getNodeTagType(data)"
+                  size="small"
+                  class="node-tag"
+                >
+                  {{ getNodeTypeLabel(data) }}
+                </el-tag>
+              </div>
+            </div>
+
+            <!-- 统计信息 -->
+            <div class="node-stats" v-if="data.stats || data.type === 'school'">
+              <div class="stat-item" v-if="data.stats && data.stats.schools !== undefined">
+                <el-icon><OfficeBuilding /></el-icon>
+                <span>{{ data.stats.schools }}</span>
+              </div>
+              <div class="stat-item" v-if="data.stats && data.stats.users !== undefined">
+                <el-icon><User /></el-icon>
+                <span>{{ data.stats.users }}</span>
+              </div>
+              <div class="stat-item" v-if="data.student_count">
+                <el-icon><User /></el-icon>
+                <span>{{ data.student_count }}</span>
+              </div>
+              <div class="stat-item" v-if="data.class_count">
+                <el-icon><OfficeBuilding /></el-icon>
+                <span>{{ data.class_count }}</span>
+              </div>
+              <div class="stat-item" v-if="data.teacher_count">
+                <el-icon><Avatar /></el-icon>
+                <span>{{ data.teacher_count }}</span>
+              </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="node-actions" v-if="data.type === 'school'">
+              <el-button
+                type="primary"
+                :icon="View"
+                size="small"
+                @click.stop="viewSchool(data)"
+              >
+                查看
+              </el-button>
+              <el-button
+                type="warning"
+                :icon="Edit"
+                size="small"
+                @click.stop="editSchool(data)"
+              >
+                编辑
+              </el-button>
+            </div>
+          </div>
+        </template>
+      </el-tree>
+    </div>
+
+    <!-- 学校详情对话框 -->
     <el-dialog
-      v-model="dialogVisible"
+      v-model="detailDialogVisible"
+      title="学校详情"
+      width="600px"
+      destroy-on-close
+    >
+      <div class="school-detail" v-if="currentDetailSchool">
+        <div class="detail-header">
+          <el-avatar :size="60" :icon="SchoolIcon" />
+          <div class="detail-title">
+            <h2>{{ currentDetailSchool.name }}</h2>
+            <el-tag :type="getSchoolTypeTag(currentDetailSchool.type)">
+              {{ getSchoolTypeName(currentDetailSchool.type) }}
+            </el-tag>
+          </div>
+        </div>
+        
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="学校代码">{{ currentDetailSchool.code }}</el-descriptions-item>
+          <el-descriptions-item label="所属区域">{{ currentDetailSchool.region_name }}</el-descriptions-item>
+          <el-descriptions-item label="联系人">{{ currentDetailSchool.contact_person }}</el-descriptions-item>
+          <el-descriptions-item label="联系电话">{{ currentDetailSchool.contact_phone }}</el-descriptions-item>
+          <el-descriptions-item label="学校地址" :span="2">{{ currentDetailSchool.address }}</el-descriptions-item>
+          <el-descriptions-item label="学生数量">{{ currentDetailSchool.student_count }}</el-descriptions-item>
+          <el-descriptions-item label="班级数量">{{ currentDetailSchool.class_count }}</el-descriptions-item>
+          <el-descriptions-item label="教师数量">{{ currentDetailSchool.teacher_count }}</el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag :type="currentDetailSchool.status === 1 ? 'success' : 'danger'">
+              {{ currentDetailSchool.status === 1 ? '正常' : '禁用' }}
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+    </el-dialog>
+
+    <!-- 学校编辑对话框 -->
+    <el-dialog
+      v-model="editDialogVisible"
       :title="isEdit ? '编辑学校' : '新增学校'"
       width="600px"
-      :close-on-click-modal="false"
+      destroy-on-close
     >
       <el-form
         ref="formRef"
         :model="schoolForm"
         :rules="formRules"
         label-width="100px"
+        style="max-height: 500px; overflow-y: auto"
       >
         <el-form-item label="学校名称" prop="name">
           <el-input v-model="schoolForm.name" placeholder="请输入学校名称" />
@@ -177,33 +175,29 @@
         </el-form-item>
         <el-form-item label="学校类型" prop="type">
           <el-select v-model="schoolForm.type" placeholder="请选择学校类型" style="width: 100%">
-            <el-option label="小学" :value="1" />
-            <el-option label="初中" :value="2" />
-            <el-option label="高中" :value="3" />
-            <el-option label="九年一贯制" :value="4" />
+            <el-option :value="1" label="小学" />
+            <el-option :value="2" label="初中" />
+            <el-option :value="3" label="高中" />
+            <el-option :value="4" label="九年一贯制" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="管理级别" prop="level">
-          <el-select v-model="schoolForm.level" placeholder="请选择管理级别" style="width: 100%">
-            <el-option label="省直" :value="1" />
-            <el-option label="市直" :value="2" />
-            <el-option label="区县直" :value="3" />
-            <el-option label="学区" :value="4" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="学校地址" prop="address">
-          <el-input
-            v-model="schoolForm.address"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入学校地址"
-          />
         </el-form-item>
         <el-form-item label="联系人" prop="contact_person">
           <el-input v-model="schoolForm.contact_person" placeholder="请输入联系人" />
         </el-form-item>
         <el-form-item label="联系电话" prop="contact_phone">
           <el-input v-model="schoolForm.contact_phone" placeholder="请输入联系电话" />
+        </el-form-item>
+        <el-form-item label="学校地址" prop="address">
+          <el-input v-model="schoolForm.address" placeholder="请输入学校地址" />
+        </el-form-item>
+        <el-form-item label="学生数量" prop="student_count">
+          <el-input-number v-model="schoolForm.student_count" :min="0" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="班级数量" prop="class_count">
+          <el-input-number v-model="schoolForm.class_count" :min="0" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="教师数量" prop="teacher_count">
+          <el-input-number v-model="schoolForm.teacher_count" :min="0" style="width: 100%" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="schoolForm.status">
@@ -213,76 +207,66 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="submitting" @click="handleSubmit">
-            {{ isEdit ? '更新' : '创建' }}
-          </el-button>
-        </div>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitForm" :loading="submitting">确定</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import {
   Plus,
+  Minus,
   Refresh,
+  Search,
+  View,
+  Edit,
+  User,
+  Phone,
+  Avatar,
+  School as SchoolIcon,
   OfficeBuilding,
   Operation,
   MapLocation,
-  Location,
-  House
+  Location
 } from '@element-plus/icons-vue'
 import {
-  getOrganizationSchoolsApi,
+  getOrganizationTreeApi,
+  type OrganizationNode
+} from '@/api/organization'
+import {
   createSchoolApi,
   updateSchoolApi,
-  deleteSchoolApi,
   type School,
   type CreateSchoolParams,
-  type UpdateSchoolParams,
-  SCHOOL_TYPES,
-  SCHOOL_LEVELS
+  type UpdateSchoolParams
 } from '@/api/school'
-import {
-  getOrganizationStatsApi,
-  type OrganizationNode,
-  type OrganizationStats
-} from '@/api/organization'
-import OrganizationTree from '@/components/OrganizationTree.vue'
 
 // 响应式数据
 const loading = ref(false)
 const submitting = ref(false)
-const dialogVisible = ref(false)
+const editDialogVisible = ref(false)
+const detailDialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
-const organizationTreeRef = ref()
+const treeRef = ref()
 
-// 学校列表
-const schoolList = ref<School[]>([])
+// 树形数据
+const treeData = ref<any[]>([])
+const searchQuery = ref('')
 
-// 组织相关数据
-const selectedOrganization = ref<OrganizationNode | null>(null)
-const selectedOrganizationId = ref<number | undefined>(undefined)
-const organizationStats = ref<OrganizationStats | null>(null)
+// 当前操作的学校
+const currentSchool = ref<School | null>(null)
+const currentDetailSchool = ref<School | null>(null)
 
-// 搜索表单
-const searchForm = reactive({
-  search: '',
-  type: undefined as number | undefined,
-  status: undefined as number | undefined
-})
-
-// 分页信息
-const pagination = reactive({
-  current_page: 1,
-  per_page: 20,
-  total: 0
-})
+// 树形组件配置
+const treeProps = {
+  children: 'children',
+  label: 'name'
+}
 
 // 学校表单
 const schoolForm = reactive({
@@ -290,10 +274,12 @@ const schoolForm = reactive({
   name: '',
   code: '',
   type: 1,
-  level: 1,
   address: '',
   contact_person: '',
   contact_phone: '',
+  student_count: 0,
+  class_count: 0,
+  teacher_count: 0,
   status: 1
 })
 
@@ -310,12 +296,6 @@ const formRules: FormRules = {
   type: [
     { required: true, message: '请选择学校类型', trigger: 'change' }
   ],
-  level: [
-    { required: true, message: '请选择管理级别', trigger: 'change' }
-  ],
-  address: [
-    { required: true, message: '请输入学校地址', trigger: 'blur' }
-  ],
   contact_person: [
     { required: true, message: '请输入联系人', trigger: 'blur' }
   ],
@@ -325,281 +305,280 @@ const formRules: FormRules = {
   ]
 }
 
-// 组织相关辅助函数
-const getOrganizationIcon = (level: number) => {
-  const icons = {
-    1: Operation,     // 省级
-    2: MapLocation,   // 市级
-    3: Location,      // 区县级
-    4: OfficeBuilding, // 学区级
-    5: House          // 学校级
-  }
-  return icons[level as keyof typeof icons] || OfficeBuilding
-}
-
-const getOrganizationColor = (level: number) => {
-  const colors = {
-    1: '#409EFF', // 省级 - 蓝色
-    2: '#67C23A', // 市级 - 绿色
-    3: '#E6A23C', // 区县级 - 橙色
-    4: '#F56C6C', // 学区级 - 红色
-    5: '#909399'  // 学校级 - 灰色
-  }
-  return colors[level as keyof typeof colors] || '#909399'
-}
-
-const getOrganizationTagType = (level: number) => {
-  const types = {
-    1: 'primary',
-    2: 'success',
-    3: 'warning',
-    4: 'danger',
-    5: 'info'
-  }
-  return types[level as keyof typeof types] || 'info'
-}
-
-const getOrganizationLevelName = (level: number) => {
-  const names = {
-    1: '省级',
-    2: '市级',
-    3: '区县级',
-    4: '学区级',
-    5: '学校级'
-  }
-  return names[level as keyof typeof names] || '未知'
-}
-
-// 获取学校列表
-const fetchSchoolList = async () => {
-  if (!selectedOrganization.value) {
-    schoolList.value = []
-    pagination.total = 0
-    return
-  }
-
-  try {
-    loading.value = true
-    const params = {
-      organization_id: selectedOrganization.value.id,
-      organization_level: selectedOrganization.value.level,
-      page: pagination.current_page,
-      per_page: pagination.per_page,
-      ...searchForm
+// 节点相关辅助函数
+const getNodeIcon = (data: any) => {
+  if (data.type === 'region') {
+    switch (data.level) {
+      case 1: return Operation      // 省级
+      case 2: return MapLocation    // 市级
+      case 3: return Location       // 区县级
+      case 4: return OfficeBuilding // 学区级
+      default: return OfficeBuilding
     }
+  } else {
+    return SchoolIcon // 学校
+  }
+}
 
-    const response = await getOrganizationSchoolsApi(params)
-    schoolList.value = response.data.items || response.data.data
+const getNodeIconClass = (data: any) => {
+  if (data.type === 'region') {
+    switch (data.level) {
+      case 1: return 'icon-province'
+      case 2: return 'icon-city'
+      case 3: return 'icon-county'
+      case 4: return 'icon-district'
+      default: return 'icon-region'
+    }
+  } else {
+    return 'icon-school'
+  }
+}
 
-    // 更新分页信息
-    if (response.data.pagination) {
-      Object.assign(pagination, response.data.pagination)
+const getNodeTagType = (data: any) => {
+  if (data.type === 'region') {
+    switch (data.level) {
+      case 1: return 'primary'  // 省级
+      case 2: return 'success'  // 市级
+      case 3: return 'warning'  // 区县级
+      case 4: return 'danger'   // 学区级
+      default: return 'info'
+    }
+  } else {
+    // 对于学校节点，根据学校类型返回不同的标签颜色
+    return getSchoolTypeTag(data.school_type || 1)
+  }
+}
+
+const getNodeTypeLabel = (data: any) => {
+  if (data.type === 'region') {
+    switch (data.level) {
+      case 1: return '省级'
+      case 2: return '市级'
+      case 3: return '区县级'
+      case 4: return '学区级'
+      default: return '区域'
+    }
+  } else {
+    // 对于学校节点，使用 school_type 字段
+    return getSchoolTypeName(data.school_type || 1)
+  }
+}
+
+// 学校类型相关辅助函数
+const getSchoolTypeName = (type: number) => {
+  const types = {
+    1: '小学',
+    2: '初中',
+    3: '高中',
+    4: '九年一贯制'
+  }
+  return types[type as keyof typeof types] || '其他'
+}
+
+const getSchoolTypeTag = (type: number) => {
+  const tags = {
+    1: 'success',  // 小学
+    2: 'warning',  // 初中
+    3: 'danger',   // 高中
+    4: 'primary'   // 九年一贯制
+  }
+  return tags[type as keyof typeof tags] || 'info'
+}
+
+// 树形过滤方法
+const filterNode = (value: string, data: any) => {
+  if (!value) return true
+  return data.name.includes(value) || (data.code && data.code.includes(value))
+}
+
+// 获取组织和学校树
+const fetchOrganizationTree = async () => {
+  loading.value = true
+  try {
+    const response = await getOrganizationTreeApi()
+    if (response.data) {
+      treeData.value = response.data
     }
   } catch (error) {
-    console.error('获取学校列表失败:', error)
-    ElMessage.error('获取学校列表失败')
-    // 如果API不存在，使用模拟数据
-    schoolList.value = [
-      {
-        id: 1,
-        name: '郑州市中原区实验小学',
-        code: 'ZY001',
-        type: 1,
-        type_name: '小学',
-        level: 3,
-        level_name: '区县直',
-        region_id: 1,
-        region_name: '中原区',
-        address: '河南省郑州市中原区建设路123号',
-        contact_person: '张校长',
-        contact_phone: '0371-12345678',
-        student_count: 1200,
-        class_count: 24,
-        teacher_count: 80,
-        status: 1,
-        created_at: '2024-01-01 00:00:00',
-        updated_at: '2024-01-01 00:00:00'
-      },
-      {
-        id: 2,
-        name: '郑州市第一中学',
-        code: 'ZY002',
-        type: 3,
-        type_name: '高中',
-        level: 2,
-        level_name: '市直',
-        region_id: 1,
-        region_name: '中原区',
-        address: '河南省郑州市中原区中原路456号',
-        contact_person: '李校长',
-        contact_phone: '0371-23456789',
-        student_count: 2400,
-        class_count: 48,
-        teacher_count: 180,
-        status: 1,
-        created_at: '2024-01-01 00:00:00',
-        updated_at: '2024-01-01 00:00:00'
-      }
-    ]
-    pagination.total = schoolList.value.length
+    console.error('获取组织树失败:', error)
+    ElMessage.error('获取组织树失败')
+    treeData.value = []
   } finally {
     loading.value = false
   }
 }
 
-// 组织选择处理
-const handleOrganizationSelect = async (organization: OrganizationNode) => {
-  console.log('选择组织:', organization)
-  selectedOrganization.value = organization
-  selectedOrganizationId.value = organization.id
+// 树形相关方法
+const expandAll = async () => {
+  if (loading.value) {
+    ElMessage.warning('数据加载中，请稍后再试')
+    return
+  }
 
-  // 重置分页
-  pagination.current_page = 1
+  if (treeData.value.length === 0) {
+    await fetchOrganizationTree()
+  }
 
-  // 重置搜索条件
-  searchForm.search = ''
-  searchForm.type = undefined
-  searchForm.status = undefined
+  await nextTick()
 
-  // 获取组织统计信息
-  await fetchOrganizationStats(organization.id)
-
-  // 获取学校列表
-  await fetchSchoolList()
-}
-
-// 获取组织统计信息
-const fetchOrganizationStats = async (organizationId: number) => {
-  try {
-    const response = await getOrganizationStatsApi(organizationId)
-    if (response.success) {
-      organizationStats.value = response.data
+  const tree = treeRef.value
+  if (tree && treeData.value.length > 0) {
+    try {
+      if (tree.store && tree.store.nodesMap) {
+        const nodesMap = tree.store.nodesMap
+        Object.values(nodesMap).forEach((node: any) => {
+          if (node && node.childNodes && node.childNodes.length > 0) {
+            node.expanded = true
+          }
+        })
+        ElMessage.success('已展开所有节点')
+      }
+    } catch (error) {
+      console.error('展开所有节点失败:', error)
+      ElMessage.error('展开失败，请重试')
     }
-  } catch (error) {
-    console.error('获取组织统计信息失败:', error)
-    organizationStats.value = null
+  } else {
+    ElMessage.warning('树形组件未就绪或数据为空')
   }
 }
 
-// 刷新数据
-const refreshData = () => {
-  if (organizationTreeRef.value) {
-    organizationTreeRef.value.refreshTree()
+const collapseAll = async () => {
+  if (loading.value) {
+    ElMessage.warning('数据加载中，请稍后再试')
+    return
   }
-  if (selectedOrganization.value) {
-    fetchOrganizationStats(selectedOrganization.value.id)
-    fetchSchoolList()
+
+  await nextTick()
+
+  const tree = treeRef.value
+  if (tree && treeData.value.length > 0) {
+    try {
+      if (tree.store && tree.store.nodesMap) {
+        const nodesMap = tree.store.nodesMap
+        Object.values(nodesMap).forEach((node: any) => {
+          if (node && node.childNodes && node.childNodes.length > 0) {
+            node.expanded = false
+          }
+        })
+        ElMessage.success('已折叠所有节点')
+      }
+    } catch (error) {
+      console.error('折叠所有节点失败:', error)
+      ElMessage.error('折叠失败，请重试')
+    }
+  } else {
+    ElMessage.warning('树形组件未就绪或数据为空')
   }
 }
 
-// 搜索
 const handleSearch = () => {
-  pagination.current_page = 1
-  fetchSchoolList()
+  const tree = treeRef.value
+  if (tree) {
+    tree.filter(searchQuery.value)
+  }
 }
 
-// 重置搜索
-const handleReset = () => {
-  Object.assign(searchForm, {
-    search: '',
-    type: undefined,
-    status: undefined
-  })
-  pagination.current_page = 1
-  fetchSchoolList()
+// 学校操作方法
+const viewSchool = (school: School) => {
+  currentDetailSchool.value = school
+  detailDialogVisible.value = true
 }
 
-// 分页大小改变
-const handleSizeChange = (size: number) => {
-  pagination.per_page = size
-  pagination.current_page = 1
-  fetchSchoolList()
-}
-
-// 当前页改变
-const handleCurrentChange = (page: number) => {
-  pagination.current_page = page
-  fetchSchoolList()
-}
-
-// 新增学校
-const handleCreate = () => {
-  isEdit.value = false
-  resetForm()
-  dialogVisible.value = true
-}
-
-// 编辑学校
-const handleEdit = (school: School) => {
+const editSchool = (school: School) => {
+  currentSchool.value = school
   isEdit.value = true
+
+  // 填充表单
   Object.assign(schoolForm, {
     id: school.id,
     name: school.name,
     code: school.code,
     type: school.type,
-    level: school.level,
-    address: school.address,
-    contact_person: school.contact_person,
-    contact_phone: school.contact_phone,
+    address: school.address || '',
+    contact_person: school.contact_person || '',
+    contact_phone: school.contact_phone || '',
+    student_count: school.student_count || 0,
+    class_count: school.class_count || 0,
+    teacher_count: school.teacher_count || 0,
     status: school.status
   })
-  dialogVisible.value = true
+
+  editDialogVisible.value = true
 }
 
-// 删除学校
-const handleDelete = async (school: School) => {
-  try {
-    await ElMessageBox.confirm(
-      `确定要删除学校 "${school.name}" 吗？此操作不可恢复！`,
-      '删除学校',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-
-    await deleteSchoolApi(school.id)
-    ElMessage.success('学校删除成功')
-    fetchSchoolList()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('删除学校失败:', error)
-      ElMessage.error('删除学校失败')
-    }
-  }
+const handleCreate = () => {
+  currentSchool.value = null
+  isEdit.value = false
+  resetForm()
+  editDialogVisible.value = true
 }
 
-// 提交表单
-const handleSubmit = async () => {
+const resetForm = () => {
+  Object.assign(schoolForm, {
+    id: 0,
+    name: '',
+    code: '',
+    type: 1,
+    address: '',
+    contact_person: '',
+    contact_phone: '',
+    student_count: 0,
+    class_count: 0,
+    teacher_count: 0,
+    status: 1
+  })
+  formRef.value?.clearValidate()
+}
+
+const submitForm = async () => {
   if (!formRef.value) return
 
   try {
     await formRef.value.validate()
     submitting.value = true
 
-    const formData = {
-      name: schoolForm.name,
-      code: schoolForm.code,
-      type: schoolForm.type,
-      level: schoolForm.level,
-      region_id: 1, // 默认区域ID，实际应该从表单选择
-      address: schoolForm.address,
-      contact_person: schoolForm.contact_person,
-      contact_phone: schoolForm.contact_phone,
-      status: schoolForm.status
-    }
+    if (isEdit.value && currentSchool.value) {
+      // 更新学校
+      const params: UpdateSchoolParams = {
+        name: schoolForm.name,
+        code: schoolForm.code,
+        type: schoolForm.type,
+        level: 5, // 学校级别
+        region_id: 1, // 默认区域ID，实际应该从当前用户的组织获取
+        address: schoolForm.address,
+        contact_person: schoolForm.contact_person,
+        contact_phone: schoolForm.contact_phone,
+        student_count: schoolForm.student_count,
+        class_count: schoolForm.class_count,
+        teacher_count: schoolForm.teacher_count,
+        status: schoolForm.status
+      }
 
-    if (isEdit.value) {
-      await updateSchoolApi(schoolForm.id, formData)
+      await updateSchoolApi(currentSchool.value.id, params)
       ElMessage.success('学校更新成功')
     } else {
-      await createSchoolApi(formData as CreateSchoolParams)
+      // 创建学校
+      const params: CreateSchoolParams = {
+        name: schoolForm.name,
+        code: schoolForm.code,
+        type: schoolForm.type,
+        level: 5, // 学校级别
+        region_id: 1, // 默认区域ID，实际应该从当前用户的组织获取
+        address: schoolForm.address,
+        contact_person: schoolForm.contact_person,
+        contact_phone: schoolForm.contact_phone,
+        student_count: schoolForm.student_count,
+        class_count: schoolForm.class_count,
+        teacher_count: schoolForm.teacher_count,
+        status: schoolForm.status
+      }
+
+      await createSchoolApi(params)
       ElMessage.success('学校创建成功')
     }
 
-    dialogVisible.value = false
-    fetchSchoolList()
+    editDialogVisible.value = false
+    refreshData()
   } catch (error) {
     console.error('提交失败:', error)
     ElMessage.error(isEdit.value ? '学校更新失败' : '学校创建失败')
@@ -608,37 +587,97 @@ const handleSubmit = async () => {
   }
 }
 
-// 重置表单
-const resetForm = () => {
-  Object.assign(schoolForm, {
-    id: 0,
-    name: '',
-    code: '',
-    type: 1,
-    level: 1,
-    address: '',
-    contact_person: '',
-    contact_phone: '',
-    status: 1
-  })
-  formRef.value?.clearValidate()
+// 刷新数据
+const refreshData = () => {
+  fetchOrganizationTree()
 }
 
-// 初始化
+// 生命周期
 onMounted(() => {
-  // 学校列表将在选择组织后加载
+  fetchOrganizationTree()
 })
 </script>
 
 <style scoped>
 .school-management-page {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
   padding: 20px;
-  background: #f5f5f5;
 }
 
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header-content h2 {
+  margin: 0 0 8px 0;
+  color: #303133;
+}
+
+.header-content p {
+  margin: 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.toolbar-section {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.search-area {
+  flex: 1;
+}
+
+.toolbar-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.school-tree {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  min-height: 400px;
+  overflow: auto; /* 添加滚动条 */
+}
+
+/* 树形节点样式 */
+.school-tree-component {
+  font-size: 14px;
+  width: 100%;
+}
+
+/* 调整 Element Plus 树形组件的样式 */
+.school-tree-component .el-tree-node__content {
+  height: auto !important; /* 覆盖默认高度 */
+  min-height: 32px;
+}
+
+.school-tree-component .el-tree-node__label {
+  white-space: normal !important; /* 允许文本换行 */
+  word-break: break-word;
+}
+
+/* 学校管理页面样式 */
+.school-management-page {
+  padding: 20px;
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+/* 页面头部 */
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -650,76 +689,6 @@ onMounted(() => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.main-content {
-  flex: 1;
-  display: flex;
-  gap: 20px;
-  min-height: 0;
-}
-
-.left-panel {
-  width: 320px;
-  flex-shrink: 0;
-}
-
-.right-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-/* 当前组织信息样式 */
-.current-organization {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.org-info {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.org-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.org-details h3 {
-  margin: 0 0 8px 0;
-  color: #303133;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.org-stats {
-  display: flex;
-  gap: 24px;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #909399;
-}
-
-.stat-value {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-}
-
 .header-content h2 {
   margin: 0 0 8px 0;
   color: #303133;
@@ -729,95 +698,207 @@ onMounted(() => {
 
 .header-content p {
   margin: 0;
-  color: #909399;
+  color: #606266;
   font-size: 14px;
 }
 
-.search-section {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-}
-
-.table-section {
-  flex: 1;
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.header-actions {
   display: flex;
-  flex-direction: column;
-  min-height: 0;
+  gap: 12px;
 }
 
-.table-section .el-table {
-  flex: 1;
+/* 工具栏 */
+.toolbar-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.empty-state {
-  flex: 1;
+.toolbar-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* 学校树形结构 */
+.school-tree {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.school-tree-component {
+  padding: 16px;
+}
+
+/* 树节点样式 - 参考用户列表样式 */
+.school-tree-component .el-tree-node {
+  margin: 2px 0;
+}
+
+.school-tree-component .el-tree-node__content {
+  padding: 0 !important;
+  height: auto !important;
+  min-height: 36px;
+}
+
+.tree-node {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
 }
 
-.pagination-section {
+.tree-node:hover {
+  background-color: #f5f7fa;
+}
+
+.node-content {
   display: flex;
-  justify-content: center;
-  margin-top: 20px;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
 }
 
-.dialog-footer {
-  text-align: right;
+.node-icon {
+  flex-shrink: 0;
+  font-size: 16px;
 }
 
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .main-content {
-    flex-direction: column;
-  }
+/* 图标颜色 */
+.icon-province { color: #409EFF; }
+.icon-city { color: #67C23A; }
+.icon-county { color: #E6A23C; }
+.icon-district { color: #F56C6C; }
+.icon-school { color: #FF9800; }
 
-  .left-panel {
-    width: 100%;
-    height: 300px;
-  }
-
-  .right-panel {
-    flex: 1;
-  }
+.node-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-@media (max-width: 768px) {
-  .school-management-page {
-    padding: 10px;
-  }
+.node-name {
+  font-size: 14px;
+  color: #303133;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-  .page-header {
-    flex-direction: column;
-    gap: 16px;
-    align-items: stretch;
-  }
+.node-tag {
+  font-size: 12px;
+  flex-shrink: 0;
+}
 
-  .header-actions {
-    justify-content: center;
-  }
+/* 统计信息样式 - 参考用户列表 */
+.node-stats {
+  display: flex;
+  gap: 16px;
+  margin-right: 12px;
+}
 
-  .org-stats {
-    justify-content: space-around;
-  }
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #909399;
+}
 
-  .search-section .el-form {
-    flex-direction: column;
-  }
+.stat-item .el-icon {
+  font-size: 12px;
+}
 
-  .search-section .el-form-item {
-    margin-right: 0;
-    margin-bottom: 16px;
-  }
+/* 操作按钮样式 */
+.node-actions {
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.tree-node:hover .node-actions {
+  opacity: 1;
+}
+
+/* 选中状态样式 */
+:deep(.el-tree-node.is-current > .el-tree-node__content) {
+  background: transparent;
+}
+
+:deep(.el-tree-node.is-current .tree-node) {
+  background-color: #e6f7ff;
+  border: 1px solid #91d5ff;
+}
+
+/* 展开/折叠图标 */
+:deep(.el-tree-node__expand-icon) {
+  color: #409EFF;
+  font-size: 14px;
+}
+
+:deep(.el-tree-node__expand-icon.expanded) {
+  transform: rotate(90deg);
+}
+
+/* 树形结构缩进 */
+:deep(.el-tree-node__children) {
+  padding-left: 20px;
+}
+
+/* 对话框样式 */
+.school-detail {
+  padding: 20px 0;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.detail-title {
+  flex: 1;
+}
+
+.detail-title h2 {
+  margin: 0 0 8px 0;
+  color: #303133;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.detail-title .el-tag {
+  margin-top: 4px;
+}
+
+.form-section {
+  margin-bottom: 24px;
+}
+
+.form-section h3 {
+  margin: 0 0 16px 0;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid #ebeef5;
+  padding-bottom: 8px;
 }
 </style>

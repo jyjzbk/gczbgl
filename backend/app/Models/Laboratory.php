@@ -14,6 +14,7 @@ class Laboratory extends Model
         'name',
         'code',
         'type',
+        'type_id',
         'location',
         'area',
         'capacity',
@@ -26,6 +27,7 @@ class Laboratory extends Model
     protected $casts = [
         'school_id' => 'integer',
         'type' => 'integer',
+        'type_id' => 'integer',
         'area' => 'decimal:2',
         'capacity' => 'integer',
         'manager_id' => 'integer',
@@ -48,6 +50,12 @@ class Laboratory extends Model
      */
     public function getTypeTextAttribute()
     {
+        // 优先使用关联的实验室类型
+        if ($this->laboratoryType) {
+            return $this->laboratoryType->name;
+        }
+
+        // 兼容旧数据，使用硬编码类型
         $types = [
             self::TYPE_PHYSICS => '物理实验室',
             self::TYPE_CHEMISTRY => '化学实验室',
@@ -84,6 +92,14 @@ class Laboratory extends Model
     public function manager()
     {
         return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    /**
+     * 关联实验室类型
+     */
+    public function laboratoryType()
+    {
+        return $this->belongsTo(LaboratoryType::class, 'type_id');
     }
 
     /**

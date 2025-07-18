@@ -7,7 +7,15 @@ export interface Laboratory {
   name: string
   code: string
   type: number
+  type_id?: number
   type_name: string
+  laboratory_type?: {
+    id: number
+    name: string
+    code: string
+    icon?: string
+    color?: string
+  }
   location: string
   area: number
   capacity: number
@@ -43,7 +51,8 @@ export interface CreateLaboratoryParams {
   school_id: number
   name: string
   code: string
-  type: number
+  type?: number // 兼容旧数据
+  type_id?: number // 新的类型关联
   location?: string
   area?: number
   capacity: number
@@ -58,7 +67,8 @@ export interface UpdateLaboratoryParams {
   school_id?: number
   name?: string
   code?: string
-  type?: number
+  type?: number // 兼容旧数据
+  type_id?: number // 新的类型关联
   location?: string
   area?: number
   capacity?: number

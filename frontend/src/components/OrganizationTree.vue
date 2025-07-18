@@ -285,7 +285,26 @@ const setDefaultExpand = () => {
   // 使用 nextTick 确保 DOM 更新后再设置展开状态
   nextTick(() => {
     if (treeRef.value && expandedKeys.length > 0) {
-      treeRef.value.setExpandedKeys(expandedKeys)
+      // 尝试使用 store 来设置展开状态
+      if (treeRef.value.store && treeRef.value.store.nodesMap) {
+        expandedKeys.forEach(key => {
+          const node = treeRef.value.store.nodesMap[key]
+          if (node) {
+            node.expanded = true
+          }
+        })
+      } else if (typeof treeRef.value.setExpandedKeys === 'function') {
+        // 如果 setExpandedKeys 方法存在，则使用它
+        treeRef.value.setExpandedKeys(expandedKeys)
+      } else {
+        // 备用方法：通过 getNode 方法逐个展开
+        expandedKeys.forEach(key => {
+          const node = treeRef.value.getNode(key)
+          if (node) {
+            node.expanded = true
+          }
+        })
+      }
     }
   })
 }
@@ -293,7 +312,14 @@ const setDefaultExpand = () => {
 // 设置当前选中节点
 const setCurrentNode = (nodeId: number) => {
   if (treeRef.value) {
-    treeRef.value.setCurrentKey(nodeId)
+    if (typeof treeRef.value.setCurrentKey === 'function') {
+      treeRef.value.setCurrentKey(nodeId)
+    } else if (typeof treeRef.value.setCurrentNode === 'function') {
+      const node = treeRef.value.getNode(nodeId)
+      if (node) {
+        treeRef.value.setCurrentNode(node)
+      }
+    }
   }
 }
 

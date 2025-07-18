@@ -51,8 +51,8 @@
         class="org-tree"
       >
         <template #default="{ node, data }">
-          <div class="tree-node">
-            <div class="node-content">
+          <div class="tree-node" :class="`level-${data.level || 1}`">
+            <div class="node-content" :style="{ paddingLeft: getNodeIndent(data.level || 1) + 'px' }">
               <!-- 组织图标 -->
               <el-icon class="node-icon" :class="getNodeIconClass(data)">
                 <component :is="getNodeIcon(data)" />
@@ -411,7 +411,7 @@ const detailDialogVisible = ref(false)
 const currentOrg = ref<any>(null)
 const currentDetailOrg = ref<any>(null)
 const editFormRef = ref<FormInstance>()
-const treeRef = ref<InstanceType<typeof ElTree>>()
+const treeRef = ref()
 
 // 树形组件配置
 const treeProps = {
@@ -464,60 +464,163 @@ const editRules: FormRules = {
 const fetchOrganizations = async () => {
   loading.value = true
   try {
+    console.log('开始获取组织数据...')
     const response = await getEditableOrganizationsApi()
+    console.log('组织数据API响应:', response)
+
     if (response.data) {
       treeData.value = response.data
+      console.log('组织树数据已设置:', treeData.value)
+    } else {
+      console.warn('API响应中没有数据')
+      treeData.value = []
     }
   } catch (error) {
     console.error('获取组织树失败:', error)
     ElMessage.error('获取组织树失败')
+    treeData.value = []
   } finally {
     loading.value = false
   }
 }
 
 // 树形相关方法
-const expandAll = () => {
-  const tree = treeRef.value
-  if (tree) {
-    // 获取所有节点的key
-    const allKeys: string[] = []
-    const collectKeys = (nodes: any[]) => {
-      nodes.forEach(node => {
-        allKeys.push(node.id.toString())
-        if (node.children && node.children.length > 0) {
-          collectKeys(node.children)
-        }
-      })
-    }
-    collectKeys(treeData.value)
+const expandAll = async () => {
+  console.log('expandAll 被调用')
+  console.log('loading.value:', loading.value)
+  console.log('treeData.value.length:', treeData.value.length)
+  console.log('treeRef.value:', treeRef.value)
 
-    // 展开所有节点
-    allKeys.forEach(key => {
-      tree.setExpanded(key, true)
+  // 如果正在加载数据，则等待加载完成
+  if (loading.value) {
+    ElMessage.warning('数据加载中，请稍后再试')
+    return
+  }
+
+  // 如果没有数据，先获取数据
+  if (treeData.value.length === 0) {
+    console.log('数据为空，重新获取数据...')
+    await fetchOrganizations()
+  }
+
+  // 等待下一个 tick 确保组件已渲染
+  await nextTick()
+
+  const tree = treeRef.value
+  console.log('tree 实例:', tree)
+  console.log('tree 的所有属性:', tree ? Object.keys(tree) : 'tree is null')
+  console.log('tree.setExpandedKeys 方法:', tree ? typeof tree.setExpandedKeys : 'tree is null')
+
+  // 尝试不同的方法访问 setExpandedKeys
+  if (tree) {
+    console.log('tree.$el:', tree.$el)
+    console.log('tree.exposed:', tree.exposed)
+    console.log('tree.setupState:', tree.setupState)
+
+    // 检查是否有其他可能的方法名
+    const possibleMethods = ['setExpandedKeys', 'expandNode', 'collapseNode', 'setExpanded']
+    possibleMethods.forEach(method => {
+      console.log(`tree.${method}:`, tree[method] ? typeof tree[method] : 'undefined')
     })
+  }
+
+  if (tree && treeData.value.length > 0) {
+    try {
+      // 尝试使用 store 来展开所有节点
+      if (tree.store && tree.store.nodesMap) {
+        console.log('使用 store 方法展开节点')
+        const nodesMap = tree.store.nodesMap
+        console.log('nodesMap:', nodesMap)
+
+        // 遍历所有节点并展开
+        Object.values(nodesMap).forEach((node: any) => {
+          if (node && node.childNodes && node.childNodes.length > 0) {
+            node.expanded = true
+          }
+        })
+
+        ElMessage.success('已展开所有节点')
+      } else {
+        // 备用方法：通过递归遍历数据来展开节点
+        console.log('使用递归方法展开节点')
+        const expandNodeRecursively = (nodes: any[]) => {
+          nodes.forEach(node => {
+            if (node.children && node.children.length > 0) {
+              // 尝试通过 getNode 方法获取节点并展开
+              const treeNode = tree.getNode(node.id)
+              if (treeNode) {
+                treeNode.expanded = true
+                expandNodeRecursively(node.children)
+              }
+            }
+          })
+        }
+
+        expandNodeRecursively(treeData.value)
+        ElMessage.success('已展开所有节点')
+      }
+    } catch (error) {
+      console.error('展开所有节点失败:', error)
+      ElMessage.error('展开失败，请重试')
+    }
+  } else {
+    console.warn('Tree component not ready or tree data empty')
+    ElMessage.warning('树形组件未就绪或数据为空')
   }
 }
 
-const collapseAll = () => {
-  const tree = treeRef.value
-  if (tree) {
-    // 获取所有节点的key
-    const allKeys: string[] = []
-    const collectKeys = (nodes: any[]) => {
-      nodes.forEach(node => {
-        allKeys.push(node.id.toString())
-        if (node.children && node.children.length > 0) {
-          collectKeys(node.children)
-        }
-      })
-    }
-    collectKeys(treeData.value)
+const collapseAll = async () => {
+  // 如果正在加载数据，则等待加载完成
+  if (loading.value) {
+    ElMessage.warning('数据加载中，请稍后再试')
+    return
+  }
 
-    // 折叠所有节点
-    allKeys.forEach(key => {
-      tree.setExpanded(key, false)
-    })
+  // 等待下一个 tick 确保组件已渲染
+  await nextTick()
+
+  const tree = treeRef.value
+  if (tree && treeData.value.length > 0) {
+    try {
+      // 尝试使用 store 来折叠所有节点
+      if (tree.store && tree.store.nodesMap) {
+        console.log('使用 store 方法折叠节点')
+        const nodesMap = tree.store.nodesMap
+
+        // 遍历所有节点并折叠
+        Object.values(nodesMap).forEach((node: any) => {
+          if (node && node.childNodes && node.childNodes.length > 0) {
+            node.expanded = false
+          }
+        })
+
+        ElMessage.success('已折叠所有节点')
+      } else {
+        // 备用方法：通过递归遍历数据来折叠节点
+        console.log('使用递归方法折叠节点')
+        const collapseNodeRecursively = (nodes: any[]) => {
+          nodes.forEach(node => {
+            if (node.children && node.children.length > 0) {
+              // 尝试通过 getNode 方法获取节点并折叠
+              const treeNode = tree.getNode(node.id)
+              if (treeNode) {
+                treeNode.expanded = false
+                collapseNodeRecursively(node.children)
+              }
+            }
+          })
+        }
+
+        collapseNodeRecursively(treeData.value)
+        ElMessage.success('已折叠所有节点')
+      }
+    } catch (error) {
+      console.error('折叠所有节点失败:', error)
+      ElMessage.error('折叠失败，请重试')
+    }
+  } else {
+    console.warn('Tree component not ready or tree data empty')
+    ElMessage.warning('树形组件未就绪或数据为空')
   }
 }
 
@@ -590,6 +693,12 @@ const getLevelText = (level: number, type: string) => {
   } else {
     return '学校'
   }
+}
+
+// 获取节点缩进
+const getNodeIndent = (level: number) => {
+  // 基础缩进 + 每级增加20px
+  return (level - 1) * 20
 }
 
 const viewDetails = (data: any) => {
@@ -891,6 +1000,32 @@ onMounted(() => {
 /* 搜索高亮 */
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background-color: #e6f7ff;
+}
+
+/* 层级缩进样式 */
+.tree-node.level-1 {
+  background-color: #f8f9fa;
+  border-left: 4px solid #409eff;
+}
+
+.tree-node.level-2 {
+  background-color: #f0f9ff;
+  border-left: 4px solid #67c23a;
+}
+
+.tree-node.level-3 {
+  background-color: #fefce8;
+  border-left: 4px solid #e6a23c;
+}
+
+.tree-node.level-4 {
+  background-color: #fef2f2;
+  border-left: 4px solid #f56c6c;
+}
+
+.tree-node.level-5 {
+  background-color: #f3f4f6;
+  border-left: 4px solid #909399;
 }
 
 /* 详情对话框样式 */
