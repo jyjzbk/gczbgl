@@ -301,6 +301,45 @@ const router = createRouter({
         }
       ]
     },
+    // 统计报表路由
+    {
+      path: '/statistics',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          redirect: '/statistics/dashboard'
+        },
+        {
+          path: 'dashboard',
+          name: 'StatisticsDashboard',
+          component: () => import('@/views/statistics/Dashboard.vue'),
+          meta: {
+            title: '统计仪表盘',
+            requiredPermissions: ['statistics.view']
+          }
+        },
+        {
+          path: 'reports',
+          name: 'StatisticsReports',
+          component: () => import('@/views/statistics/Reports.vue'),
+          meta: {
+            title: '详细报表',
+            requiredPermissions: ['statistics.view']
+          }
+        },
+        {
+          path: 'test',
+          name: 'StatisticsTest',
+          component: () => import('@/views/statistics/Test.vue'),
+          meta: {
+            title: 'API测试',
+            requiredPermissions: ['statistics.view']
+          }
+        }
+      ]
+    },
     // TODO: 其他实验管理页面待开发
     // 调试页面
     {

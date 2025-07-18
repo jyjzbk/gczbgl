@@ -90,6 +90,15 @@ class PermissionService
             'equipment.category.create',
             'equipment.category.edit',
             'equipment.category.delete',
+
+            // 统计报表权限
+            'statistics.view',
+            'statistics.dashboard',
+            'statistics.experiment',
+            'statistics.equipment',
+            'statistics.user',
+            'statistics.performance',
+            'statistics.export',
         ];
     }
 
@@ -146,6 +155,46 @@ class PermissionService
                 'name' => '超级管理员',
                 'permissions' => $this->getAllPermissions()
             ],
+            'province_admin' => [
+                'name' => '省级管理员',
+                'permissions' => [
+                    'equipment.view',
+                    'equipment.create',
+                    'equipment.edit',
+                    'equipment.delete',
+                    'equipment.import',
+                    'equipment.export',
+                    'equipment.photo.upload',
+                    'equipment.photo.delete',
+                    'equipment.borrow.view',
+                    'equipment.borrow.create',
+                    'equipment.borrow.edit',
+                    'equipment.borrow.approve',
+                    'equipment.borrow.return',
+                    'equipment.borrow.batch',
+                    'equipment.maintenance.view',
+                    'equipment.maintenance.create',
+                    'equipment.maintenance.edit',
+                    'equipment.maintenance.assign',
+                    'equipment.maintenance.complete',
+                    'equipment.maintenance.statistics',
+                    'equipment.qrcode.generate',
+                    'equipment.qrcode.view',
+                    'equipment.qrcode.delete',
+                    'equipment.qrcode.batch',
+                    'equipment.category.view',
+                    'equipment.category.create',
+                    'equipment.category.edit',
+                    'equipment.category.delete',
+                    'statistics.view',
+                    'statistics.dashboard',
+                    'statistics.experiment',
+                    'statistics.equipment',
+                    'statistics.user',
+                    'statistics.performance',
+                    'statistics.export',
+                ]
+            ],
             'admin' => [
                 'name' => '管理员',
                 'permissions' => [
@@ -169,6 +218,13 @@ class PermissionService
                     'equipment.qrcode.view',
                     'equipment.qrcode.delete',
                     'equipment.qrcode.batch',
+                    'statistics.view',
+                    'statistics.dashboard',
+                    'statistics.experiment',
+                    'statistics.equipment',
+                    'statistics.user',
+                    'statistics.performance',
+                    'statistics.export',
                 ]
             ],
             'teacher' => [
@@ -181,6 +237,10 @@ class PermissionService
                     'equipment.maintenance.view',
                     'equipment.maintenance.create',
                     'equipment.qrcode.view',
+                    'statistics.view',
+                    'statistics.dashboard',
+                    'statistics.experiment',
+                    'statistics.equipment',
                 ]
             ],
             'lab_manager' => [
@@ -201,6 +261,10 @@ class PermissionService
                     'equipment.qrcode.generate',
                     'equipment.qrcode.view',
                     'equipment.qrcode.delete',
+                    'statistics.view',
+                    'statistics.dashboard',
+                    'statistics.experiment',
+                    'statistics.equipment',
                 ]
             ],
             'student' => [

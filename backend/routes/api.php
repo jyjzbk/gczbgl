@@ -22,6 +22,7 @@ use App\Http\Controllers\EquipmentBorrowController;
 use App\Http\Controllers\EquipmentMaintenanceController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\EquipmentQrcodeController;
+use App\Http\Controllers\Api\StatisticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -93,8 +94,8 @@ Route::middleware('auth:api')->group(function () {
 
     // 学校管理
     Route::middleware(['data.scope'])->group(function () {
-        Route::apiResource('schools', SchoolController::class);
         Route::get('schools/options', [SchoolController::class, 'options']);
+        Route::apiResource('schools', SchoolController::class);
     });
 
     // 学科管理
@@ -192,6 +193,15 @@ Route::middleware('auth:api')->group(function () {
         Route::get('equipments/{equipment}/qrcode', [EquipmentQrcodeController::class, 'show']);
         Route::delete('equipments/{equipment}/qrcode', [EquipmentQrcodeController::class, 'destroy']);
         Route::post('equipments/batch-qrcode', [EquipmentQrcodeController::class, 'batchGenerate']);
+    });
+
+    // 统计报表相关路由
+    Route::prefix('statistics')->middleware(['data.scope'])->group(function () {
+        Route::get('dashboard', [StatisticsController::class, 'getDashboardStats']);
+        Route::get('experiments', [StatisticsController::class, 'getExperimentStats']);
+        Route::get('equipment', [StatisticsController::class, 'getEquipmentStats']);
+        Route::get('users', [StatisticsController::class, 'getUserActivityStats']);
+        Route::get('performance', [StatisticsController::class, 'getOrganizationPerformance']);
     });
 });
 

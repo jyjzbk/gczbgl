@@ -80,9 +80,10 @@
           <el-icon><DataAnalysis /></el-icon>
           <span>统计报表</span>
         </template>
-        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog'])" index="/statistics/experiment">实验统计</el-menu-item>
-        <el-menu-item v-if="authStore.hasAnyPermission(['equipment', 'equipment.list'])" index="/statistics/equipment">设备统计</el-menu-item>
-        <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list'])" index="/statistics/region">区域分析</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['statistics.view', 'experiment', 'experiment.catalog'])" index="/statistics/dashboard">统计仪表盘</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['statistics.view', 'experiment', 'equipment'])" index="/statistics/reports">详细报表</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['statistics.view'])" index="/statistics/test">API测试</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog'])" index="/experiment-statistics">实验统计</el-menu-item>
       </el-sub-menu>
       
       <!-- 系统管理 -->
@@ -147,8 +148,9 @@ const hasBasicDataPermission = computed(() => {
 })
 
 const hasStatisticsPermission = computed(() => {
-  // 统计报表权限：有实验或设备权限的用户都可以查看对应的统计
-  return authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'experiment.record']) ||
+  // 统计报表权限：有统计权限或实验、设备权限的用户都可以查看对应的统计
+  return authStore.hasAnyPermission(['statistics.view']) ||
+         authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'experiment.record']) ||
          authStore.hasAnyPermission(['equipment', 'equipment.list']) ||
          authStore.hasAnyPermission(['user', 'user.list'])
 })

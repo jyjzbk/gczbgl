@@ -39,6 +39,8 @@ const routeTitleMap: Record<string, string> = {
   '/equipment-borrow': '设备借用管理',
   '/equipment-maintenance': '设备维修管理',
   '/equipment-qrcode': '设备二维码管理',
+  '/statistics/dashboard': '统计仪表盘',
+  '/statistics/reports': '详细报表',
   '/statistics/experiment': '实验统计',
   '/statistics/equipment': '设备统计',
   '/statistics/region': '区域分析',

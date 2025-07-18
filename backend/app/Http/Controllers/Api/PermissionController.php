@@ -71,6 +71,20 @@ class PermissionController extends Controller
                     ['id' => 'system.read', 'name' => '系统信息', 'code' => 'system.read', 'type' => 'advanced', 'level' => 'high'],
                     ['id' => 'log.read', 'name' => '日志查看', 'code' => 'log.read', 'type' => 'advanced', 'level' => 'high']
                 ]
+            ],
+            [
+                'id' => 'statistics',
+                'name' => '统计报表',
+                'code' => 'statistics',
+                'children' => [
+                    ['id' => 'statistics.view', 'name' => '查看统计', 'code' => 'statistics.view', 'type' => 'read'],
+                    ['id' => 'statistics.dashboard', 'name' => '统计仪表板', 'code' => 'statistics.dashboard', 'type' => 'read'],
+                    ['id' => 'statistics.experiment', 'name' => '实验统计', 'code' => 'statistics.experiment', 'type' => 'read'],
+                    ['id' => 'statistics.equipment', 'name' => '设备统计', 'code' => 'statistics.equipment', 'type' => 'read'],
+                    ['id' => 'statistics.user', 'name' => '用户统计', 'code' => 'statistics.user', 'type' => 'read'],
+                    ['id' => 'statistics.performance', 'name' => '绩效统计', 'code' => 'statistics.performance', 'type' => 'read'],
+                    ['id' => 'statistics.export', 'name' => '导出统计', 'code' => 'statistics.export', 'type' => 'advanced', 'level' => 'high']
+                ]
             ]
         ];
 
@@ -105,7 +119,15 @@ class PermissionController extends Controller
             ['id' => 'equipment.update', 'name' => '编辑设备', 'code' => 'equipment.update', 'type' => 'write', 'module' => 'equipment'],
             ['id' => 'equipment.delete', 'name' => '删除设备', 'code' => 'equipment.delete', 'type' => 'delete', 'module' => 'equipment'],
             ['id' => 'equipment.borrow', 'name' => '设备借用', 'code' => 'equipment.borrow', 'type' => 'write', 'module' => 'equipment'],
-            ['id' => 'equipment.maintenance', 'name' => '设备维修', 'code' => 'equipment.maintenance', 'type' => 'write', 'module' => 'equipment']
+            ['id' => 'equipment.maintenance', 'name' => '设备维修', 'code' => 'equipment.maintenance', 'type' => 'write', 'module' => 'equipment'],
+
+            ['id' => 'statistics.view', 'name' => '查看统计', 'code' => 'statistics.view', 'type' => 'read', 'module' => 'statistics'],
+            ['id' => 'statistics.dashboard', 'name' => '统计仪表板', 'code' => 'statistics.dashboard', 'type' => 'read', 'module' => 'statistics'],
+            ['id' => 'statistics.experiment', 'name' => '实验统计', 'code' => 'statistics.experiment', 'type' => 'read', 'module' => 'statistics'],
+            ['id' => 'statistics.equipment', 'name' => '设备统计', 'code' => 'statistics.equipment', 'type' => 'read', 'module' => 'statistics'],
+            ['id' => 'statistics.user', 'name' => '用户统计', 'code' => 'statistics.user', 'type' => 'read', 'module' => 'statistics'],
+            ['id' => 'statistics.performance', 'name' => '绩效统计', 'code' => 'statistics.performance', 'type' => 'read', 'module' => 'statistics'],
+            ['id' => 'statistics.export', 'name' => '导出统计', 'code' => 'statistics.export', 'type' => 'advanced', 'module' => 'statistics']
         ];
 
         return response()->json([

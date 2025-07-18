@@ -269,11 +269,30 @@ const dialogTitle = computed(() => {
 // 保修状态
 const warrantyStatus = computed((): WarrantyStatus | null => {
   if (!selectedEquipment.value) return null
-  
+
+  // 检查购入日期和保修期是否有效
+  if (!selectedEquipment.value.purchase_date || !selectedEquipment.value.warranty_period) {
+    return {
+      title: '保修信息不完整',
+      message: '设备缺少购入日期或保修期信息，无法确定保修状态',
+      type: 'info'
+    }
+  }
+
   const purchaseDate = dayjs(selectedEquipment.value.purchase_date)
+
+  // 检查日期是否有效
+  if (!purchaseDate.isValid()) {
+    return {
+      title: '保修信息无效',
+      message: '设备购入日期格式无效，无法确定保修状态',
+      type: 'warning'
+    }
+  }
+
   const warrantyEndDate = purchaseDate.add(selectedEquipment.value.warranty_period, 'month')
   const now = dayjs()
-  
+
   if (now.isBefore(warrantyEndDate)) {
     const remainingDays = warrantyEndDate.diff(now, 'day')
     return {

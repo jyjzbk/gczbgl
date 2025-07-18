@@ -78,7 +78,8 @@
               show-checkbox
               node-key="id"
               :default-expanded-keys="expandedKeys"
-              :check-strictly="true"
+              :check-strictly="false"
+              @check="handlePermissionCheck"
             >
               <template #default="{ node, data }">
                 <div class="permission-node">
@@ -201,23 +202,18 @@ const fetchRolePermissions = async (roleId: number) => {
       // 等待DOM更新后再设置新的选中状态
       await nextTick()
 
-      // 只设置叶子节点，避免父子节点级联问题
-      const leafPermissions = rolePermissions.value.filter(permission => {
-        // 检查是否为叶子节点（没有子权限依赖它）
-        return !rolePermissions.value.some(p => p.startsWith(permission + '.'))
-      })
-
-      console.log('原始权限:', rolePermissions.value)
-      console.log('叶子权限:', leafPermissions)
-
-      permissionTreeRef.value.setCheckedKeys(leafPermissions, false) // false表示不级联选择
+      // 设置权限，不启用级联选择以避免自动勾选父节点
+      console.log('设置权限:', rolePermissions.value)
+      permissionTreeRef.value.setCheckedKeys(rolePermissions.value, false) // false表示不级联选择
       console.log('树形组件选中状态已更新')
 
       // 验证实际选中的权限
       setTimeout(() => {
         if (permissionTreeRef.value) {
           const actualChecked = permissionTreeRef.value.getCheckedKeys()
+          const halfChecked = permissionTreeRef.value.getHalfCheckedKeys()
           console.log('实际选中的权限:', actualChecked)
+          console.log('半选中的权限:', halfChecked)
         }
       }, 100)
     }
@@ -238,13 +234,17 @@ const savePermissions = async () => {
   saving.value = true
   try {
     const checkedKeys = permissionTreeRef.value.getCheckedKeys()
-    // 由于设置了 check-strictly="true"，不需要 halfCheckedKeys
+    const halfCheckedKeys = permissionTreeRef.value.getHalfCheckedKeys()
+
+    // 只保存完全选中的权限，不包含半选中的父节点
+    // 这样可以避免保存不应该保存的父节点权限
     const allPermissions = [...checkedKeys]
 
     console.log('保存权限配置:', {
       roleId: selectedRole.value.id,
       roleName: selectedRole.value.name,
       checkedKeys,
+      halfCheckedKeys,
       allPermissions
     })
 
@@ -337,11 +337,19 @@ const collapseAllPermissions = () => {
   }
 }
 
+// 处理权限选中事件
+const handlePermissionCheck = (data: any, checked: any) => {
+  console.log('权限选中事件:', { data, checked })
+  // Element Plus 的树形组件在 check-strictly="false" 时会自动处理父子联动
+  // 这里可以添加额外的业务逻辑，比如记录操作日志等
+}
+
 // 调试：打印权限树结构
 const debugPermissionTree = () => {
   console.log('权限树结构:', permissionTree.value)
   if (permissionTreeRef.value) {
     console.log('当前选中的权限:', permissionTreeRef.value.getCheckedKeys())
+    console.log('半选中的权限:', permissionTreeRef.value.getHalfCheckedKeys())
   }
 }
 

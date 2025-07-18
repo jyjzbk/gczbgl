@@ -226,10 +226,12 @@ class RoleController extends Controller
         $permissionMap = [
             // 省级角色
             'province_admin' => [
-                'user', 'user.list', 'user.create', 'user.update', 'user.delete',
+                'user', 'user.list', 'user.create', 'user.update', 'user.delete', 'user.edit', 'user.export', 'user.reset_password',
                 'role', 'role.list', 'role.create', 'role.update', 'role.delete',
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance'
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
+                'statistics', 'statistics.view', 'statistics.dashboard', 'statistics.experiment', 'statistics.equipment', 'statistics.user', 'statistics.performance', 'statistics.export',
+                'system', 'system.read', 'log', 'log.read'
             ],
             'province_researcher' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
@@ -278,6 +280,10 @@ class RoleController extends Controller
                 'equipment', 'equipment.list', 'equipment.borrow', 'equipment.maintenance'
             ],
             'school_teacher' => [
+                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'equipment', 'equipment.list', 'equipment.borrow'
+            ],
+            'school_student' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.borrow'
             ]

@@ -49,13 +49,13 @@ class DataScopeMiddleware
     public static function applyDataScope($query, Request $request, string $table = null)
     {
         $dataScope = $request->get('data_scope');
-        
+
         if (!$dataScope || $dataScope['type'] === 'all') {
             return $query; // 超级管理员或无限制
         }
 
         $schoolIds = $dataScope['school_ids'];
-        
+
         // 根据表类型应用不同的过滤逻辑
         switch ($table) {
             case 'equipments':
@@ -64,17 +64,17 @@ class DataScopeMiddleware
             case 'experiment_records':
                 // 这些表直接通过school_id过滤
                 if (!empty($schoolIds)) {
-                    $query->whereIn('school_id', $schoolIds);
+                    $query->whereIn($table . '.school_id', $schoolIds);
                 } else {
                     // 如果没有可访问的学校，返回空结果
                     $query->whereRaw('1 = 0');
                 }
                 break;
-                
+
             case 'schools':
                 // 学校表过滤
                 if (!empty($schoolIds)) {
-                    $query->whereIn('id', $schoolIds);
+                    $query->whereIn('schools.id', $schoolIds);
                 } else {
                     $query->whereRaw('1 = 0');
                 }

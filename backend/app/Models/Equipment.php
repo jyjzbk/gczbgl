@@ -193,7 +193,18 @@ class Equipment extends Model
     public function getWarrantyStatusAttribute(): array
     {
         $purchaseDate = $this->purchase_date;
-        $warrantyEndDate = $purchaseDate->addMonths($this->warranty_period);
+
+        // 如果购入日期或保修期为空，返回默认值
+        if (!$purchaseDate || !$this->warranty_period) {
+            return [
+                'is_in_warranty' => false,
+                'warranty_end_date' => null,
+                'remaining_days' => 0,
+                'expired_days' => 0,
+            ];
+        }
+
+        $warrantyEndDate = $purchaseDate->copy()->addMonths($this->warranty_period);
         $now = now();
 
         $isInWarranty = $now->lte($warrantyEndDate);
@@ -274,7 +285,7 @@ class Equipment extends Model
             return false;
         }
 
-        $warrantyEndDate = $this->purchase_date->addMonths($this->warranty_period);
+        $warrantyEndDate = $this->purchase_date->copy()->addMonths($this->warranty_period);
         return now() <= $warrantyEndDate;
     }
 
@@ -287,7 +298,7 @@ class Equipment extends Model
             return null;
         }
 
-        return $this->purchase_date->addMonths($this->warranty_period);
+        return $this->purchase_date->copy()->addMonths($this->warranty_period);
     }
 
     /**

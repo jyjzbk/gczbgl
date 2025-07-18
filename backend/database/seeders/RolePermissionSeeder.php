@@ -21,12 +21,13 @@ class RolePermissionSeeder extends Seeder
         $permissionMap = [
             // 省级角色
             'province_admin' => [
-                'user', 'user.list', 'user.create', 'user.update', 'user.delete',
+                'user', 'user.list', 'user.create', 'user.update', 'user.delete', 'user.edit', 'user.export', 'user.reset_password',
                 'role', 'role.list', 'role.create', 'role.update', 'role.delete',
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
                 'laboratory_type', 'laboratory_type.list', 'laboratory_type.create', 'laboratory_type.update', 'laboratory_type.delete',
                 'equipment_standard', 'equipment_standard.list', 'equipment_standard.create', 'equipment_standard.update', 'equipment_standard.delete',
+                'statistics.view', 'statistics.dashboard', 'statistics.experiment', 'statistics.equipment', 'statistics.user', 'statistics.performance', 'statistics.export',
                 'system', 'system.read', 'log', 'log.read'
             ],
             'province_researcher' => [
@@ -38,11 +39,13 @@ class RolePermissionSeeder extends Seeder
 
             // 市级角色
             'city_admin' => [
-                'user', 'user.list', 'user.create', 'user.update',
+                'user', 'user.list', 'user.create', 'user.update', 'user.delete', 'user.edit', 'user.export', 'user.reset_password',
+                'role', 'role.list', 'role.create', 'role.update', 'role.delete',
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.borrow', 'equipment.maintenance',
-                'laboratory_type', 'laboratory_type.list',
-                'equipment_standard', 'equipment_standard.list'
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
+                'laboratory_type', 'laboratory_type.list', 'laboratory_type.create', 'laboratory_type.update', 'laboratory_type.delete',
+                'equipment_standard', 'equipment_standard.list', 'equipment_standard.create', 'equipment_standard.update', 'equipment_standard.delete',
+                'statistics', 'statistics.view', 'statistics.dashboard', 'statistics.experiment', 'statistics.equipment', 'statistics.user', 'statistics.performance', 'statistics.export'
             ],
             'city_researcher' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
@@ -53,11 +56,13 @@ class RolePermissionSeeder extends Seeder
 
             // 区县级角色
             'county_admin' => [
-                'user', 'user.list', 'user.create', 'user.update',
+                'user', 'user.list', 'user.create', 'user.update', 'user.delete', 'user.edit', 'user.export', 'user.reset_password',
+                'role', 'role.list', 'role.create', 'role.update', 'role.delete',
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.borrow', 'equipment.maintenance',
-                'laboratory_type', 'laboratory_type.list',
-                'equipment_standard', 'equipment_standard.list'
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
+                'laboratory_type', 'laboratory_type.list', 'laboratory_type.create', 'laboratory_type.update', 'laboratory_type.delete',
+                'equipment_standard', 'equipment_standard.list', 'equipment_standard.create', 'equipment_standard.update', 'equipment_standard.delete',
+                'statistics', 'statistics.view', 'statistics.dashboard', 'statistics.experiment', 'statistics.equipment', 'statistics.user', 'statistics.performance', 'statistics.export'
             ],
             'county_researcher' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
@@ -68,10 +73,12 @@ class RolePermissionSeeder extends Seeder
 
             // 学区级角色
             'district_admin' => [
+                'user', 'user.list', 'user.create', 'user.update',
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
-                'equipment', 'equipment.list', 'equipment.borrow', 'equipment.maintenance',
+                'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.borrow', 'equipment.maintenance',
                 'laboratory_type', 'laboratory_type.list',
-                'equipment_standard', 'equipment_standard.list'
+                'equipment_standard', 'equipment_standard.list',
+                'statistics', 'statistics.view', 'statistics.dashboard', 'statistics.experiment', 'statistics.equipment', 'statistics.user', 'statistics.performance'
             ],
 
             // 学校级角色
