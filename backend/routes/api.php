@@ -23,6 +23,8 @@ use App\Http\Controllers\EquipmentMaintenanceController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\EquipmentQrcodeController;
 use App\Http\Controllers\Api\StatisticsController;
+use App\Http\Controllers\Api\SmartReservationController;
+use App\Http\Controllers\Api\ExperimentWorkController;
 
 /*
 |--------------------------------------------------------------------------
@@ -207,3 +209,37 @@ Route::middleware('auth:api')->group(function () {
 
 // 公开的二维码查询路由（不需要认证）
 Route::get('qrcode/scan/{code}', [EquipmentQrcodeController::class, 'scan']);
+
+// 器材需求配置路由
+Route::middleware(['auth:sanctum'])->group(function () {
+    // 实验器材需求配置
+    Route::prefix('experiment-catalogs/{catalogId}/equipment-requirements')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\EquipmentRequirementController::class, 'index']);
+        Route::post('/batch', [App\Http\Controllers\Api\EquipmentRequirementController::class, 'batchStore']);
+        Route::get('/recommendations', [App\Http\Controllers\Api\EquipmentRequirementController::class, 'getRecommendations']);
+        Route::post('/copy', [App\Http\Controllers\Api\EquipmentRequirementController::class, 'copyFromCatalog']);
+        Route::put('/sort-order', [App\Http\Controllers\Api\EquipmentRequirementController::class, 'updateSortOrder']);
+        Route::put('/{requirementId}', [App\Http\Controllers\Api\EquipmentRequirementController::class, 'update']);
+        Route::delete('/{requirementId}', [App\Http\Controllers\Api\EquipmentRequirementController::class, 'destroy']);
+    });
+    
+    // 器材配置模板
+    Route::apiResource('equipment-requirement-templates', App\Http\Controllers\Api\EquipmentRequirementTemplateController::class);
+
+    // 智能预约相关路由
+    Route::prefix('smart-reservations')->group(function () {
+        Route::get('laboratories/{laboratoryId}/schedule', [SmartReservationController::class, 'getLaboratorySchedule']);
+        Route::post('create', [SmartReservationController::class, 'smartCreate']);
+        Route::post('check-conflicts', [SmartReservationController::class, 'checkConflicts']);
+    });
+
+    // 实验作品管理
+    Route::apiResource('experiment-works', ExperimentWorkController::class);
+
+    // 个人实验档案相关路由
+    Route::prefix('personal')->group(function () {
+        Route::get('experiment-stats', [App\Http\Controllers\Api\ExperimentReservationController::class, 'getPersonalStats']);
+        Route::get('experiment-archive/export', [App\Http\Controllers\Api\ExperimentReservationController::class, 'exportPersonalArchive']);
+    });
+});
+

@@ -248,6 +248,46 @@ const router = createRouter({
         }
       ]
     },
+    // 智能实验预约路由
+    {
+      path: '/smart-reservation',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'SmartReservation',
+          component: () => import('@/views/experiment/SmartReservation.vue'),
+          meta: { title: '智能预约' }
+        }
+      ]
+    },
+    {
+      path: '/laboratory-schedule',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'LaboratorySchedule',
+          component: () => import('@/views/experiment/LaboratorySchedule.vue'),
+          meta: { title: '实验室课表' }
+        }
+      ]
+    },
+    {
+      path: '/personal-archive',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'PersonalArchive',
+          component: () => import('@/views/experiment/PersonalArchive.vue'),
+          meta: { title: '个人实验档案' }
+        }
+      ]
+    },
     // 设备管理路由
     {
       path: '/equipment-management',

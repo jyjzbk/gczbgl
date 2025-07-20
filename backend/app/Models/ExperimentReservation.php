@@ -24,7 +24,12 @@ class ExperimentReservation extends Model
         'remark',
         'reviewer_id',
         'reviewed_at',
-        'review_remark'
+        'review_remark',
+        'batch_id',
+        'equipment_requirements',
+        'auto_borrow_equipment',
+        'priority',
+        'preparation_notes'
     ];
 
     protected $casts = [
@@ -35,10 +40,13 @@ class ExperimentReservation extends Model
         'student_count' => 'integer',
         'status' => 'integer',
         'reviewer_id' => 'integer',
+        'batch_id' => 'integer',
+        'auto_borrow_equipment' => 'boolean',
         'reservation_date' => 'date',
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
-        'reviewed_at' => 'datetime'
+        'reviewed_at' => 'datetime',
+        'equipment_requirements' => 'array'
     ];
 
     // 状态常量
@@ -47,6 +55,12 @@ class ExperimentReservation extends Model
     const STATUS_REJECTED = 3;   // 已拒绝
     const STATUS_COMPLETED = 4;  // 已完成
     const STATUS_CANCELLED = 5;  // 已取消
+
+    // 优先级常量
+    const PRIORITY_LOW = 'low';
+    const PRIORITY_NORMAL = 'normal';
+    const PRIORITY_HIGH = 'high';
+    const PRIORITY_URGENT = 'urgent';
 
     /**
      * 获取状态文本
@@ -124,6 +138,30 @@ class ExperimentReservation extends Model
     public function record()
     {
         return $this->hasOne(ExperimentRecord::class, 'reservation_id');
+    }
+
+    /**
+     * 关联预约批次
+     */
+    public function batch()
+    {
+        return $this->belongsTo(ReservationBatch::class, 'batch_id');
+    }
+
+    /**
+     * 关联设备借用记录
+     */
+    public function equipmentBorrows()
+    {
+        return $this->hasMany(EquipmentBorrow::class, 'reservation_id');
+    }
+
+    /**
+     * 关联冲突日志
+     */
+    public function conflictLogs()
+    {
+        return $this->hasMany(ReservationConflictLog::class, 'reservation_id');
     }
 
     /**
@@ -232,5 +270,105 @@ class ExperimentReservation extends Model
     public function getDurationAttribute()
     {
         return $this->start_time->diffInMinutes($this->end_time);
+    }
+
+    /**
+     * 获取优先级名称
+     */
+    public function getPriorityNameAttribute()
+    {
+        $priorities = [
+            self::PRIORITY_LOW => '低',
+            self::PRIORITY_NORMAL => '普通',
+            self::PRIORITY_HIGH => '高',
+            self::PRIORITY_URGENT => '紧急'
+        ];
+        return $priorities[$this->priority] ?? '普通';
+    }
+
+    /**
+     * 获取优先级颜色
+     */
+    public function getPriorityColorAttribute()
+    {
+        $colors = [
+            self::PRIORITY_LOW => 'info',
+            self::PRIORITY_NORMAL => 'primary',
+            self::PRIORITY_HIGH => 'warning',
+            self::PRIORITY_URGENT => 'danger'
+        ];
+        return $colors[$this->priority] ?? 'primary';
+    }
+
+    /**
+     * 自动生成设备借用记录
+     */
+    public function generateEquipmentBorrows()
+    {
+        if (!$this->auto_borrow_equipment || !$this->equipment_requirements) {
+            return;
+        }
+
+        foreach ($this->equipment_requirements as $requirement) {
+            EquipmentBorrow::create([
+                'equipment_id' => $requirement['equipment_id'],
+                'reservation_id' => $this->id,
+                'borrower_id' => $this->teacher_id,
+                'quantity' => $requirement['quantity'],
+                'borrow_date' => $this->reservation_date,
+                'expected_return_date' => $this->reservation_date,
+                'purpose' => '实验教学：' . $this->catalog->name,
+                'status' => EquipmentBorrow::STATUS_APPROVED
+            ]);
+        }
+    }
+
+    /**
+     * 作用域：按批次筛选
+     */
+    public function scopeByBatch($query, $batchId)
+    {
+        return $query->where('batch_id', $batchId);
+    }
+
+    /**
+     * 作用域：按优先级筛选
+     */
+    public function scopeByPriority($query, $priority)
+    {
+        return $query->where('priority', $priority);
+    }
+
+
+
+    /**
+     * 自动创建设备借用记录
+     */
+    public function createEquipmentBorrows(): void
+    {
+        if ($this->auto_borrow_equipment && $this->equipment_requirements) {
+            $borrowService = app(\App\Services\EquipmentBorrowService::class);
+            $borrowService->createBorrowsFromReservation($this);
+        }
+    }
+
+    /**
+     * 更新设备借用记录
+     */
+    public function updateEquipmentBorrows(): void
+    {
+        if ($this->auto_borrow_equipment) {
+            $borrowService = app(\App\Services\EquipmentBorrowService::class);
+            $borrowService->updateBorrowsFromReservation($this);
+        }
+    }
+
+    /**
+     * 获取设备借用统计
+     */
+    public function getBorrowStats(): array
+    {
+        $borrowService = app(\App\Services\EquipmentBorrowService::class);
+        return $borrowService->getReservationBorrowStats($this);
     }
 }

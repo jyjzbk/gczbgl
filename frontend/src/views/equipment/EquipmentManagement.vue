@@ -598,16 +598,16 @@ const handleOrganizationSelect = async (organization: OrganizationNode) => {
   })
 
   // 获取组织统计信息
-  await fetchOrganizationStats(organization.id)
+  await fetchOrganizationStats(organization.id, organization.type)
 
   // 获取设备列表
   await loadData()
 }
 
 // 获取组织统计信息
-const fetchOrganizationStats = async (organizationId: number) => {
+const fetchOrganizationStats = async (organizationId: number, organizationType?: string) => {
   try {
-    const response = await getOrganizationStatsApi(organizationId)
+    const response = await getOrganizationStatsApi(organizationId, organizationType)
     if (response.success) {
       organizationStats.value = response.data
     }
@@ -623,7 +623,7 @@ const refreshData = () => {
     organizationTreeRef.value.refreshTree()
   }
   if (selectedOrganization.value) {
-    fetchOrganizationStats(selectedOrganization.value.id)
+    fetchOrganizationStats(selectedOrganization.value.id, selectedOrganization.value.type)
     loadData()
   }
   loadCategories()
@@ -677,6 +677,14 @@ const handleDelete = async (row: Equipment) => {
     await deleteEquipmentApi(row.id)
     ElMessage.success('删除成功')
     loadData()
+    // 刷新组织树统计数据
+    if (organizationTreeRef.value) {
+      organizationTreeRef.value.refreshTree()
+    }
+    // 刷新右侧组织统计
+    if (selectedOrganization.value) {
+      fetchOrganizationStats(selectedOrganization.value.id, selectedOrganization.value.type)
+    }
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除设备失败:', error)
@@ -756,11 +764,27 @@ const handleSizeChange = () => {
 // 对话框成功回调
 const handleDialogSuccess = () => {
   loadData()
+  // 刷新组织树统计数据
+  if (organizationTreeRef.value) {
+    organizationTreeRef.value.refreshTree()
+  }
+  // 刷新右侧组织统计
+  if (selectedOrganization.value) {
+    fetchOrganizationStats(selectedOrganization.value.id, selectedOrganization.value.type)
+  }
 }
 
 // 导入成功回调
 const handleImportSuccess = () => {
   loadData()
+  // 刷新组织树统计数据
+  if (organizationTreeRef.value) {
+    organizationTreeRef.value.refreshTree()
+  }
+  // 刷新右侧组织统计
+  if (selectedOrganization.value) {
+    fetchOrganizationStats(selectedOrganization.value.id, selectedOrganization.value.type)
+  }
 }
 
 // 初始化

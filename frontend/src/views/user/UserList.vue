@@ -468,16 +468,16 @@ const handleOrganizationSelect = async (organization: OrganizationNode) => {
   searchForm.status = ''
 
   // 获取组织统计信息
-  await fetchOrganizationStats(organization.id)
+  await fetchOrganizationStats(organization.id, organization.type)
 
   // 获取用户列表
   await fetchUserList()
 }
 
 // 获取组织统计信息
-const fetchOrganizationStats = async (organizationId: number) => {
+const fetchOrganizationStats = async (organizationId: number, organizationType?: string) => {
   try {
-    const response = await getOrganizationStatsApi(organizationId)
+    const response = await getOrganizationStatsApi(organizationId, organizationType)
     if (response.success) {
       organizationStats.value = response.data
     }
@@ -493,7 +493,7 @@ const refreshData = () => {
     organizationTreeRef.value.refreshTree()
   }
   if (selectedOrganization.value) {
-    fetchOrganizationStats(selectedOrganization.value.id)
+    fetchOrganizationStats(selectedOrganization.value.id, selectedOrganization.value.type)
     fetchUserList()
   }
 }
@@ -723,7 +723,7 @@ onMounted(async () => {
 
   // 自动选择当前用户所属的组织
   const authStore = useAuthStore()
-  const currentUser = authStore.user
+  const currentUser = authStore.userInfo
 
   if (currentUser && currentUser.school_id) {
     // 学校管理员：自动选择所属学校
@@ -734,10 +734,14 @@ onMounted(async () => {
       if (organizationTreeRef.value) {
         // 触发组织树的节点选择
         const schoolNode = {
-          id: currentUser.school_id,
+          id: currentUser.school_id as number,
           name: currentUser.school_name || '当前学校',
+          code: `SCHOOL_${currentUser.school_id}`,
+          parent_id: null,
           level: 5,
-          type: 'school'
+          type: 'school',
+          sort_order: 0,
+          status: 1
         }
         handleOrganizationSelect(schoolNode)
       }

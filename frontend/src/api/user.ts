@@ -103,6 +103,11 @@ export const createUserApi = (data: CreateUserParams) => {
   return request.post('/users', data)
 }
 
+// 获取单个用户详情接口
+export const getUserApi = (id: number) => {
+  return request.get(`/users/${id}`)
+}
+
 // 更新用户接口（管理员功能）
 export interface UpdateUserParams {
   real_name?: string
@@ -144,4 +149,17 @@ export interface School {
 
 export const getSchoolsApi = (params?: { search?: string }) => {
   return request.get<{ data: School[] }>('/schools', { params })
+}
+
+// 用户API对象（为了兼容组件中的使用方式）
+export const userApi = {
+  getProfile: () => request.get('/user/profile'),
+  updateProfile: updateProfileApi,
+  uploadAvatar: uploadAvatarApi,
+  getList: getUserListApi,
+  create: createUserApi,
+  get: getUserApi,
+  update: updateUserApi,
+  delete: deleteUserApi,
+  resetPassword: resetUserPasswordApi
 }

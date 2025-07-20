@@ -534,16 +534,16 @@ const handleOrganizationSelect = async (organization: OrganizationNode) => {
   searchForm.status = undefined
 
   // 获取组织统计信息
-  await fetchOrganizationStats(organization.id)
+  await fetchOrganizationStats(organization.id, organization.type)
 
   // 获取实验室列表
   await fetchLaboratoryList()
 }
 
 // 获取组织统计信息
-const fetchOrganizationStats = async (organizationId: number) => {
+const fetchOrganizationStats = async (organizationId: number, organizationType?: string) => {
   try {
-    const response = await getOrganizationStatsApi(organizationId)
+    const response = await getOrganizationStatsApi(organizationId, organizationType)
     if (response.success) {
       organizationStats.value = response.data
     }
@@ -559,7 +559,7 @@ const refreshData = () => {
     organizationTreeRef.value.refreshTree()
   }
   if (selectedOrganization.value) {
-    fetchOrganizationStats(selectedOrganization.value.id)
+    fetchOrganizationStats(selectedOrganization.value.id, selectedOrganization.value.type)
     fetchLaboratoryList()
   }
   loadSchoolOptions()

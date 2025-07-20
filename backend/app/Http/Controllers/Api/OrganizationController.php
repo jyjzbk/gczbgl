@@ -671,39 +671,66 @@ class OrganizationController extends Controller
     {
         $user = auth()->user();
         $organizationId = $request->get('organization_id');
+        $organizationType = $request->get('organization_type'); // 新增：节点类型参数
 
         // 验证权限
         $dataScope = $this->permissionService->getUserDataScope($user);
 
-        // 首先检查是否是学校ID
+        // 如果明确指定了节点类型，直接按类型处理
+        if ($organizationType === 'school') {
+            $school = School::find($organizationId);
+            if ($school) {
+                return $this->getSchoolStatsForOrganization($school, $user, $dataScope);
+            } else {
+                return response()->json([
+                    'code' => 404,
+                    'message' => '学校不存在'
+                ], 404);
+            }
+        }
+
+        // 优先检查是否是区域ID（避免与学校ID冲突）
+        $region = AdministrativeRegion::find($organizationId);
+        if ($region) {
+            // 这是区域节点，验证权限
+            if ($dataScope['type'] !== 'all') {
+                $regionIds = $dataScope['region_ids'] ?? [];
+                if (!in_array($organizationId, $regionIds)) {
+                    return response()->json([
+                        'code' => 403,
+                        'message' => '无权访问该组织的统计数据'
+                    ], 403);
+                }
+            }
+
+            // 处理区域统计逻辑
+            return $this->getRegionStatsForOrganization($region, $user, $dataScope);
+        }
+
+        // 如果不是区域，再检查是否是学校ID
         $school = School::find($organizationId);
         if ($school) {
             // 这是学校节点，返回学校统计信息
             return $this->getSchoolStatsForOrganization($school, $user, $dataScope);
         }
 
-        // 不是学校，检查是否是区域
-        if ($dataScope['type'] !== 'all') {
-            $regionIds = $dataScope['region_ids'] ?? [];
-            if (!in_array($organizationId, $regionIds)) {
-                return response()->json([
-                    'code' => 403,
-                    'message' => '无权访问该组织的统计数据'
-                ], 403);
-            }
-        }
+        // 既不是区域也不是学校
+        return response()->json([
+            'code' => 404,
+            'message' => '组织不存在'
+        ], 404);
+    }
 
-        $region = AdministrativeRegion::find($organizationId);
-        if (!$region) {
-            return response()->json([
-                'code' => 404,
-                'message' => '组织不存在'
-            ], 404);
-        }
+    /**
+     * 获取区域详细统计信息（用于组织统计API）
+     */
+    private function getRegionStatsForOrganization(AdministrativeRegion $region, $user, array $dataScope): JsonResponse
+    {
+        $regionId = $region->id;
 
         // 获取下级区域ID
-        $childRegionIds = $this->getChildRegionIds($organizationId);
-        $childRegionIds[] = $organizationId;
+        $childRegionIds = $this->getChildRegionIds($regionId);
+        $childRegionIds[] = $regionId;
 
         // 获取这些区域下的学校ID
         $schoolIds = School::whereIn('region_id', $childRegionIds)->pluck('id');
@@ -894,36 +921,61 @@ class OrganizationController extends Controller
         // 验证权限
         $dataScope = $this->permissionService->getUserDataScope($user);
 
-        if ($dataScope['type'] !== 'all') {
-            $regionIds = $dataScope['region_ids'] ?? [];
-            if (!in_array($organizationId, $regionIds)) {
-                return response()->json([
-                    'code' => 403,
-                    'message' => '无权访问该组织的设备数据'
-                ], 403);
+        // 首先检查是否是学校节点
+        $school = School::find($organizationId);
+        if ($school) {
+            // 这是学校节点，验证学校权限
+            if ($dataScope['type'] !== 'all') {
+                $schoolIds = $dataScope['school_ids'] ?? [];
+                $regionIds = $dataScope['region_ids'] ?? [];
+
+                // 检查是否有直接的学校权限或者区域权限
+                $hasPermission = in_array($school->id, $schoolIds) ||
+                               in_array($school->region_id, $regionIds);
+
+                if (!$hasPermission) {
+                    return response()->json([
+                        'code' => 403,
+                        'message' => '无权访问该学校的设备数据'
+                    ], 403);
+                }
             }
-        }
 
-        // 获取下级区域ID
-        $childRegionIds = $this->getChildRegionIds($organizationId);
-        $childRegionIds[] = $organizationId;
+            // 直接查询该学校的设备
+            $schoolIds = collect([$school->id]);
+        } else {
+            // 这是区域节点，验证区域权限
+            if ($dataScope['type'] !== 'all') {
+                $regionIds = $dataScope['region_ids'] ?? [];
+                if (!in_array($organizationId, $regionIds)) {
+                    return response()->json([
+                        'code' => 403,
+                        'message' => '无权访问该组织的设备数据'
+                    ], 403);
+                }
+            }
 
-        // 获取这些区域下的学校ID
-        $schoolIds = School::whereIn('region_id', $childRegionIds)->pluck('id');
+            // 获取下级区域ID
+            $childRegionIds = $this->getChildRegionIds($organizationId);
+            $childRegionIds[] = $organizationId;
 
-        if ($schoolIds->isEmpty()) {
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'items' => [],
-                    'pagination' => [
-                        'current_page' => 1,
-                        'per_page' => $request->get('per_page', 20),
-                        'total' => 0,
-                        'last_page' => 1
+            // 获取这些区域下的学校ID
+            $schoolIds = School::whereIn('region_id', $childRegionIds)->pluck('id');
+
+            if ($schoolIds->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'items' => [],
+                        'pagination' => [
+                            'current_page' => 1,
+                            'per_page' => $request->get('per_page', 20),
+                            'total' => 0,
+                            'last_page' => 1
+                        ]
                     ]
-                ]
-            ]);
+                ]);
+            }
         }
 
         // 构建查询
@@ -1089,45 +1141,67 @@ class OrganizationController extends Controller
     private function addStatsToTree(array $tree): array
     {
         foreach ($tree as &$node) {
-            // 获取下级区域ID
-            $childRegionIds = $this->getChildRegionIds($node['id']);
-            $childRegionIds[] = $node['id'];
+            // 区分区域节点和学校节点
+            if (isset($node['type']) && $node['type'] === 'school') {
+                // 学校节点：只统计该学校的数据
+                $schoolId = $node['id'];
 
-            // 获取这些区域下的学校ID
-            $schoolIds = School::whereIn('region_id', $childRegionIds)->pluck('id');
+                // 统计学校用户
+                $node['user_count'] = User::where('school_id', $schoolId)->count();
+                $node['school_count'] = 0; // 学校节点本身不包含其他学校
 
-            // 统计信息
-            $node['school_count'] = $schoolIds->count();
-            $node['equipment_count'] = 0;
-            $node['laboratory_count'] = 0;
-
-            // 统计用户数据（包含学校用户和组织用户）
-            $userQuery = User::where(function($q) use ($schoolIds, $childRegionIds) {
-                // 条件1：有school_id的用户（传统学校用户）
-                if ($schoolIds->isNotEmpty()) {
-                    $q->whereIn('school_id', $schoolIds);
-                }
-
-                // 条件2：有organization_id的用户（新的组织用户）
-                if (!empty($childRegionIds)) {
-                    if ($schoolIds->isNotEmpty()) {
-                        $q->orWhereIn('organization_id', $childRegionIds);
-                    } else {
-                        $q->whereIn('organization_id', $childRegionIds);
-                    }
-                }
-            });
-
-            $node['user_count'] = $userQuery->count();
-
-            // 统计设备和实验室
-            if ($schoolIds->isNotEmpty()) {
+                // 统计学校设备和实验室
                 if (class_exists(Equipment::class)) {
-                    $node['equipment_count'] = Equipment::whereIn('school_id', $schoolIds)->count();
+                    $node['equipment_count'] = Equipment::where('school_id', $schoolId)->count();
                 }
 
                 if (class_exists(Laboratory::class)) {
-                    $node['laboratory_count'] = Laboratory::whereIn('school_id', $schoolIds)->count();
+                    $node['laboratory_count'] = Laboratory::where('school_id', $schoolId)->count();
+                }
+            } else {
+                // 区域节点：统计该区域及其下级区域的数据
+                $regionId = $node['id'];
+
+                // 获取下级区域ID
+                $childRegionIds = $this->getChildRegionIds($regionId);
+                $childRegionIds[] = $regionId;
+
+                // 获取这些区域下的学校ID
+                $schoolIds = School::whereIn('region_id', $childRegionIds)->pluck('id');
+
+                // 统计信息
+                $node['school_count'] = $schoolIds->count();
+                $node['equipment_count'] = 0;
+                $node['laboratory_count'] = 0;
+
+                // 统计用户数据（包含学校用户和组织用户）
+                $userQuery = User::where(function($q) use ($schoolIds, $childRegionIds) {
+                    // 条件1：有school_id的用户（传统学校用户）
+                    if ($schoolIds->isNotEmpty()) {
+                        $q->whereIn('school_id', $schoolIds);
+                    }
+
+                    // 条件2：有organization_id的用户（新的组织用户）
+                    if (!empty($childRegionIds)) {
+                        if ($schoolIds->isNotEmpty()) {
+                            $q->orWhereIn('organization_id', $childRegionIds);
+                        } else {
+                            $q->whereIn('organization_id', $childRegionIds);
+                        }
+                    }
+                });
+
+                $node['user_count'] = $userQuery->count();
+
+                // 统计设备和实验室
+                if ($schoolIds->isNotEmpty()) {
+                    if (class_exists(Equipment::class)) {
+                        $node['equipment_count'] = Equipment::whereIn('school_id', $schoolIds)->count();
+                    }
+
+                    if (class_exists(Laboratory::class)) {
+                        $node['laboratory_count'] = Laboratory::whereIn('school_id', $schoolIds)->count();
+                    }
                 }
             }
 

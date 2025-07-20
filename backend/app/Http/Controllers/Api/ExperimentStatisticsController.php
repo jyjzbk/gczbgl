@@ -55,22 +55,42 @@ class ExperimentStatisticsController extends Controller
         }
 
         // 统计应做实验数
-        $totalExperiments = $catalogQuery->where('status', 1)->count();
+        $totalExperiments = $catalogQuery->where('experiment_catalogs.status', 1)->count();
 
         // 统计已完成实验数
         $completedExperiments = $recordQuery
-            ->where('status', ExperimentRecord::STATUS_COMPLETED)
-            ->whereBetween('start_time', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->where('experiment_records.status', ExperimentRecord::STATUS_COMPLETED)
+            ->whereBetween('experiment_records.start_time', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->count();
 
         // 计算开出率
-        $completionRate = $totalExperiments > 0 ? 
+        $completionRate = $totalExperiments > 0 ?
             round(($completedExperiments / $totalExperiments) * 100, 2) : 0;
 
-        // 按类型统计
-        $typeStats = $recordQuery
+        // 按类型统计 - 创建新的查询实例避免冲突
+        $typeStatsQuery = ExperimentRecord::query();
+
+        // 重新应用筛选条件
+        if ($request->school_id) {
+            $typeStatsQuery->where('experiment_records.school_id', $request->school_id);
+        }
+
+        if ($request->subject_id) {
+            $typeStatsQuery->whereHas('catalog', function($q) use ($request) {
+                $q->where('subject_id', $request->subject_id);
+            });
+        }
+
+        if ($request->grade) {
+            $typeStatsQuery->whereHas('catalog', function($q) use ($request) {
+                $q->where('grade', $request->grade);
+            });
+        }
+
+        $typeStats = $typeStatsQuery
             ->join('experiment_catalogs', 'experiment_records.catalog_id', '=', 'experiment_catalogs.id')
             ->where('experiment_records.status', ExperimentRecord::STATUS_COMPLETED)
+            ->where('experiment_catalogs.status', 1) // 确保实验目录是启用状态
             ->whereBetween('experiment_records.start_time', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->select('experiment_catalogs.type', DB::raw('COUNT(*) as count'))
             ->groupBy('experiment_catalogs.type')

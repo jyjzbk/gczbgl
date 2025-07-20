@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             EquipmentSeeder::class,
             EquipmentBorrowSeeder::class,
             EquipmentMaintenanceSeeder::class,
+            EquipmentRequirementSeeder::class, // 新增器材需求配置数据
         ]);
 
         // 创建测试用户
@@ -35,3 +36,4 @@ class DatabaseSeeder extends Seeder
         ]);
     }
 }
+

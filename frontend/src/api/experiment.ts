@@ -418,3 +418,15 @@ export const getSubjectStatisticsApi = (params?: {
 }) => {
   return request.get<{ data: SubjectStatistics }>('/experiment-statistics/subject-statistics', { params })
 }
+
+// 实验目录API对象（为了兼容组件中的使用方式）
+export const experimentCatalogApi = {
+  getList: (params?: ExperimentCatalogListParams) => {
+    return getExperimentCatalogsApi(params || {})
+  },
+  create: createExperimentCatalogApi,
+  get: getExperimentCatalogApi,
+  update: updateExperimentCatalogApi,
+  delete: deleteExperimentCatalogApi,
+  batchImport: batchImportCatalogsApi
+}

@@ -184,5 +184,55 @@ export const statisticsApi = {
       method: 'get',
       params
     })
+  },
+
+  /**
+   * 获取个人实验统计数据
+   */
+  getPersonalExperimentStats(params: { teacher_id?: string | number } = {}) {
+    return request<{
+      success: boolean
+      data: {
+        total_reservations: number
+        completed_experiments: number
+        completion_rate: number
+        total_works: number
+        pending_reservations: number
+        approved_reservations: number
+      }
+    }>({
+      url: '/personal/experiment-stats',
+      method: 'get',
+      params: {
+        teacher_id: 'current',
+        ...params
+      }
+    })
+  },
+
+  /**
+   * 获取实验完成率趋势
+   */
+  getExperimentCompletionTrend(params: {
+    teacher_id?: string | number
+    months?: number
+  } = {}) {
+    return request<{
+      success: boolean
+      data: Array<{
+        month: string
+        completion_rate: number
+        total_experiments: number
+        completed_experiments: number
+      }>
+    }>({
+      url: '/statistics/experiment-completion-trend',
+      method: 'get',
+      params: {
+        teacher_id: 'current',
+        months: 12,
+        ...params
+      }
+    })
   }
 }

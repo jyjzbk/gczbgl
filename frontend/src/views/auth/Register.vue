@@ -234,7 +234,7 @@ const searchSchools = async (query: string) => {
     schoolLoading.value = true
     try {
       const response = await getSchoolsApi({ search: query })
-      schools.value = response.data
+      schools.value = response.data.data || response.data
     } catch (error) {
       console.error('搜索学校失败:', error)
     } finally {
@@ -296,7 +296,8 @@ const showPrivacy = () => {
 onMounted(async () => {
   try {
     const response = await getSchoolsApi()
-    schools.value = response.data.slice(0, 10) // 显示前10个学校
+    const schoolData = response.data.data || response.data
+    schools.value = Array.isArray(schoolData) ? schoolData.slice(0, 10) : [] // 显示前10个学校
   } catch (error) {
     console.error('加载学校列表失败:', error)
   }

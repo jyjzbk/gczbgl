@@ -56,10 +56,13 @@
           <el-icon><Operation /></el-icon>
           <span>实验管理</span>
         </template>
-        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog'])" index="/experiment-catalogs">实验目录</el-menu-item>
-        <el-menu-item v-if="authStore.hasPermission('experiment.booking')" index="/experiment-bookings">实验预约</el-menu-item>
-        <el-menu-item v-if="authStore.hasPermission('experiment.record')" index="/experiment-records">实验记录</el-menu-item>
-        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'experiment.record'])" index="/experiment-statistics">实验统计</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'experiment.catalog.view'])" index="/experiment-catalogs">实验目录</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment.booking', 'experiment.booking.view'])" index="/experiment-bookings">实验预约</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment.booking', 'experiment.booking.view'])" index="/smart-reservation">🆕 智能预约</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment.booking', 'experiment.booking.view'])" index="/laboratory-schedule">实验室课表</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment.record', 'experiment.record.view'])" index="/experiment-records">实验记录</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment.record', 'experiment.record.view'])" index="/personal-archive">个人实验档案</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'experiment.record', 'statistics.experiment'])" index="/experiment-statistics">实验统计</el-menu-item>
       </el-sub-menu>
 
       <!-- 设备管理 -->

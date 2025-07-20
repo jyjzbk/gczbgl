@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>权限调试页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>权限系统调试页面</h1>
+    
+    <div class="section">
+        <h2>1. 检查localStorage</h2>
+        <button onclick="checkLocalStorage()">检查localStorage</button>
+        <div id="localStorage-result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>2. 测试API调用</h2>
+        <button onclick="testLogin()">测试登录</button>
+        <button onclick="testUserInfo()">测试获取用户信息</button>
+        <div id="api-result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>3. 权限检查</h2>
+        <button onclick="checkPermissions()">检查权限</button>
+        <div id="permissions-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        
+        function log(message, type = 'info') {
+            console.log(message);
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            return `<div class="${className}">${message}</div>`;
+        }
+        
+        function checkLocalStorage() {
+            const result = document.getElementById('localStorage-result');
+            let html = '';
+            
+            try {
+                const token = localStorage.getItem('token');
+                const authData = localStorage.getItem('pinia-auth');
+                
+                html += log(`Token: ${token ? '存在' : '不存在'}`, token ? 'success' : 'error');
+                
+                if (authData) {
+                    const parsed = JSON.parse(authData);
+                    html += log(`Auth数据: 存在`, 'success');
+                    html += `<pre>${JSON.stringify(parsed, null, 2)}</pre>`;
+                } else {
+                    html += log(`Auth数据: 不存在`, 'error');
+                }
+            } catch (e) {
+                html += log(`检查localStorage失败: ${e.message}`, 'error');
+            }
+            
+            result.innerHTML = html;
+        }
+        
+        async function testLogin() {
+            const result = document.getElementById('api-result');
+            let html = '';
+            
+            try {
+                html += log('正在测试登录...', 'info');
+                
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'province_admin_test',
+                        password: '123456'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    html += log('登录成功', 'success');
+                    html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    
+                    // 保存token
+                    if (data.data && data.data.token) {
+                        localStorage.setItem('token', data.data.token);
+                        html += log('Token已保存到localStorage', 'success');
+                    }
+                } else {
+                    html += log(`登录失败: ${data.message}`, 'error');
+                }
+            } catch (e) {
+                html += log(`登录请求失败: ${e.message}`, 'error');
+            }
+            
+            result.innerHTML = html;
+        }
+        
+        async function testUserInfo() {
+            const result = document.getElementById('api-result');
+            let html = result.innerHTML;
+            
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    html += log('没有token，请先登录', 'error');
+                    result.innerHTML = html;
+                    return;
+                }
+                
+                html += log('正在获取用户信息...', 'info');
+                
+                const response = await fetch(`${API_BASE}/auth/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    html += log('获取用户信息成功', 'success');
+                    html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    html += log(`获取用户信息失败: ${data.message}`, 'error');
+                }
+            } catch (e) {
+                html += log(`用户信息请求失败: ${e.message}`, 'error');
+            }
+            
+            result.innerHTML = html;
+        }
+        
+        function checkPermissions() {
+            const result = document.getElementById('permissions-result');
+            let html = '';
+            
+            try {
+                const authData = localStorage.getItem('pinia-auth');
+                if (!authData) {
+                    html += log('没有认证数据', 'error');
+                    result.innerHTML = html;
+                    return;
+                }
+                
+                const parsed = JSON.parse(authData);
+                const permissions = parsed.permissions || [];
+                
+                html += log(`权限数量: ${permissions.length}`, permissions.length > 0 ? 'success' : 'error');
+                
+                // 检查关键权限
+                const keyPermissions = [
+                    'user', 'user.list', 'role', 'role.list',
+                    'equipment', 'equipment.list',
+                    'experiment', 'experiment.catalog',
+                    'statistics.view'
+                ];
+                
+                html += '<h3>关键权限检查:</h3>';
+                keyPermissions.forEach(permission => {
+                    const hasPermission = permissions.includes(permission);
+                    html += log(`${permission}: ${hasPermission ? '有' : '无'}`, hasPermission ? 'success' : 'error');
+                });
+                
+                html += '<h3>所有权限:</h3>';
+                html += `<pre>${JSON.stringify(permissions, null, 2)}</pre>`;
+                
+            } catch (e) {
+                html += log(`检查权限失败: ${e.message}`, 'error');
+            }
+            
+            result.innerHTML = html;
+        }
+        
+        // 页面加载时自动检查
+        window.onload = function() {
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>

@@ -155,3 +155,13 @@ export const LABORATORY_STATUS = {
   0: '维护中',
   1: '正常'
 }
+
+// 实验室API对象（为了兼容组件中的使用方式）
+export const laboratoryApi = {
+  getList: getLaboratoryListApi,
+  create: createLaboratoryApi,
+  get: getLaboratoryDetailApi,
+  update: updateLaboratoryApi,
+  delete: deleteLaboratoryApi,
+  getOptions: getLaboratoryOptionsApi
+}

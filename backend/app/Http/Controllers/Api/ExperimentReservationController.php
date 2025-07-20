@@ -266,4 +266,51 @@ class ExperimentReservationController extends Controller
             'message' => "审核{$statusText}成功"
         ]);
     }
+
+
+
+    /**
+     * 获取个人预约统计
+     */
+    public function getPersonalStats(Request $request): JsonResponse
+    {
+        try {
+            $teacherId = $request->teacher_id === 'current' ? auth()->id() : $request->teacher_id;
+
+            $stats = [
+                'total_reservations' => ExperimentReservation::where('teacher_id', $teacherId)->count(),
+                'completed_experiments' => ExperimentReservation::where('teacher_id', $teacherId)
+                    ->where('status', ExperimentReservation::STATUS_COMPLETED)
+                    ->count(),
+                'pending_reservations' => ExperimentReservation::where('teacher_id', $teacherId)
+                    ->where('status', ExperimentReservation::STATUS_PENDING)
+                    ->count(),
+                'approved_reservations' => ExperimentReservation::where('teacher_id', $teacherId)
+                    ->where('status', ExperimentReservation::STATUS_APPROVED)
+                    ->count()
+            ];
+
+            // 计算完成率
+            $stats['completion_rate'] = $stats['total_reservations'] > 0
+                ? round(($stats['completed_experiments'] / $stats['total_reservations']) * 100, 2)
+                : 0;
+
+            // 获取作品总数
+            $stats['total_works'] = \DB::table('experiment_records')
+                ->join('experiment_reservations', 'experiment_records.reservation_id', '=', 'experiment_reservations.id')
+                ->where('experiment_reservations.teacher_id', $teacherId)
+                ->sum('experiment_records.work_count');
+
+            return response()->json([
+                'success' => true,
+                'data' => $stats
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => '获取统计数据失败：' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

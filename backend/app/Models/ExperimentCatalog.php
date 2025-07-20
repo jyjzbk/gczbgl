@@ -159,4 +159,40 @@ class ExperimentCatalog extends Model
     {
         return $query->where('status', self::STATUS_ACTIVE);
     }
+
+    /**
+     * 关联器材需求配置
+     */
+    public function equipmentRequirements(): HasMany
+    {
+        return $this->hasMany(ExperimentEquipmentRequirement::class, 'catalog_id');
+    }
+
+    /**
+     * 关联启用的器材需求配置
+     */
+    public function activeEquipmentRequirements(): HasMany
+    {
+        return $this->hasMany(ExperimentEquipmentRequirement::class, 'catalog_id')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+
+    /**
+     * 获取器材配置数量
+     */
+    public function getEquipmentCountAttribute(): int
+    {
+        return $this->equipmentRequirements()->count();
+    }
+
+    /**
+     * 检查是否已配置器材
+     */
+    public function hasEquipmentConfig(): bool
+    {
+        return $this->equipmentRequirements()->exists();
+    }
 }
+

@@ -635,9 +635,363 @@ Response:
 }
 ```
 
+## 八、🆕 智能实验预约系统接口
+
+### 8.1 智能预约创建
+```
+POST /api/smart-reservations/create
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Request Body:
+{
+    "catalog_id": 1,
+    "laboratory_id": 1,
+    "reservation_date": "2025-01-15",
+    "start_time": "08:00",
+    "end_time": "09:40",
+    "class_name": "高一(1)班",
+    "student_count": 45,
+    "priority": "normal",
+    "auto_borrow_equipment": true,
+    "preparation_notes": "需要提前准备天平和砝码"
+}
+
+Response:
+{
+    "success": true,
+    "message": "预约创建成功",
+    "data": {
+        "reservation": {
+            "id": 123,
+            "experiment_name": "测量重力加速度",
+            "laboratory_name": "物理实验室1",
+            "reservation_date": "2025-01-15",
+            "time_slot": "08:00-09:40",
+            "status": 1,
+            "status_text": "待审核",
+            "equipment_requirements": [
+                {
+                    "equipment_id": 1,
+                    "equipment_name": "天平",
+                    "equipment_code": "EQ001",
+                    "required_quantity": 15,
+                    "available_quantity": 20,
+                    "shortage": 0,
+                    "is_required": true
+                }
+            ]
+        },
+        "conflicts": [],
+        "has_conflicts": false
+    }
+}
+```
+
+### 8.2 实验室课表查询
+```
+GET /api/smart-reservations/laboratories/{laboratory_id}/schedule
+Authorization: Bearer {token}
+
+Query Parameters:
+- date_start: 2025-01-15 (必填)
+- date_end: 2025-01-21 (必填)
+- view_type: week|month (可选，默认week)
+
+Response:
+{
+    "success": true,
+    "data": {
+        "laboratory": {
+            "id": 1,
+            "name": "物理实验室1",
+            "capacity": 50,
+            "location": "教学楼3楼"
+        },
+        "schedule": [
+            {
+                "date": "2025-01-15",
+                "day_name": "星期三",
+                "reservations": [
+                    {
+                        "id": 123,
+                        "experiment_name": "测量重力加速度",
+                        "teacher_name": "张老师",
+                        "class_name": "高一(1)班",
+                        "student_count": 45,
+                        "start_time": "08:00",
+                        "end_time": "09:40",
+                        "status": 2,
+                        "status_text": "已通过",
+                        "status_color": "success",
+                        "priority": "normal",
+                        "priority_name": "普通",
+                        "priority_color": "primary"
+                    }
+                ]
+            }
+        ],
+        "date_range": {
+            "start": "2025-01-15",
+            "end": "2025-01-21"
+        }
+    }
+}
+```
+
+### 8.3 预约冲突检测
+```
+POST /api/smart-reservations/check-conflicts
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Request Body:
+{
+    "laboratory_id": 1,
+    "reservation_date": "2025-01-15",
+    "start_time": "08:00",
+    "end_time": "09:40",
+    "teacher_id": 123,
+    "student_count": 45,
+    "equipment_ids": [1, 2, 3],
+    "exclude_reservation_id": 122
+}
+
+Response:
+{
+    "success": true,
+    "data": {
+        "has_conflicts": true,
+        "conflicts": [
+            {
+                "type": "laboratory_time",
+                "message": "实验室时间冲突",
+                "existing_reservation": {
+                    "id": 122,
+                    "experiment_name": "光的折射实验",
+                    "teacher_name": "李老师",
+                    "time_slot": "08:00-09:40"
+                }
+            },
+            {
+                "type": "equipment_borrowed",
+                "message": "设备已被借用",
+                "equipment_name": "天平",
+                "borrower_name": "王老师",
+                "borrow_date": "2025-01-15",
+                "expected_return_date": "2025-01-15"
+            }
+        ]
+    }
+}
+```
+
+### 8.4 个人实验统计
+```
+GET /api/personal/experiment-stats
+Authorization: Bearer {token}
+
+Query Parameters:
+- teacher_id: current|{user_id} (可选，默认current)
+
+Response:
+{
+    "success": true,
+    "data": {
+        "total_reservations": 25,
+        "completed_experiments": 20,
+        "completion_rate": 80.0,
+        "total_works": 156,
+        "pending_reservations": 3,
+        "approved_reservations": 2
+    }
+}
+```
+
+## 九、🆕 实验作品管理接口
+
+### 9.1 作品上传
+```
+POST /api/experiment-works
+Authorization: Bearer {token}
+Content-Type: multipart/form-data
+
+Request Body:
+record_id: 1
+student_id: 123 (可选)
+title: "重力加速度测量结果"
+description: "通过单摆实验测量重力加速度的实验结果"
+is_public: true
+file: [binary data]
+
+Response:
+{
+    "success": true,
+    "message": "作品上传成功",
+    "data": {
+        "id": 456,
+        "title": "重力加速度测量结果",
+        "type": "photo",
+        "type_name": "图片",
+        "file_url": "/storage/experiment-works/2025/01/uuid.jpg",
+        "thumbnail_url": "/storage/experiment-works/2025/01/thumbnails/uuid_thumb.jpg",
+        "file_size": 2621440,
+        "formatted_file_size": "2.5 MB",
+        "created_at": "2025-01-15T10:30:00Z"
+    }
+}
+```
+
+### 9.2 作品列表查询
+```
+GET /api/experiment-works
+Authorization: Bearer {token}
+
+Query Parameters:
+- record_id: 1 (可选)
+- student_id: 123 (可选)
+- type: photo|video|document|other (可选)
+- is_featured: true|false (可选)
+- is_public: true|false (可选)
+- page: 1 (可选)
+- per_page: 15 (可选)
+
+Response:
+{
+    "success": true,
+    "data": [
+        {
+            "id": 456,
+            "title": "重力加速度测量结果",
+            "description": "实验结果分析",
+            "type": "photo",
+            "type_name": "图片",
+            "file_url": "/storage/experiment-works/2025/01/uuid.jpg",
+            "thumbnail_url": "/storage/experiment-works/2025/01/thumbnails/uuid_thumb.jpg",
+            "file_size": 2621440,
+            "formatted_file_size": "2.5 MB",
+            "quality_score": 4,
+            "teacher_comment": "实验数据准确，分析到位",
+            "is_featured": true,
+            "is_public": true,
+            "student": {
+                "id": 123,
+                "name": "张三"
+            },
+            "uploader": {
+                "id": 456,
+                "name": "李老师"
+            },
+            "created_at": "2025-01-15T10:30:00Z"
+        }
+    ],
+    "pagination": {
+        "current_page": 1,
+        "last_page": 5,
+        "per_page": 15,
+        "total": 68
+    }
+}
+```
+
+### 9.3 作品详情
+```
+GET /api/experiment-works/{id}
+Authorization: Bearer {token}
+
+Response:
+{
+    "success": true,
+    "data": {
+        "id": 456,
+        "title": "重力加速度测量结果",
+        "description": "通过单摆实验测量重力加速度",
+        "type": "photo",
+        "file_url": "/storage/experiment-works/2025/01/uuid.jpg",
+        "thumbnail_url": "/storage/experiment-works/2025/01/thumbnails/uuid_thumb.jpg",
+        "file_name": "gravity_experiment.jpg",
+        "file_size": 2621440,
+        "mime_type": "image/jpeg",
+        "metadata": {
+            "width": 1920,
+            "height": 1080,
+            "original_name": "重力实验照片.jpg"
+        },
+        "quality_score": 4,
+        "teacher_comment": "实验数据准确，分析到位",
+        "is_featured": true,
+        "is_public": true,
+        "experiment_record": {
+            "id": 1,
+            "catalog": {
+                "id": 1,
+                "name": "测量重力加速度"
+            },
+            "laboratory": {
+                "id": 1,
+                "name": "物理实验室1"
+            }
+        },
+        "student": {
+            "id": 123,
+            "name": "张三"
+        },
+        "uploader": {
+            "id": 456,
+            "name": "李老师"
+        },
+        "created_at": "2025-01-15T10:30:00Z"
+    }
+}
+```
+
+### 9.4 作品更新
+```
+PUT /api/experiment-works/{id}
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Request Body:
+{
+    "title": "重力加速度测量结果（修订版）",
+    "description": "更新后的实验结果分析",
+    "quality_score": 5,
+    "teacher_comment": "优秀的实验报告",
+    "is_featured": true,
+    "is_public": true
+}
+
+Response:
+{
+    "success": true,
+    "message": "作品更新成功",
+    "data": {
+        "id": 456,
+        "title": "重力加速度测量结果（修订版）",
+        "quality_score": 5,
+        "teacher_comment": "优秀的实验报告",
+        "is_featured": true,
+        "is_public": true,
+        "updated_at": "2025-01-15T14:30:00Z"
+    }
+}
+```
+
+### 9.5 作品删除
+```
+DELETE /api/experiment-works/{id}
+Authorization: Bearer {token}
+
+Response:
+{
+    "success": true,
+    "message": "作品删除成功"
+}
+```
+
 ---
 
-**文档版本**: v1.0  
-**创建日期**: 2025-01-13  
-**更新日期**: 2025-01-13  
-**文档状态**: 初稿
+**文档版本**: v2.0
+**创建日期**: 2025-01-13
+**更新日期**: 2025-07-19
+**文档状态**: 已更新智能预约系统接口

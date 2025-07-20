@@ -44,7 +44,8 @@ class RoleController extends Controller
 
             // 添加统计信息
             $roles->each(function ($role) {
-                $role->user_count = \App\Models\User::where('role', $role->code)->count();
+                // 通过user_roles关联表统计用户数量
+                $role->user_count = $role->users()->count();
                 $role->permission_count = $role->permissions()->count();
             });
 
@@ -59,7 +60,8 @@ class RoleController extends Controller
 
         // 添加统计信息
         $roles->getCollection()->each(function ($role) {
-            $role->user_count = \App\Models\User::where('role', $role->code)->count();
+            // 通过user_roles关联表统计用户数量
+            $role->user_count = $role->users()->count();
             $role->permission_count = $role->permissions()->count();
         });
 
