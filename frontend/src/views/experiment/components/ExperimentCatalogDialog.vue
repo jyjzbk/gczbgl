@@ -52,9 +52,9 @@
       
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="年级" prop="grade">
+          <el-form-item label="年级" prop="grade_level">
             <el-select
-              v-model="form.grade"
+              v-model="form.grade_level"
               placeholder="请选择年级"
               style="width: 100%"
             >
@@ -67,16 +67,20 @@
             </el-select>
           </el-form-item>
         </el-col>
-        
+
         <el-col :span="8">
-          <el-form-item label="学期" prop="semester">
+          <el-form-item label="册次" prop="volume">
             <el-select
-              v-model="form.semester"
-              placeholder="请选择学期"
+              v-model="form.volume"
+              placeholder="请选择册次"
               style="width: 100%"
             >
-              <el-option label="上学期" :value="1" />
-              <el-option label="下学期" :value="2" />
+              <el-option
+                v-for="volume in volumeOptions"
+                :key="volume.value"
+                :label="volume.label"
+                :value="volume.value"
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -263,8 +267,8 @@ const form = reactive({
   name: '',
   code: '',
   type: undefined as number | undefined,
-  grade: undefined as number | undefined,
-  semester: undefined as number | undefined,
+  grade_level: undefined as string | undefined,
+  volume: undefined as string | undefined,
   chapter: '',
   duration: 45,
   student_count: 2,
@@ -283,13 +287,31 @@ const dialogTitle = computed(() => {
 })
 
 // 年级选项
-const gradeOptions = computed(() => {
-  const options = []
-  for (let i = 1; i <= 12; i++) {
-    options.push({ label: `${i}年级`, value: i })
-  }
-  return options
-})
+const gradeOptions = [
+  { label: '一年级', value: '1' },
+  { label: '二年级', value: '2' },
+  { label: '三年级', value: '3' },
+  { label: '四年级', value: '4' },
+  { label: '五年级', value: '5' },
+  { label: '六年级', value: '6' },
+  { label: '七年级', value: '7' },
+  { label: '八年级', value: '8' },
+  { label: '九年级', value: '9' },
+  { label: '高一', value: '10' },
+  { label: '高二', value: '11' },
+  { label: '高三', value: '12' }
+]
+
+// 册次选项
+const volumeOptions = [
+  { label: '上册', value: '上册' },
+  { label: '下册', value: '下册' },
+  { label: '全册', value: '全册' },
+  { label: '第一册', value: '第一册' },
+  { label: '第二册', value: '第二册' },
+  { label: '第三册', value: '第三册' },
+  { label: '第四册', value: '第四册' }
+]
 
 // 类型选项
 const typeOptions = [
@@ -315,11 +337,11 @@ const rules: FormRules = {
   type: [
     { required: true, message: '请选择实验类型', trigger: 'change' }
   ],
-  grade: [
+  grade_level: [
     { required: true, message: '请选择年级', trigger: 'change' }
   ],
-  semester: [
-    { required: true, message: '请选择学期', trigger: 'change' }
+  volume: [
+    { required: true, message: '请选择册次', trigger: 'change' }
   ],
   duration: [
     { required: true, message: '请输入实验时长', trigger: 'blur' }
@@ -358,8 +380,8 @@ const initForm = () => {
       name: props.catalog.name,
       code: props.catalog.code,
       type: props.catalog.type,
-      grade: props.catalog.grade,
-      semester: props.catalog.semester,
+      grade_level: props.catalog.grade_level || String(props.catalog.grade),
+      volume: props.catalog.volume || (props.catalog.semester === 1 ? '上册' : '下册'),
       chapter: props.catalog.chapter || '',
       duration: props.catalog.duration,
       student_count: props.catalog.student_count,
@@ -384,8 +406,8 @@ const resetForm = () => {
     name: '',
     code: '',
     type: undefined,
-    grade: undefined,
-    semester: undefined,
+    grade_level: undefined,
+    volume: undefined,
     chapter: '',
     duration: 45,
     student_count: 2,

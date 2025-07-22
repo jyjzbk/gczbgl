@@ -195,6 +195,34 @@ const router = createRouter({
         }
       ]
     },
+    // 教材版本管理路由
+    {
+      path: '/textbook-versions',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'TextbookVersions',
+          component: () => import('@/views/basic/TextbookVersions.vue'),
+          meta: { title: '教材版本管理' }
+        }
+      ]
+    },
+    // 章节结构管理路由
+    {
+      path: '/textbook-chapters',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'TextbookChapters',
+          component: () => import('@/views/basic/TextbookChapters.vue'),
+          meta: { title: '章节结构管理' }
+        }
+      ]
+    },
     // 实验管理路由
     {
       path: '/experiment-catalogs',

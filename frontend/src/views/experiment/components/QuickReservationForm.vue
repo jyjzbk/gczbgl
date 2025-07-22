@@ -189,8 +189,10 @@ const hasBlockingConflicts = computed(() => {
 const loadExperimentCatalogs = async () => {
   try {
     const response = await experimentCatalogApi.getList({ per_page: 100 })
-    experimentCatalogs.value = response.data
+    // 处理分页数据结构
+    experimentCatalogs.value = response.data.data || response.data
   } catch (error) {
+    console.error('加载实验目录失败:', error)
     ElMessage.error('加载实验目录失败')
   }
 }

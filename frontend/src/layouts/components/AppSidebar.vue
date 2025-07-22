@@ -48,6 +48,8 @@
         <el-menu-item v-if="authStore.hasAnyPermission(['laboratory_type', 'laboratory_type.list'])" index="/laboratory-types">实验室类型管理</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list', 'user.create'])" index="/subjects">学科管理</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['equipment_standard', 'equipment_standard.list'])" index="/equipment-standards">教学仪器配备标准</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['textbook_versions', 'textbook_versions.list', 'user', 'user.list'])" index="/textbook-versions">📚 教材版本管理</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['textbook_chapters', 'textbook_chapters.list', 'user', 'user.list'])" index="/textbook-chapters">📖 章节结构管理</el-menu-item>
       </el-sub-menu>
       
       <!-- 实验管理 -->
@@ -147,7 +149,13 @@ const hasExperimentPermission = computed(() => {
 })
 
 const hasBasicDataPermission = computed(() => {
-  return authStore.hasAnyPermission(['user', 'user.list', 'user.create'])
+  return authStore.hasAnyPermission([
+    'user', 'user.list', 'user.create',
+    'laboratory_type', 'laboratory_type.list',
+    'equipment_standard', 'equipment_standard.list',
+    'textbook_versions', 'textbook_versions.list',
+    'textbook_chapters', 'textbook_chapters.list'
+  ])
 })
 
 const hasStatisticsPermission = computed(() => {

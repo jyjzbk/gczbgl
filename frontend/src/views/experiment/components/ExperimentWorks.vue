@@ -275,8 +275,10 @@ const loadWorks = async () => {
       record_id: props.recordId,
       per_page: 100
     })
-    works.value = response.data
+    // 处理分页数据结构
+    works.value = response.data.data || response.data
   } catch (error) {
+    console.error('加载作品列表失败:', error)
     ElMessage.error('加载作品列表失败')
   }
 }
@@ -287,9 +289,10 @@ const loadStudents = async () => {
       role: 'student',
       per_page: 100
     })
-    students.value = response.data
+    // 处理分页数据结构
+    students.value = response.data.data || response.data
   } catch (error) {
-    console.error('加载学生列表失败')
+    console.error('加载学生列表失败:', error)
   }
 }
 

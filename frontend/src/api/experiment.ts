@@ -4,6 +4,20 @@ import request from './request'
 export interface ExperimentCatalog {
   id: number
   subject_id: number
+  textbook_version_id?: number
+  chapter_id?: number
+  grade_level?: string
+  volume?: string
+  management_level: number
+  experiment_type: string
+  parent_catalog_id?: number
+  original_catalog_id?: number
+  version: number
+  is_deleted_by_lower: boolean
+  delete_reason?: string
+  created_by_level?: number
+  created_by_org_id?: number
+  created_by_org_type?: string
   name: string
   code: string
   type: number
@@ -26,12 +40,23 @@ export interface ExperimentCatalog {
     name: string
     code: string
   }
+  textbook_version?: TextbookVersion
+  chapter_info?: TextbookChapter
+  parent_catalog?: ExperimentCatalog
+  original_catalog?: ExperimentCatalog
 }
 
 export interface ExperimentCatalogListParams {
   page?: number
   per_page?: number
   subject_id?: number
+  textbook_version_id?: number
+  chapter_id?: number
+  grade_level?: string
+  volume?: string
+  management_level?: number
+  experiment_type?: string
+  parent_catalog_id?: number
   grade?: number
   semester?: number
   type?: number
@@ -44,6 +69,20 @@ export interface ExperimentCatalogListParams {
 
 export interface CreateExperimentCatalogParams {
   subject_id: number
+  textbook_version_id?: number
+  chapter_id?: number
+  grade_level?: string
+  volume?: string
+  management_level: number
+  experiment_type: string
+  parent_catalog_id?: number
+  original_catalog_id?: number
+  version?: number
+  is_deleted_by_lower?: boolean
+  delete_reason?: string
+  created_by_level?: number
+  created_by_org_id?: number
+  created_by_org_type?: string
   name: string
   code: string
   type: number
@@ -417,6 +456,146 @@ export const getSubjectStatisticsApi = (params?: {
   end_date?: string
 }) => {
   return request.get<{ data: SubjectStatistics }>('/experiment-statistics/subject-statistics', { params })
+}
+
+// 教材版本相关接口
+export interface TextbookVersion {
+  id: number
+  name: string
+  code: string
+  publisher?: string
+  description?: string
+  status: number
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface TextbookVersionListParams {
+  page?: number
+  per_page?: number
+  search?: string
+  status?: number
+  sort_field?: string
+  sort_order?: 'asc' | 'desc'
+}
+
+export interface CreateTextbookVersionParams {
+  name: string
+  code: string
+  publisher?: string
+  description?: string
+  status: boolean
+  sort_order: number
+}
+
+// 获取教材版本列表
+export const getTextbookVersionsApi = (params?: TextbookVersionListParams) => {
+  return request.get('/textbook-versions', { params })
+}
+
+// 获取教材版本选项（用于下拉菜单）
+export const getTextbookVersionOptionsApi = () => {
+  return request.get('/textbook-versions/options')
+}
+
+// 创建教材版本
+export const createTextbookVersionApi = (data: CreateTextbookVersionParams) => {
+  return request.post('/textbook-versions', data)
+}
+
+// 获取教材版本详情
+export const getTextbookVersionApi = (id: number) => {
+  return request.get(`/textbook-versions/${id}`)
+}
+
+// 更新教材版本
+export const updateTextbookVersionApi = (id: number, data: Partial<CreateTextbookVersionParams>) => {
+  return request.put(`/textbook-versions/${id}`, data)
+}
+
+// 删除教材版本
+export const deleteTextbookVersionApi = (id: number) => {
+  return request.delete(`/textbook-versions/${id}`)
+}
+
+// 章节结构相关接口
+export interface TextbookChapter {
+  id: number
+  subject_id: number
+  textbook_version_id: number
+  grade_level: string
+  volume: string
+  parent_id?: number
+  level: number
+  code: string
+  name: string
+  sort_order: number
+  status: number
+  created_at: string
+  updated_at: string
+  children?: TextbookChapter[]
+  subject?: Subject
+  textbook_version?: TextbookVersion
+}
+
+export interface TextbookChapterListParams {
+  subject_id?: number
+  textbook_version_id?: number
+  grade_level?: string
+  volume?: string
+  parent_id?: number
+  level?: number
+  status?: number
+  search?: string
+}
+
+export interface CreateTextbookChapterParams {
+  subject_id: number
+  textbook_version_id: number
+  grade_level: string
+  volume: string
+  parent_id?: number
+  level: number
+  code: string
+  name: string
+  sort_order: number
+  status: boolean
+}
+
+// 获取章节结构列表
+export const getTextbookChaptersApi = (params?: TextbookChapterListParams) => {
+  return request.get('/textbook-chapters', { params })
+}
+
+// 创建章节结构
+export const createTextbookChapterApi = (data: CreateTextbookChapterParams) => {
+  return request.post('/textbook-chapters', data)
+}
+
+// 获取章节结构详情
+export const getTextbookChapterApi = (id: number) => {
+  return request.get(`/textbook-chapters/${id}`)
+}
+
+// 更新章节结构
+export const updateTextbookChapterApi = (id: number, data: Partial<CreateTextbookChapterParams>) => {
+  return request.put(`/textbook-chapters/${id}`, data)
+}
+
+// 删除章节结构
+export const deleteTextbookChapterApi = (id: number) => {
+  return request.delete(`/textbook-chapters/${id}`)
+}
+
+// 获取章节树形结构
+export const getTextbookChapterTreeApi = (params?: {
+  subject_id?: number
+  textbook_version_id?: number
+  grade_level?: string
+  volume?: string
+}) => {
+  return request.get('/textbook-chapters/tree', { params })
 }
 
 // 实验目录API对象（为了兼容组件中的使用方式）

@@ -308,8 +308,9 @@ const loadReservations = async () => {
     }
 
     const response = await experimentReservationApi.getList(params)
-    reservations.value = response.data
-    pagination.total = response.pagination.total
+    // 处理分页数据结构
+    reservations.value = response.data.data || response.data
+    pagination.total = response.data.total || response.pagination?.total || 0
   } catch (error) {
     ElMessage.error('加载预约记录失败')
   } finally {

@@ -370,9 +370,17 @@ const initForm = () => {
       end_time: props.booking.end_time,
       remark: props.booking.remark || ''
     })
+    // 加载教师列表
+    loadTeachers()
   } else {
     // 新增模式，重置表单
     resetForm()
+    // 如果是学校级用户，自动设置学校ID
+    if (!canSelectSchool.value && authStore.userInfo?.school_id) {
+      form.school_id = authStore.userInfo.school_id
+      // 自动加载教师列表
+      loadTeachers()
+    }
   }
 }
 
@@ -460,17 +468,30 @@ const loadCatalogs = async () => {
 }
 
 const loadTeachers = async () => {
-  if (!form.school_id) return
-  
+  if (!form.school_id) {
+    teachers.value = []
+    return
+  }
+
   try {
-    const response = await getUserListApi({ 
-      school_id: form.school_id, 
+    const response = await getUserListApi({
+      school_id: form.school_id,
       role: 'teacher',
-      per_page: 1000 
+      per_page: 1000
     })
-    teachers.value = response.data.items
+
+    // 处理响应数据结构
+    if (response.data && response.data.items && Array.isArray(response.data.items)) {
+      teachers.value = response.data.items
+    } else if (response.data && Array.isArray(response.data)) {
+      teachers.value = response.data
+    } else {
+      console.warn('教师数据格式不正确:', response.data)
+      teachers.value = []
+    }
   } catch (error) {
     console.error('加载教师列表失败:', error)
+    teachers.value = []
   }
 }
 

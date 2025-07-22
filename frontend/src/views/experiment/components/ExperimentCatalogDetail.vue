@@ -19,8 +19,11 @@
           <el-descriptions-item label="所属学科">
             {{ catalog.subject?.name }}
           </el-descriptions-item>
-          <el-descriptions-item label="年级学期">
-            {{ catalog.grade }}年级 {{ catalog.semester === 1 ? '上学期' : '下学期' }}
+          <el-descriptions-item label="年级">
+            {{ getGradeLabel(catalog.grade_level || catalog.grade) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="册次">
+            {{ getVolumeLabel(catalog.volume) || (catalog.semester === 1 ? '上学期' : '下学期') }}
           </el-descriptions-item>
           <el-descriptions-item label="实验类型">
             <el-tag :type="getTypeTagType(catalog.type)">
@@ -198,6 +201,45 @@ const getTypeLabel = (type: number) => {
     4: '综合实验'
   }
   return typeMap[type] || '未知'
+}
+
+// 获取年级标签
+const getGradeLabel = (grade: string | number) => {
+  if (!grade) return '-'
+
+  const gradeMap: Record<string, string> = {
+    '1': '一年级',
+    '2': '二年级',
+    '3': '三年级',
+    '4': '四年级',
+    '5': '五年级',
+    '6': '六年级',
+    '7': '七年级',
+    '8': '八年级',
+    '9': '九年级',
+    '10': '高一',
+    '11': '高二',
+    '12': '高三'
+  }
+
+  return gradeMap[String(grade)] || `${grade}年级`
+}
+
+// 获取册次标签
+const getVolumeLabel = (volume: string) => {
+  if (!volume) return '-'
+
+  const volumeMap: Record<string, string> = {
+    '上册': '上册',
+    '下册': '下册',
+    '全册': '全册',
+    '第一册': '第一册',
+    '第二册': '第二册',
+    '第三册': '第三册',
+    '第四册': '第四册'
+  }
+
+  return volumeMap[volume] || volume
 }
 
 // 格式化日期
