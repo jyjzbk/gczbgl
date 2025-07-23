@@ -265,11 +265,22 @@ class LaboratoryController extends Controller
      */
     public function options(Request $request): JsonResponse
     {
-        $query = Laboratory::normal();
+        $query = Laboratory::with(['school'])->normal();
+
+        // 应用数据权限过滤
+        DataScopeMiddleware::applyDataScope($query, $request, 'laboratories');
 
         // 按学校筛选
         if ($request->filled('school_id')) {
-            $query->bySchool($request->school_id);
+            // 验证用户是否可以访问指定学校
+            if (DataScopeMiddleware::canAccess($request, 'school', $request->school_id)) {
+                $query->bySchool($request->school_id);
+            } else {
+                return response()->json([
+                    'code' => 403,
+                    'message' => '无权访问指定学校的数据'
+                ], 403);
+            }
         }
 
         // 按类型筛选
@@ -278,7 +289,7 @@ class LaboratoryController extends Controller
         }
 
         $laboratories = $query->orderBy('name')
-                             ->get(['id', 'name', 'code', 'type', 'capacity']);
+                             ->get(['id', 'name', 'code', 'type', 'capacity', 'school_id']);
 
         return response()->json([
             'code' => 200,

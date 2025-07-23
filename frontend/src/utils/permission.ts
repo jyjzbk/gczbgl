@@ -47,11 +47,15 @@ export class PermissionController {
    * 获取当前用户的管理级别
    */
   getCurrentUserLevel(): ManagementLevel {
-    const user = this.authStore.user
+    const user = this.authStore.userInfo
     if (!user) return ManagementLevel.SCHOOL
-    
-    // 根据用户角色或组织类型确定管理级别
-    // 这里需要根据实际的用户数据结构调整
+
+    // 根据用户的organization_level字段确定管理级别
+    if (user.organization_level) {
+      return user.organization_level as ManagementLevel
+    }
+
+    // 兼容旧的organization_type字段判断
     if (user.organization_type === 'province') return ManagementLevel.PROVINCE
     if (user.organization_type === 'city') return ManagementLevel.CITY
     if (user.organization_type === 'county') return ManagementLevel.COUNTY
@@ -63,7 +67,7 @@ export class PermissionController {
    * 获取当前用户的组织ID
    */
   getCurrentUserOrgId(): number {
-    const user = this.authStore.user
+    const user = this.authStore.userInfo
     return user?.organization_id || 0
   }
 
@@ -71,7 +75,7 @@ export class PermissionController {
    * 获取当前用户的组织类型
    */
   getCurrentUserOrgType(): string {
-    const user = this.authStore.user
+    const user = this.authStore.userInfo
     return user?.organization_type || 'school'
   }
 
@@ -79,20 +83,8 @@ export class PermissionController {
    * 检查是否可以查看实验目录
    */
   canViewCatalog(catalog: any): boolean {
-    const userLevel = this.getCurrentUserLevel()
-    const userOrgId = this.getCurrentUserOrgId()
-    
-    // 可以查看自己级别及以上级别的实验目录
-    if (catalog.management_level <= userLevel) {
-      return true
-    }
-    
-    // 可以查看自己组织创建的实验目录
-    if (catalog.created_by_org_id === userOrgId) {
-      return true
-    }
-    
-    return false
+    // 所有用户都能查看各级管理员创建的实验目录
+    return true
   }
 
   /**
@@ -109,10 +101,21 @@ export class PermissionController {
   canEditCatalog(catalog: any): boolean {
     const userLevel = this.getCurrentUserLevel()
     const userOrgId = this.getCurrentUserOrgId()
-    
-    // 只能编辑自己创建的实验目录
-    return catalog.created_by_level === userLevel && 
-           catalog.created_by_org_id === userOrgId
+
+    // 各级管理员只能编辑本级的实验目录
+    if (catalog.management_level === userLevel) {
+      // 如果是本级的实验目录，检查是否是同一组织创建的
+      if (catalog.created_by_org_id === userOrgId) {
+        return true // 编辑本级同组织的实验目录
+      }
+    }
+
+    // 上级管理员可以编辑下级实验目录
+    if (catalog.management_level > userLevel) {
+      return true // 上级可以编辑下级的实验目录
+    }
+
+    return false
   }
 
   /**
@@ -121,18 +124,20 @@ export class PermissionController {
   canDeleteCatalog(catalog: any): boolean {
     const userLevel = this.getCurrentUserLevel()
     const userOrgId = this.getCurrentUserOrgId()
-    
-    // 可以删除自己创建的实验目录
-    if (catalog.created_by_level === userLevel && 
-        catalog.created_by_org_id === userOrgId) {
-      return true
+
+    // 各级管理员只能删除本级的实验目录
+    if (catalog.management_level === userLevel) {
+      // 如果是本级的实验目录，检查是否是同一组织创建的
+      if (catalog.created_by_org_id === userOrgId) {
+        return true // 删除本级同组织的实验目录
+      }
     }
-    
-    // 下级可以标记删除上级的实验目录
-    if (catalog.management_level < userLevel) {
-      return true
+
+    // 上级管理员可以删除下级实验目录
+    if (catalog.management_level > userLevel) {
+      return true // 上级可以删除下级的实验目录
     }
-    
+
     return false
   }
 
@@ -140,10 +145,57 @@ export class PermissionController {
    * 检查是否可以复制实验目录
    */
   canCopyCatalog(catalog: any): boolean {
-    const userLevel = this.getCurrentUserLevel()
-    
-    // 可以复制上级的实验目录
-    return catalog.management_level < userLevel
+    // 首先检查权限代码
+    if (this.authStore.hasPermission('experiment.catalog.copy')) {
+      // 如果有权限代码，则按照权限代码执行
+      return this.canViewCatalog(catalog)
+    }
+
+    // 兼容旧的逻辑：用户可以复制所有可见的实验目录
+    return this.canViewCatalog(catalog)
+  }
+
+  /**
+   * 基于权限代码检查是否可以查看实验目录
+   */
+  canViewCatalogByPermission(): boolean {
+    return this.authStore.hasPermission('experiment.catalog.view') ||
+           this.authStore.hasPermission('experiment.catalog')
+  }
+
+  /**
+   * 基于权限代码检查是否可以创建实验目录
+   */
+  canCreateCatalogByPermission(): boolean {
+    return this.authStore.hasPermission('experiment.catalog.create')
+  }
+
+  /**
+   * 基于权限代码检查是否可以编辑实验目录
+   */
+  canEditCatalogByPermission(): boolean {
+    return this.authStore.hasPermission('experiment.catalog.edit')
+  }
+
+  /**
+   * 基于权限代码检查是否可以删除实验目录
+   */
+  canDeleteCatalogByPermission(): boolean {
+    return this.authStore.hasPermission('experiment.catalog.delete')
+  }
+
+  /**
+   * 基于权限代码检查是否可以复制实验目录
+   */
+  canCopyCatalogByPermission(): boolean {
+    return this.authStore.hasPermission('experiment.catalog.copy')
+  }
+
+  /**
+   * 基于权限代码检查是否可以管理级别权限
+   */
+  canManageLevelPermissions(): boolean {
+    return this.authStore.hasPermission('experiment.catalog.manage_level')
   }
 
   /**
@@ -230,9 +282,9 @@ export class PermissionController {
       { label: '学区级', value: ManagementLevel.DISTRICT },
       { label: '学校级', value: ManagementLevel.SCHOOL }
     ]
-    
-    // 只能看到自己级别及以下的级别
-    return levels.filter(level => level.value >= userLevel)
+
+    // 所有用户都能看到所有级别的选项（用于筛选查看）
+    return levels
   }
 
   /**

@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ExperimentCatalog;
 use App\Models\Subject;
+use App\Models\TextbookVersion;
+use App\Models\TextbookChapter;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class ExperimentCatalogController extends Controller
 {
@@ -16,31 +19,57 @@ class ExperimentCatalogController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = ExperimentCatalog::with('subject');
+        $query = ExperimentCatalog::with([
+            'subject',
+            'textbookVersion',
+            'chapter',
+            'parentCatalog',
+            'originalCatalog'
+        ]);
 
         // 按学科筛选
         if ($request->filled('subject_id')) {
             $query->bySubject($request->subject_id);
         }
 
+        // 按教材版本筛选
+        if ($request->filled('textbook_version_id')) {
+            $query->where('textbook_version_id', $request->textbook_version_id);
+        }
+
+        // 按章节筛选
+        if ($request->filled('chapter_id')) {
+            $query->where('chapter_id', $request->chapter_id);
+        }
+
         // 按年级筛选
-        if ($request->filled('grade')) {
-            $query->byGrade($request->grade);
+        if ($request->filled('grade_level')) {
+            $query->where('grade_level', $request->grade_level);
         }
 
-        // 按学期筛选
-        if ($request->filled('semester')) {
-            $query->bySemester($request->semester);
+        // 按册次筛选
+        if ($request->filled('volume')) {
+            $query->where('volume', $request->volume);
         }
 
-        // 按类型筛选
-        if ($request->filled('type')) {
-            $query->byType($request->type);
+        // 按管理级别筛选
+        if ($request->filled('management_level')) {
+            $query->where('management_level', $request->management_level);
         }
 
-        // 按是否标准实验筛选
-        if ($request->filled('is_standard')) {
-            $query->where('is_standard', $request->is_standard);
+        // 按实验类型筛选
+        if ($request->filled('experiment_type')) {
+            $query->where('experiment_type', $request->experiment_type);
+        }
+
+        // 按是否被下级删除筛选
+        if ($request->has('is_deleted_by_lower')) {
+            $query->where('is_deleted_by_lower', $request->boolean('is_deleted_by_lower'));
+        }
+
+        // 按创建者级别筛选
+        if ($request->filled('created_by_level')) {
+            $query->where('created_by_level', $request->created_by_level);
         }
 
         // 按状态筛选
@@ -48,6 +77,12 @@ class ExperimentCatalogController extends Controller
             $query->where('status', $request->status);
         } else {
             $query->active(); // 默认只显示启用的
+        }
+
+        // 权限控制：根据用户级别筛选可见的实验目录
+        $user = Auth::user();
+        if ($user) {
+            $this->applyPermissionFilter($query, $user);
         }
 
         // 搜索
@@ -69,6 +104,20 @@ class ExperimentCatalogController extends Controller
         $perPage = $request->get('per_page', 15);
         $catalogs = $query->paginate($perPage);
 
+        // 处理章节信息映射
+        $catalogs->getCollection()->transform(function ($catalog) {
+            // 如果有章节关联，将其映射为 chapter_info
+            // 注意：由于模型中同时有 chapter 字段和 chapter 关联，需要使用 getRelation 方法
+            $chapterRelation = $catalog->getRelation('chapter');
+            if ($chapterRelation) {
+                $catalog->chapter_info = $chapterRelation->toArray();
+            } else {
+                $catalog->chapter_info = null;
+            }
+
+            return $catalog;
+        });
+
         return response()->json([
             'code' => 200,
             'message' => '获取成功',
@@ -86,8 +135,8 @@ class ExperimentCatalogController extends Controller
             'name' => 'required|string|max:200',
             'code' => 'required|string|max:50|unique:experiment_catalogs',
             'type' => ['required', 'integer', Rule::in([1, 2, 3, 4])],
-            'grade' => 'required|integer|min:1|max:12',
-            'semester' => ['required', 'integer', Rule::in([1, 2])],
+            'grade_level' => 'required|string|max:20',
+            'volume' => 'required|string|max:20',
             'chapter' => 'nullable|string|max:100',
             'duration' => 'integer|min:1|max:300',
             'student_count' => 'integer|min:1|max:100',
@@ -139,8 +188,8 @@ class ExperimentCatalogController extends Controller
                 Rule::unique('experiment_catalogs')->ignore($experimentCatalog->id)
             ],
             'type' => ['required', 'integer', Rule::in([1, 2, 3, 4])],
-            'grade' => 'required|integer|min:1|max:12',
-            'semester' => ['required', 'integer', Rule::in([1, 2])],
+            'grade_level' => 'required|string|max:20',
+            'volume' => 'required|string|max:20',
             'chapter' => 'nullable|string|max:100',
             'duration' => 'integer|min:1|max:300',
             'student_count' => 'integer|min:1|max:100',
@@ -195,8 +244,8 @@ class ExperimentCatalogController extends Controller
             'catalogs.*.name' => 'required|string|max:200',
             'catalogs.*.code' => 'required|string|max:50',
             'catalogs.*.type' => ['required', 'integer', Rule::in([1, 2, 3, 4])],
-            'catalogs.*.grade' => 'required|integer|min:1|max:12',
-            'catalogs.*.semester' => ['required', 'integer', Rule::in([1, 2])],
+            'catalogs.*.grade_level' => 'required|string|max:20',
+            'catalogs.*.volume' => 'required|string|max:20',
         ]);
 
         $imported = 0;
@@ -225,5 +274,90 @@ class ExperimentCatalogController extends Controller
                 'errors' => $errors
             ]
         ]);
+    }
+
+    /**
+     * 应用权限过滤
+     */
+    private function applyPermissionFilter($query, $user)
+    {
+        // 根据新的权限要求：所有角色、用户都能查看各级管理员创建的实验目录
+        // 不需要进行权限过滤，所有用户都能看到所有实验目录
+        // 权限控制在操作层面（编辑、删除等）进行
+    }
+
+    /**
+     * 复制实验目录（继承机制）
+     */
+    public function copy(Request $request, $id): JsonResponse
+    {
+        try {
+            $sourceCatalog = ExperimentCatalog::with(['equipmentRequirements'])->findOrFail($id);
+            $user = Auth::user();
+
+            // 验证权限：用户必须有权限访问源实验目录
+            if (!$this->canAccessCatalog($sourceCatalog, $user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '没有权限复制该实验目录'
+                ], 403);
+            }
+
+            // 创建副本
+            $newCatalog = $sourceCatalog->replicate();
+            $newCatalog->name = $request->input('name', $sourceCatalog->name . ' (副本)');
+            $newCatalog->parent_catalog_id = $sourceCatalog->id;
+            $newCatalog->original_catalog_id = $sourceCatalog->original_catalog_id ?? $sourceCatalog->id;
+            $newCatalog->version = 1;
+            $newCatalog->management_level = $user->organization_level ?? 5;
+            $newCatalog->created_by_level = $user->organization_level ?? 5;
+            $newCatalog->created_by_org_id = $user->organization_id ?? $user->school_id;
+            $newCatalog->created_by_org_type = $user->organization_type ?? 'school';
+            $newCatalog->created_by = $user->id;
+            $newCatalog->save();
+
+            // 复制器材需求配置
+            foreach ($sourceCatalog->equipmentRequirements as $requirement) {
+                $newRequirement = $requirement->replicate();
+                $newRequirement->catalog_id = $newCatalog->id;
+                $newRequirement->created_by = $user->id;
+                $newRequirement->save();
+            }
+
+            $newCatalog->load(['subject', 'textbookVersion', 'chapter']);
+
+            return response()->json([
+                'success' => true,
+                'message' => '实验目录复制成功',
+                'data' => $newCatalog
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => '复制实验目录失败：' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * 检查用户是否可以访问实验目录
+     */
+    private function canAccessCatalog($catalog, $user): bool
+    {
+        $userLevel = $user->organization_level ?? 5;
+        $userOrgId = $user->organization_id ?? $user->school_id;
+
+        // 可以访问自己级别及下级级别的实验目录
+        if ($catalog->management_level >= $userLevel) {
+            return true;
+        }
+
+        // 可以访问自己组织创建的实验目录
+        if ($catalog->created_by_org_id == $userOrgId) {
+            return true;
+        }
+
+        return false;
     }
 }

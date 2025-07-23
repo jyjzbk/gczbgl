@@ -27,6 +27,10 @@ class ExperimentRecord extends Model
         'summary',
         'problems',
         'suggestions',
+        'work_count',
+        'attendance_data',
+        'equipment_usage_rate',
+        'safety_incidents',
         'status'
     ];
 
@@ -41,6 +45,9 @@ class ExperimentRecord extends Model
         'quality_score' => 'integer',
         'photos' => 'array',
         'videos' => 'array',
+        'work_count' => 'integer',
+        'attendance_data' => 'array',
+        'equipment_usage_rate' => 'decimal:2',
         'status' => 'integer',
         'start_time' => 'datetime',
         'end_time' => 'datetime'

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主机： 127.0.0.1
--- 生成日期： 2025-07-19 10:04:12
+-- 生成日期： 2025-07-22 10:49:34
 -- 服务器版本： 10.4.32-MariaDB
 -- PHP 版本： 8.2.12
 
@@ -75,16 +75,6 @@ CREATE TABLE `cache` (
   `value` mediumtext NOT NULL,
   `expiration` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- 转存表中的数据 `cache`
---
-
-INSERT INTO `cache` (`key`, `value`, `expiration`) VALUES
-('laravel-cache-user_permissions_3', 'a:0:{}', 1752885099),
-('laravel-cache-user_permissions_42', 'a:45:{i:0;s:9:\"equipment\";i:1;s:18:\"equipment_standard\";i:2;s:25:\"equipment_standard.create\";i:3;s:25:\"equipment_standard.delete\";i:4;s:23:\"equipment_standard.list\";i:5;s:25:\"equipment_standard.update\";i:6;s:16:\"equipment.borrow\";i:7;s:16:\"equipment.create\";i:8;s:16:\"equipment.delete\";i:9;s:14:\"equipment.list\";i:10;s:21:\"equipment.maintenance\";i:11;s:16:\"equipment.update\";i:12;s:10:\"experiment\";i:13;s:18:\"experiment.booking\";i:14;s:18:\"experiment.catalog\";i:15;s:17:\"experiment.record\";i:16;s:15:\"laboratory_type\";i:17;s:22:\"laboratory_type.create\";i:18;s:22:\"laboratory_type.delete\";i:19;s:20:\"laboratory_type.list\";i:20;s:22:\"laboratory_type.update\";i:21;s:3:\"log\";i:22;s:8:\"log.read\";i:23;s:4:\"role\";i:24;s:11:\"role.create\";i:25;s:11:\"role.delete\";i:26;s:9:\"role.list\";i:27;s:11:\"role.update\";i:28;s:20:\"statistics.dashboard\";i:29;s:20:\"statistics.equipment\";i:30;s:21:\"statistics.experiment\";i:31;s:17:\"statistics.export\";i:32;s:22:\"statistics.performance\";i:33;s:15:\"statistics.user\";i:34;s:15:\"statistics.view\";i:35;s:6:\"system\";i:36;s:11:\"system.read\";i:37;s:4:\"user\";i:38;s:11:\"user.create\";i:39;s:11:\"user.delete\";i:40;s:9:\"user.edit\";i:41;s:11:\"user.export\";i:42;s:9:\"user.list\";i:43;s:19:\"user.reset_password\";i:44;s:11:\"user.update\";}', 1752892761),
-('laravel-cache-user_permissions_50', 'a:0:{}', 1752885099),
-('laravel-cache-user_permissions_51', 'a:0:{}', 1752885099);
 
 -- --------------------------------------------------------
 
@@ -467,6 +457,20 @@ INSERT INTO `equipment_standards` (`id`, `name`, `code`, `authority_type`, `stag
 CREATE TABLE `experiment_catalogs` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `subject_id` bigint(20) UNSIGNED NOT NULL COMMENT '学科ID',
+  `textbook_version_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT '教材版本ID',
+  `chapter_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT '章节ID',
+  `grade_level` varchar(20) DEFAULT NULL COMMENT '年级',
+  `volume` varchar(20) DEFAULT NULL COMMENT '册次',
+  `management_level` tinyint(4) NOT NULL DEFAULT 5 COMMENT '管理级别（1省2市3区县4学区5学校）',
+  `experiment_type` enum('必做','选做','演示','分组') NOT NULL DEFAULT '必做' COMMENT '实验类型',
+  `parent_catalog_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT '上级实验目录ID（继承关系）',
+  `original_catalog_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT '原始实验目录ID（版本追踪）',
+  `version` int(11) NOT NULL DEFAULT 1 COMMENT '版本号',
+  `is_deleted_by_lower` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否被下级删除',
+  `delete_reason` text DEFAULT NULL COMMENT '删除理由',
+  `created_by_level` tinyint(4) DEFAULT NULL COMMENT '创建者级别',
+  `created_by_org_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT '创建者组织ID',
+  `created_by_org_type` varchar(20) DEFAULT NULL COMMENT '创建者组织类型',
   `name` varchar(200) NOT NULL COMMENT '实验名称',
   `code` varchar(50) NOT NULL COMMENT '实验编号',
   `type` tinyint(4) NOT NULL COMMENT '实验类型：1必做 2选做 3演示 4分组',
@@ -490,12 +494,86 @@ CREATE TABLE `experiment_catalogs` (
 -- 转存表中的数据 `experiment_catalogs`
 --
 
-INSERT INTO `experiment_catalogs` (`id`, `subject_id`, `name`, `code`, `type`, `grade`, `semester`, `chapter`, `duration`, `student_count`, `objective`, `materials`, `procedure`, `safety_notes`, `difficulty_level`, `is_standard`, `status`, `created_at`, `updated_at`) VALUES
-(1, 2, '测量物体的长度', 'MP_001', 4, 8, 1, '第一章 机械运动', 45, 2, '学会使用刻度尺测量物体长度，掌握测量的基本方法', '刻度尺、铅笔、硬币、细线等', '1.观察刻度尺的结构\\n2.学习正确的测量方法\\n3.测量不同物体的长度\\n4.记录测量结果', '使用刻度尺时要轻拿轻放，避免弯折', 1, 1, 1, '2025-07-18 15:17:56', '2025-07-18 15:17:56'),
-(2, 2, '测量重力加速度', 'MP_002', 4, 9, 1, '第十三章 力和机械', 90, 4, '通过实验测量重力加速度的大小', '单摆装置、秒表、刻度尺、小球等', '1.组装单摆装置\\n2.测量摆长\\n3.测量周期\\n4.计算重力加速度', '注意摆球的安全，避免碰撞', 3, 1, 1, '2025-07-18 15:17:56', '2025-07-18 15:17:56'),
-(3, 3, '氧气的制取和性质', 'MC_001', 3, 9, 1, '第二单元 我们周围的空气', 45, 1, '学习氧气的制取方法，观察氧气的性质', '高锰酸钾、试管、酒精灯、导管、集气瓶等', '1.装置连接\\n2.加热制取氧气\\n3.收集氧气\\n4.验证氧气性质', '注意用火安全，避免烫伤；注意通风', 2, 1, 1, '2025-07-18 15:17:56', '2025-07-18 15:17:56'),
-(4, 4, '观察植物细胞', 'MB_001', 4, 7, 1, '第二单元 生物体的结构层次', 45, 2, '学会制作临时装片，观察植物细胞的基本结构', '显微镜、载玻片、盖玻片、洋葱、碘液等', '1.制作洋葱表皮临时装片\\n2.显微镜观察\\n3.绘制细胞结构图\\n4.总结细胞特点', '小心使用显微镜，避免损坏镜头', 2, 1, 1, '2025-07-18 15:17:56', '2025-07-18 15:17:56'),
-(5, 5, '验证牛顿第二定律', 'HP_001', 4, 10, 2, '第四章 牛顿运动定律', 90, 4, '通过实验验证牛顿第二定律F=ma', '气垫导轨、滑块、砝码、光电门、计时器等', '1.调节气垫导轨水平\\n2.测量不同力下的加速度\\n3.测量不同质量下的加速度\\n4.分析数据验证定律', '注意气垫导轨的使用，避免损坏设备', 4, 1, 1, '2025-07-18 15:17:56', '2025-07-18 15:17:56');
+INSERT INTO `experiment_catalogs` (`id`, `subject_id`, `textbook_version_id`, `chapter_id`, `grade_level`, `volume`, `management_level`, `experiment_type`, `parent_catalog_id`, `original_catalog_id`, `version`, `is_deleted_by_lower`, `delete_reason`, `created_by_level`, `created_by_org_id`, `created_by_org_type`, `name`, `code`, `type`, `grade`, `semester`, `chapter`, `duration`, `student_count`, `objective`, `materials`, `procedure`, `safety_notes`, `difficulty_level`, `is_standard`, `status`, `created_at`, `updated_at`) VALUES
+(1, 2, 1, 2, '8', '上册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '测量物体的长度', 'MP_001', 4, 8, 1, '第一章 机械运动', 45, 2, '学会使用刻度尺测量物体长度，掌握测量的基本方法', '刻度尺、铅笔、硬币、细线等', '1.观察刻度尺的结构\\n2.学习正确的测量方法\\n3.测量不同物体的长度\\n4.记录测量结果', '使用刻度尺时要轻拿轻放，避免弯折', 1, 1, 1, '2025-07-18 15:17:56', '2025-07-21 19:31:52'),
+(2, 2, 1, 2, '9', '上册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '测量重力加速度', 'MP_002', 4, 9, 1, '第十三章 力和机械', 90, 4, '通过实验测量重力加速度的大小', '单摆装置、秒表、刻度尺、小球等', '1.组装单摆装置\\n2.测量摆长\\n3.测量周期\\n4.计算重力加速度', '注意摆球的安全，避免碰撞', 3, 1, 1, '2025-07-18 15:17:56', '2025-07-21 19:31:52'),
+(3, 3, 1, 2, '9', '上册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '氧气的制取和性质', 'MC_001', 3, 9, 1, '第二单元 我们周围的空气', 45, 1, '学习氧气的制取方法，观察氧气的性质', '高锰酸钾、试管、酒精灯、导管、集气瓶等', '1.装置连接\\n2.加热制取氧气\\n3.收集氧气\\n4.验证氧气性质', '注意用火安全，避免烫伤；注意通风', 2, 1, 1, '2025-07-18 15:17:56', '2025-07-21 19:31:52'),
+(4, 4, 1, 3, '7', '上册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '观察植物细胞', 'MB_001', 4, 7, 1, '第二单元 生物体的结构层次', 45, 2, '学会制作临时装片，观察植物细胞的基本结构', '显微镜、载玻片、盖玻片、洋葱、碘液等', '1.制作洋葱表皮临时装片\\n2.显微镜观察\\n3.绘制细胞结构图\\n4.总结细胞特点', '小心使用显微镜，避免损坏镜头', 2, 1, 1, '2025-07-18 15:17:56', '2025-07-21 19:31:52'),
+(5, 5, 1, 3, '10', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '验证牛顿第二定律', 'HP_001', 4, 10, 2, '第四章 牛顿运动定律', 90, 4, '通过实验验证牛顿第二定律F=ma', '气垫导轨、滑块、砝码、光电门、计时器等', '1.调节气垫导轨水平\\n2.测量不同力下的加速度\\n3.测量不同质量下的加速度\\n4.分析数据验证定律', '注意气垫导轨的使用，避免损坏设备', 4, 1, 1, '2025-07-18 15:17:56', '2025-07-21 19:31:52'),
+(19, 1, 7, 5, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '观察物体', 'JKB-1X-01', 4, 1, 2, '第一单元 我们周围的物体', 45, 4, '通过观察物体实验，培养学生的观察能力和科学探究精神，了解我们周围的物体相关知识。', '玻璃球、蜡笔、乒乓球、橡皮、泡沫块、纸片等', '1. 准备实验器材：玻璃球、蜡笔、乒乓球、橡皮、泡沫块、纸片等\n2. 按照教材第3页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:31', '2025-07-21 18:19:15'),
+(20, 1, 7, 5, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '探轻重排序', 'JKB-1X-02', 4, 1, 2, '第一单元 我们周围的物体', 45, 4, '通过探轻重排序实验，培养学生的观察能力和科学探究精神，了解我们周围的物体相关知识。', '乒乓球、木块、塑料块、小橡皮、大橡皮、天平、回形针', '1. 准备实验器材：乒乓球、木块、塑料块、小橡皮、大橡皮、天平、回形针\n2. 按照教材第6页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:32', '2025-07-21 18:19:15'),
+(21, 1, 7, 5, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '平描物体', 'JKB-1X-03', 3, 1, 2, '第一单元 我们周围的物体', 45, 1, '通过平描物体实验，培养学生的观察能力和科学探究精神，了解我们周围的物体相关知识。', '乒乓球、木块、橡皮、蜡笔、方盒子', '1. 准备实验器材：乒乓球、木块、橡皮、蜡笔、方盒子\n2. 按照教材第9页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:32', '2025-07-21 18:19:15'),
+(22, 1, 7, 5, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '给物体分类', 'JKB-1X-04', 4, 1, 2, '第一单元 我们周围的物体', 45, 4, '通过给物体分类实验，培养学生的观察能力和科学探究精神，了解我们周围的物体相关知识。', '玻璃球、蜡笔、乒乓球、橡皮、泡沫块、纸片等', '1. 准备实验器材：玻璃球、蜡笔、乒乓球、橡皮、泡沫块、纸片等\n2. 按照教材第11页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:32', '2025-07-21 18:19:15'),
+(23, 1, 7, 5, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '观察水和洗发液', 'JKB-1X-05', 4, 1, 2, '第一单元 我们周围的物体', 45, 4, '通过观察水和洗发液实验，培养学生的观察能力和科学探究精神，了解我们周围的物体相关知识。', '水、洗发液', '1. 准备实验器材：水、洗发液\n2. 按照教材第14页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:32', '2025-07-21 18:19:15'),
+(24, 1, 7, 5, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '溶解实验', 'JKB-1X-06', 4, 1, 2, '第一单元 我们周围的物体', 45, 4, '通过溶解实验实验，培养学生的观察能力和科学探究精神，了解我们周围的物体相关知识。', '水、红糖、食盐、小石子、小木根、小勺、烧杯', '1. 准备实验器材：水、红糖、食盐、小石子、小木根、小勺、烧杯\n2. 按照教材第17页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:32', '2025-07-21 18:19:15'),
+(25, 1, 7, 5, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '观察空气', 'JKB-1X-07', 4, 1, 2, '第一单元 我们周围的物体', 45, 4, '通过观察空气实验，培养学生的观察能力和科学探究精神，了解我们周围的物体相关知识。', '空气、水、木块、塑料袋', '1. 准备实验器材：空气、水、木块、塑料袋\n2. 按照教材第20页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:32', '2025-07-21 18:19:15'),
+(26, 1, 7, 6, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '观察动物', 'JKB-1X-08', 3, 1, 2, '第二单元 动物', 45, 1, '通过观察动物实验，培养学生的观察能力和科学探究精神，了解动物相关知识。', '动物图片或标本等', '1. 准备实验器材：动物图片或标本等\n2. 按照教材第25页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:32', '2025-07-21 18:19:15'),
+(27, 1, 7, 6, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '寻找小动物', 'JKB-1X-09', 4, 1, 2, '第二单元 动物', 45, 4, '通过寻找小动物实验，培养学生的观察能力和科学探究精神，了解动物相关知识。', '放大镜、镊子', '1. 准备实验器材：放大镜、镊子\n2. 按照教材第27页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:32', '2025-07-21 18:19:15'),
+(28, 1, 7, 6, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '观察蜗牛', 'JKB-1X-10', 4, 1, 2, '第二单元 动物', 45, 4, '通过观察蜗牛实验，培养学生的观察能力和科学探究精神，了解动物相关知识。', '蜗牛、放大镜、玻璃', '1. 准备实验器材：蜗牛、放大镜、玻璃\n2. 按照教材第33页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:32', '2025-07-21 18:19:15'),
+(29, 1, 7, 6, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '饲养蜗牛', 'JKB-1X-11', 3, 1, 2, '第二单元 动物', 45, 1, '通过饲养蜗牛实验，培养学生的观察能力和科学探究精神，了解动物相关知识。', '蜗牛、饲养箱、菜叶', '1. 准备实验器材：蜗牛、饲养箱、菜叶\n2. 按照教材第37页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:32', '2025-07-21 18:19:15'),
+(30, 1, 7, 6, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '观察鱼', 'JKB-1X-12', 3, 1, 2, '第二单元 动物', 45, 1, '通过观察鱼实验，培养学生的观察能力和科学探究精神，了解动物相关知识。', '鱼缸、鱼、图片', '1. 准备实验器材：鱼缸、鱼、图片\n2. 按照教材第38页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:32', '2025-07-21 18:19:15'),
+(31, 1, 7, 6, '1', '下册', 5, '必做', NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, '给动物分类', 'JKB-1X-13', 4, 1, 2, '第二单元 动物', 45, 4, '通过给动物分类实验，培养学生的观察能力和科学探究精神，了解动物相关知识。', '动物卡片', '1. 准备实验器材：动物卡片\n2. 按照教材第40页的步骤进行实验\n3. 仔细观察并记录实验现象\n4. 讨论实验结果\n5. 整理实验器材', '注意实验安全，小心使用实验器材，避免误食或误伤。教师需全程指导。', 1, 1, 1, '2025-07-20 23:42:32', '2025-07-21 18:19:15');
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `experiment_catalog_deletions`
+--
+
+CREATE TABLE `experiment_catalog_deletions` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `catalog_id` bigint(20) UNSIGNED NOT NULL COMMENT '被删除的实验目录ID',
+  `deleted_by_org_type` varchar(20) NOT NULL COMMENT '删除组织类型',
+  `deleted_by_org_id` bigint(20) UNSIGNED NOT NULL COMMENT '删除组织ID',
+  `deleted_by_user_id` bigint(20) UNSIGNED NOT NULL COMMENT '删除用户ID',
+  `delete_reason` text NOT NULL COMMENT '删除理由',
+  `deleted_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT '删除时间',
+  `restored_at` timestamp NULL DEFAULT NULL COMMENT '恢复时间',
+  `restored_by` bigint(20) UNSIGNED DEFAULT NULL COMMENT '恢复人ID',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `experiment_catalog_permissions`
+--
+
+CREATE TABLE `experiment_catalog_permissions` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `catalog_id` bigint(20) UNSIGNED NOT NULL COMMENT '实验目录ID',
+  `subject_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT '学科ID',
+  `organization_type` varchar(20) NOT NULL COMMENT '组织类型',
+  `organization_id` bigint(20) UNSIGNED NOT NULL COMMENT '组织ID',
+  `user_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT '用户ID',
+  `permission_type` varchar(30) NOT NULL COMMENT '权限类型',
+  `granted_by` bigint(20) UNSIGNED NOT NULL COMMENT '授权人ID',
+  `expires_at` timestamp NULL DEFAULT NULL COMMENT '过期时间',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `experiment_catalog_versions`
+--
+
+CREATE TABLE `experiment_catalog_versions` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `catalog_id` bigint(20) UNSIGNED NOT NULL COMMENT '实验目录ID',
+  `version` int(11) NOT NULL COMMENT '版本号',
+  `name` varchar(200) NOT NULL COMMENT '实验名称',
+  `content` text DEFAULT NULL COMMENT '实验内容',
+  `objective` text DEFAULT NULL COMMENT '实验目标',
+  `procedure` text DEFAULT NULL COMMENT '实验步骤',
+  `safety_notes` text DEFAULT NULL COMMENT '安全注意事项',
+  `change_reason` varchar(500) NOT NULL COMMENT '变更原因',
+  `changed_by` bigint(20) UNSIGNED NOT NULL COMMENT '变更人ID',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -520,6 +598,27 @@ CREATE TABLE `experiment_equipment_requirements` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- 转存表中的数据 `experiment_equipment_requirements`
+--
+
+INSERT INTO `experiment_equipment_requirements` (`id`, `catalog_id`, `equipment_id`, `required_quantity`, `min_quantity`, `is_required`, `calculation_type`, `group_size`, `usage_note`, `safety_note`, `sort_order`, `is_active`, `created_by`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 2, 1, 1, 'per_group', 5, '实验用器材 - 生物显微镜XSP-2CA', '注意安全使用', 1, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(2, 1, 4, 2, 1, 0, 'per_group', 4, '实验用器材 - 学生用生物显微镜', '注意安全使用', 2, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(3, 1, 7, 2, 1, 0, 'per_group', 6, '实验用器材 - 电子天平', '注意安全使用', 3, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(4, 2, 7, 3, 1, 1, 'per_student', 4, '实验用器材 - 电子天平', '注意安全使用', 1, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(5, 2, 10, 3, 1, 0, 'per_student', 4, '实验用器材 - 分析天平', '注意安全使用', 2, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(6, 2, 13, 2, 1, 0, 'fixed', 2, '实验用器材 - 数字万用表', '注意安全使用', 3, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(7, 3, 13, 3, 1, 1, 'fixed', 5, '实验用器材 - 数字万用表', '注意安全使用', 1, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(8, 3, 16, 1, 1, 0, 'per_student', 3, '实验用器材 - 玻璃烧杯100ml', '注意安全使用', 2, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(9, 3, 19, 1, 1, 0, 'per_group', 2, '实验用器材 - 玻璃烧杯250ml', '注意安全使用', 3, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(10, 4, 19, 1, 1, 1, 'per_student', 2, '实验用器材 - 玻璃烧杯250ml', '注意安全使用', 1, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(11, 4, 22, 2, 1, 0, 'fixed', 2, '实验用器材 - 解剖刀套装', '注意安全使用', 2, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(12, 4, 1, 1, 1, 0, 'per_group', 6, '实验用器材 - 生物显微镜XSP-2CA', '注意安全使用', 3, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(13, 5, 1, 3, 1, 1, 'fixed', 5, '实验用器材 - 生物显微镜XSP-2CA', '注意安全使用', 1, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(14, 5, 4, 3, 1, 0, 'fixed', 4, '实验用器材 - 学生用生物显微镜', '注意安全使用', 2, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55'),
+(15, 5, 7, 1, 1, 0, 'per_student', 5, '实验用器材 - 电子天平', '注意安全使用', 3, 1, 1, '2025-07-20 05:22:55', '2025-07-20 05:22:55');
 
 -- --------------------------------------------------------
 
@@ -781,7 +880,10 @@ INSERT INTO `experiment_reservations` (`id`, `school_id`, `catalog_id`, `laborat
 (147, 5, 1, 16, 36, '三年级(2)班', 28, '2025-07-27', '09:08:00', '09:53:00', 1, '完成测量物体的长度实验教学任务', NULL, NULL, NULL, '2025-07-15 15:27:50', '2025-07-17 15:27:50'),
 (148, 5, 2, 16, 34, '五年级(6)班', 42, '2025-07-29', '11:40:00', '12:30:00', 3, '完成测量重力加速度实验教学任务', NULL, NULL, '实验室设备维护中', '2025-07-15 15:27:50', '2025-07-13 15:27:50'),
 (149, 5, 5, 16, 34, '九年级(4)班', 33, '2025-07-24', '08:05:00', '09:31:00', 4, '完成验证牛顿第二定律实验教学任务', 24, '2025-07-14 15:27:50', '审核通过', '2025-07-16 15:27:50', '2025-07-18 15:30:44'),
-(150, 5, 2, 16, 36, '高一(3)班', 32, '2025-08-07', '14:51:00', '16:05:00', 3, '完成测量重力加速度实验教学任务', NULL, NULL, '实验室设备维护中', '2025-07-11 15:27:50', '2025-07-12 15:27:50');
+(150, 5, 2, 16, 36, '高一(3)班', 32, '2025-08-07', '14:51:00', '16:05:00', 3, '完成测量重力加速度实验教学任务', NULL, NULL, '实验室设备维护中', '2025-07-11 15:27:50', '2025-07-12 15:27:50'),
+(151, 3, 20, 9, 84, 'edf', 40, '2025-07-23', '08:37:00', '09:37:00', 1, 'fv', NULL, NULL, NULL, '2025-07-21 15:39:01', '2025-07-21 15:39:01'),
+(152, 5, 21, 16, 84, '一年级2班', 45, '2025-07-25', '10:21:00', '11:21:00', 1, '我', NULL, NULL, NULL, '2025-07-21 18:22:07', '2025-07-21 18:22:07'),
+(153, 3, 19, 10, 70, '一年级3', 45, '2025-07-31', '14:39:00', '15:39:00', 1, NULL, NULL, NULL, NULL, '2025-07-22 00:41:01', '2025-07-22 00:41:01');
 
 -- --------------------------------------------------------
 
@@ -966,7 +1068,12 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (58, '2025_07_14_034529_create_role_permissions_table', 1),
 (59, '2025_07_15_000001_add_organization_fields_to_users_table', 1),
 (60, '2025_07_17_020000_add_contact_fields_to_administrative_regions_table', 1),
-(61, '2025_07_18_150000_create_teaching_equipment_standards_table', 2);
+(61, '2025_07_18_150000_create_teaching_equipment_standards_table', 2),
+(64, '2025_07_20_125815_create_textbook_versions_table', 3),
+(65, '2025_07_20_125826_create_textbook_chapters_table', 4),
+(66, '2025_07_20_140028_create_experiment_catalog_deletions_table', 5),
+(67, '2025_07_20_140111_create_experiment_catalog_permissions_table', 6),
+(68, '2025_07_20_140151_create_experiment_catalog_versions_table', 7);
 
 -- --------------------------------------------------------
 
@@ -1304,7 +1411,145 @@ INSERT INTO `role_permissions` (`id`, `role_id`, `permission_code`, `created_at`
 (277, 13, 'experiment.booking', '2025-07-18 16:29:10', '2025-07-18 16:29:10'),
 (278, 13, 'experiment.record', '2025-07-18 16:29:10', '2025-07-18 16:29:10'),
 (279, 13, 'equipment.list', '2025-07-18 16:29:10', '2025-07-18 16:29:10'),
-(280, 13, 'equipment.borrow', '2025-07-18 16:29:10', '2025-07-18 16:29:10');
+(280, 13, 'equipment.borrow', '2025-07-18 16:29:10', '2025-07-18 16:29:10'),
+(281, 1, 'experiment.catalog.view', '2025-07-19 00:34:12', '2025-07-19 00:34:12'),
+(282, 1, 'experiment.catalog.create', '2025-07-19 00:34:12', '2025-07-19 00:34:12'),
+(283, 1, 'experiment.catalog.edit', '2025-07-19 00:34:12', '2025-07-19 00:34:12'),
+(284, 1, 'experiment.catalog.delete', '2025-07-19 00:34:12', '2025-07-19 00:34:12'),
+(285, 1, 'experiment.booking.view', '2025-07-19 00:34:12', '2025-07-19 00:34:12'),
+(286, 1, 'experiment.booking.create', '2025-07-19 00:34:12', '2025-07-19 00:34:12'),
+(287, 1, 'experiment.booking.edit', '2025-07-19 00:34:12', '2025-07-19 00:34:12'),
+(288, 1, 'experiment.booking.approve', '2025-07-19 00:34:12', '2025-07-19 00:34:12'),
+(289, 1, 'experiment.booking.cancel', '2025-07-19 00:34:12', '2025-07-19 00:34:12'),
+(290, 1, 'experiment.record.view', '2025-07-19 00:34:12', '2025-07-19 00:34:12'),
+(291, 1, 'experiment.record.create', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(292, 1, 'experiment.record.edit', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(293, 1, 'experiment.record.complete', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(294, 3, 'experiment.catalog.view', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(295, 3, 'experiment.catalog.create', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(296, 3, 'experiment.catalog.edit', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(297, 3, 'experiment.catalog.delete', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(298, 3, 'experiment.booking.view', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(299, 3, 'experiment.booking.create', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(300, 3, 'experiment.booking.edit', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(301, 3, 'experiment.booking.approve', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(302, 3, 'experiment.booking.cancel', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(303, 3, 'experiment.record.view', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(304, 3, 'experiment.record.create', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(305, 3, 'experiment.record.edit', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(306, 3, 'experiment.record.complete', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(307, 5, 'experiment.catalog.view', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(308, 5, 'experiment.catalog.create', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(309, 5, 'experiment.catalog.edit', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(310, 5, 'experiment.catalog.delete', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(311, 5, 'experiment.booking.view', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(312, 5, 'experiment.booking.create', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(313, 5, 'experiment.booking.edit', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(314, 5, 'experiment.booking.approve', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(315, 5, 'experiment.booking.cancel', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(316, 5, 'experiment.record.view', '2025-07-19 00:34:13', '2025-07-19 00:34:13'),
+(317, 5, 'experiment.record.create', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(318, 5, 'experiment.record.edit', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(319, 5, 'experiment.record.complete', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(320, 7, 'experiment.catalog.view', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(321, 7, 'experiment.catalog.create', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(322, 7, 'experiment.catalog.edit', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(323, 7, 'experiment.catalog.delete', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(324, 7, 'experiment.booking.view', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(325, 7, 'experiment.booking.create', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(326, 7, 'experiment.booking.edit', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(327, 7, 'experiment.booking.approve', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(328, 7, 'experiment.booking.cancel', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(329, 7, 'experiment.record.view', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(330, 7, 'experiment.record.create', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(331, 7, 'experiment.record.edit', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(332, 7, 'experiment.record.complete', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(333, 8, 'experiment.catalog.view', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(334, 8, 'experiment.catalog.create', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(335, 8, 'experiment.catalog.edit', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(336, 8, 'experiment.catalog.delete', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(337, 8, 'experiment.booking.view', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(338, 8, 'experiment.booking.create', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(339, 8, 'experiment.booking.edit', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(340, 8, 'experiment.booking.approve', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(341, 8, 'experiment.booking.cancel', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(342, 8, 'experiment.record.view', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(343, 8, 'experiment.record.create', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(344, 8, 'experiment.record.edit', '2025-07-19 00:34:14', '2025-07-19 00:34:14'),
+(345, 8, 'experiment.record.complete', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(346, 12, 'experiment.catalog.view', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(347, 12, 'experiment.catalog.create', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(348, 12, 'experiment.catalog.edit', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(349, 12, 'experiment.catalog.delete', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(350, 12, 'experiment.booking.view', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(351, 12, 'experiment.booking.create', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(352, 12, 'experiment.booking.edit', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(353, 12, 'experiment.booking.approve', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(354, 12, 'experiment.booking.cancel', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(355, 12, 'experiment.record.view', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(356, 12, 'experiment.record.create', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(357, 12, 'experiment.record.edit', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(358, 12, 'experiment.record.complete', '2025-07-19 00:34:15', '2025-07-19 00:34:15'),
+(359, 1, 'textbook_versions', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(360, 1, 'textbook_versions.list', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(361, 1, 'textbook_versions.create', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(362, 1, 'textbook_versions.update', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(363, 1, 'textbook_versions.delete', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(364, 1, 'textbook_versions.view', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(365, 1, 'textbook_chapters', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(366, 1, 'textbook_chapters.list', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(367, 1, 'textbook_chapters.create', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(368, 1, 'textbook_chapters.update', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(369, 1, 'textbook_chapters.delete', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(370, 1, 'textbook_chapters.view', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(371, 1, 'textbook_chapters.tree', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(372, 3, 'textbook_versions', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(373, 3, 'textbook_versions.list', '2025-07-20 18:30:21', '2025-07-20 18:30:21'),
+(374, 3, 'textbook_versions.create', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(375, 3, 'textbook_versions.update', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(376, 3, 'textbook_versions.delete', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(377, 3, 'textbook_versions.view', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(378, 3, 'textbook_chapters', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(379, 3, 'textbook_chapters.list', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(380, 3, 'textbook_chapters.create', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(381, 3, 'textbook_chapters.update', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(382, 3, 'textbook_chapters.delete', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(383, 3, 'textbook_chapters.view', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(384, 3, 'textbook_chapters.tree', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(385, 5, 'textbook_versions', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(386, 5, 'textbook_versions.list', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(387, 5, 'textbook_versions.create', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(388, 5, 'textbook_versions.update', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(389, 5, 'textbook_versions.delete', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(390, 5, 'textbook_versions.view', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(391, 5, 'textbook_chapters', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(392, 5, 'textbook_chapters.list', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(393, 5, 'textbook_chapters.create', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(394, 5, 'textbook_chapters.update', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(395, 5, 'textbook_chapters.delete', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(396, 5, 'textbook_chapters.view', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(397, 5, 'textbook_chapters.tree', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(398, 7, 'textbook_versions', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(399, 7, 'textbook_versions.list', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(400, 7, 'textbook_versions.view', '2025-07-20 18:30:22', '2025-07-20 18:30:22'),
+(401, 7, 'textbook_chapters', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(402, 7, 'textbook_chapters.list', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(403, 7, 'textbook_chapters.view', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(404, 7, 'textbook_chapters.tree', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(405, 8, 'textbook_versions', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(406, 8, 'textbook_versions.list', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(407, 8, 'textbook_versions.view', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(408, 8, 'textbook_chapters', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(409, 8, 'textbook_chapters.list', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(410, 8, 'textbook_chapters.view', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(411, 8, 'textbook_chapters.tree', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(412, 10, 'textbook_versions', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(413, 10, 'textbook_versions.list', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(414, 10, 'textbook_versions.view', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(415, 10, 'textbook_chapters', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(416, 10, 'textbook_chapters.list', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(417, 10, 'textbook_chapters.view', '2025-07-20 18:30:23', '2025-07-20 18:30:23'),
+(418, 10, 'textbook_chapters.tree', '2025-07-20 18:30:23', '2025-07-20 18:30:23');
 
 -- --------------------------------------------------------
 
@@ -1371,6 +1616,17 @@ CREATE TABLE `sessions` (
   `payload` longtext NOT NULL,
   `last_activity` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- 转存表中的数据 `sessions`
+--
+
+INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
+('Gk8mXc0teljHr5KcBYWTxuUiNt0whXsirXP06NWR', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT; Windows NT 10.0; zh-CN) WindowsPowerShell/5.1.26100.4652', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiOG9yakxlQmNEcjlLdmtPODV0QmhjM2lZeGJOYm9tczlwdUlWcUh1MiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NTE6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMC9hcGkvdGV4dGJvb2stdmVyc2lvbnMvb3B0aW9ucyI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1753148836),
+('IPdsZgvFdWThcGf7rOA3qObLoRxYwQGjjRkGVPNG', 42, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiTEdSS2RKckIwWGZyeFFremExdkZ4aU85RTZjVXFmcFFFd2xBcWhSdiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NTE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9hcGkvdGV4dGJvb2stdmVyc2lvbnMvb3B0aW9ucyI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1753148708),
+('xMXY13Ur5bQvnf80dytsJbM5Og6ev805MmJGsmrU', 42, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoidE9paWNpMEpTVW5HVElySHpHdmZOc3pabDhmdThQbnlMSW1QMDdaWiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NTE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9hcGkvdGV4dGJvb2stdmVyc2lvbnMvb3B0aW9ucyI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1753172754),
+('YsCkYeBKx9Cvcykda74wQsXIINmEE27EZEqxu03h', 42, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiV0FmYlQ0Zm15U215d2prR2Y5QUY2WWxoaWhwN2tjam5nY0pLaUM3RSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NTE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9hcGkvdGV4dGJvb2stdmVyc2lvbnMvb3B0aW9ucyI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1753173669),
+('ZWtk31LPsgyj9iEbu7HvXZL1YlR1pshLtlnJfJbt', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT; Windows NT 10.0; zh-CN) WindowsPowerShell/5.1.26100.4652', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiZ2RNaEdDTE9SeTFyUFFPQmNQWVQxdlJIVjdZY21kV0ZxcHRSdjFwTCI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NTE6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMC9hcGkvdGV4dGJvb2stdmVyc2lvbnMvb3B0aW9ucyI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1753148784);
 
 -- --------------------------------------------------------
 
@@ -1536,6 +1792,68 @@ INSERT INTO `teaching_equipment_standards` (`id`, `standard_name`, `standard_cod
 -- --------------------------------------------------------
 
 --
+-- 表的结构 `textbook_chapters`
+--
+
+CREATE TABLE `textbook_chapters` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `subject_id` bigint(20) UNSIGNED NOT NULL COMMENT '学科ID',
+  `textbook_version_id` bigint(20) UNSIGNED NOT NULL COMMENT '教材版本ID',
+  `grade_level` varchar(20) NOT NULL COMMENT '年级',
+  `volume` varchar(20) NOT NULL COMMENT '册次（上册、下册）',
+  `parent_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT '父级章节ID',
+  `level` tinyint(4) NOT NULL COMMENT '层级（1章2节3小节）',
+  `code` varchar(50) NOT NULL COMMENT '章节编码（如：01、01-01、01-01-01）',
+  `name` varchar(200) NOT NULL COMMENT '章节名称',
+  `sort_order` int(11) NOT NULL DEFAULT 0 COMMENT '排序',
+  `status` tinyint(4) NOT NULL DEFAULT 1 COMMENT '状态',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- 转存表中的数据 `textbook_chapters`
+--
+
+INSERT INTO `textbook_chapters` (`id`, `subject_id`, `textbook_version_id`, `grade_level`, `volume`, `parent_id`, `level`, `code`, `name`, `sort_order`, `status`, `created_at`, `updated_at`) VALUES
+(2, 2, 1, '1', '上册', NULL, 1, '01', '力学', 0, 1, '2025-07-20 19:43:40', '2025-07-20 19:43:40'),
+(3, 2, 1, '3', '上册', 2, 2, '01', '电学', 0, 1, '2025-07-20 19:44:54', '2025-07-20 19:44:54'),
+(5, 1, 7, '1', '下册', NULL, 1, '01', '第一单元 我们周围的物体', 1, 1, '2025-07-20 22:43:28', '2025-07-20 22:43:28'),
+(6, 1, 7, '1', '下册', NULL, 1, '02', '第二单元 动物', 2, 1, '2025-07-20 22:43:28', '2025-07-20 22:43:28');
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `textbook_versions`
+--
+
+CREATE TABLE `textbook_versions` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `name` varchar(50) NOT NULL COMMENT '版本名称（人教版、苏教版等）',
+  `code` varchar(20) NOT NULL COMMENT '版本代码',
+  `publisher` varchar(100) DEFAULT NULL COMMENT '出版社',
+  `description` text DEFAULT NULL COMMENT '版本描述',
+  `status` tinyint(4) NOT NULL DEFAULT 1 COMMENT '状态（1启用0禁用）',
+  `sort_order` int(11) NOT NULL DEFAULT 0 COMMENT '排序',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- 转存表中的数据 `textbook_versions`
+--
+
+INSERT INTO `textbook_versions` (`id`, `name`, `code`, `publisher`, `description`, `status`, `sort_order`, `created_at`, `updated_at`) VALUES
+(1, '人教版', 'PEP', '人民教育出版社', '人民教育出版社出版的教材', 1, 1, '2025-07-20 05:05:08', '2025-07-20 19:24:43'),
+(2, '苏教版', 'JSEP', '江苏教育出版社', '江苏教育出版社出版的教材', 1, 2, '2025-07-20 05:05:08', '2025-07-20 05:05:08'),
+(3, '北师大版', 'BNU', '北京师范大学出版社', '北京师范大学出版社出版的教材', 1, 3, '2025-07-20 05:05:08', '2025-07-20 05:05:08'),
+(4, '沪科版', 'HKEP', '上海科学技术出版社', '上海科学技术出版社出版的教材', 1, 4, '2025-07-20 05:05:08', '2025-07-20 05:05:08'),
+(5, '粤教版', 'GDEP', '广东教育出版社', '广东教育出版社出版的教材', 1, 5, '2025-07-20 05:05:08', '2025-07-20 05:05:08'),
+(7, '教科版', 'JKB', '教育科学出版社', '教育科学出版社', 1, 6, '2025-07-20 19:36:39', '2025-07-20 19:36:39');
+
+-- --------------------------------------------------------
+
+--
 -- 表的结构 `users`
 --
 
@@ -1583,7 +1901,7 @@ INSERT INTO `users` (`id`, `username`, `email`, `phone`, `password`, `real_name`
 (11, 'county_researcher_2', 'county_researcher_1@example.com', NULL, '$2y$12$VU1yCyt68Yg/w8zMHrEVOeplV5FM8f2.4Q6FoiiZHM/bg2tj9oIK.', '黄磊', NULL, NULL, NULL, NULL, 1, '省级教研员', NULL, NULL, NULL, NULL, NULL, 15, 'county', NULL, NULL, NULL, NULL, '2025-07-18 15:21:23', '2025-07-18 16:09:34'),
 (12, 'school_admin_1', 'school_admin_0@example.com', NULL, '$2y$12$azMzm2fcExzqbdhe7IlBReb2wGMYfxaNudEjuHKRz2EEBgbNN.mTG', '周杰', NULL, NULL, NULL, NULL, 1, '学校管理员', NULL, NULL, NULL, 1, NULL, 1, 'school', NULL, NULL, NULL, NULL, '2025-07-18 15:21:23', '2025-07-18 16:12:21'),
 (13, 'principal_1', 'principal_0@example.com', NULL, '$2y$12$PEFveT6dMzE42ZSxhrX.6ug4EzeK6bMQ8n2skIVN/TpMmL6V2R6aG', '吴琳', NULL, NULL, NULL, NULL, 1, '校长', NULL, NULL, NULL, 2, NULL, 1, 'school', NULL, NULL, NULL, NULL, '2025-07-18 15:21:24', '2025-07-18 16:12:21'),
-(14, 'teacher_0_1', 'teacher_0_1@example.com', NULL, '$2y$12$NVQegDa7FRFdi9ico3Tb2u5G4nspAeOUVMlis4.6Y6uiUlFmQdjuu', '徐明', NULL, NULL, NULL, NULL, 1, '任课教师', NULL, NULL, NULL, 3, NULL, 1, 'school', NULL, NULL, NULL, NULL, '2025-07-18 15:21:24', '2025-07-18 16:12:21'),
+(14, 'teacher_0_1', 'teacher_0_1@example.com', NULL, '$2y$12$NVQegDa7FRFdi9ico3Tb2u5G4nspAeOUVMlis4.6Y6uiUlFmQdjuu', '徐明', NULL, NULL, NULL, NULL, 1, '任课教师', NULL, NULL, NULL, 3, NULL, 1, 'school', NULL, '2025-07-21 22:40:03', NULL, NULL, '2025-07-18 15:21:24', '2025-07-21 22:40:03'),
 (15, 'teacher_0_2', 'teacher_0_2@example.com', NULL, '$2y$12$T3fmcf9kVVpm.yrL7h.J9.K8f7F6cB8q9iLL8D0xwCj81GiZWtoR6', '朱红', NULL, NULL, NULL, NULL, 1, '任课教师', NULL, NULL, NULL, 4, NULL, 1, 'school', NULL, NULL, NULL, NULL, '2025-07-18 15:21:24', '2025-07-18 16:12:21'),
 (16, 'teacher_0_3', 'teacher_0_3@example.com', NULL, '$2y$12$1TRo5cdwrCW4MFLdExNH8uT576WIwdNHhoqPjifw2XTxRWET4WS9y', '马超', NULL, NULL, NULL, NULL, 1, '任课教师', NULL, NULL, NULL, 5, NULL, 1, 'school', NULL, NULL, NULL, NULL, '2025-07-18 15:21:24', '2025-07-18 16:12:21'),
 (17, 'school_admin_2', 'school_admin_1@example.com', NULL, '$2y$12$NVNS8vzbkvtYVek44Ve/8./GtwGeytYrsdzLALTbvB5KGgzotKAyK', '胡斌', NULL, NULL, NULL, NULL, 1, '学校管理员', NULL, NULL, NULL, 6, NULL, 9, 'school', NULL, NULL, NULL, NULL, '2025-07-18 15:21:25', '2025-07-18 16:12:21'),
@@ -1611,16 +1929,51 @@ INSERT INTO `users` (`id`, `username`, `email`, `phone`, `password`, `real_name`
 (39, 'teacher_5_1', 'teacher_5_1@example.com', NULL, '$2y$12$YYOa75K22mUrBgzAAfP4S.EGwCvmWtqTv7lXwiLyrAzrVsby/A2LW', '郑州市二七区九年制学校实验教师1', NULL, NULL, NULL, NULL, 1, '任课教师', NULL, NULL, NULL, 7, NULL, 6, 'school', NULL, NULL, NULL, NULL, '2025-07-18 15:21:30', '2025-07-18 16:13:26'),
 (40, 'teacher_5_2', 'teacher_5_2@example.com', NULL, '$2y$12$Z1L/8d4HeVaJ1ZLc2DWd1u7H588qLheiqxGqAaIv6dbcTjXRWlm/K', '郑州市二七区九年制学校实验教师2', NULL, NULL, NULL, NULL, 1, '任课教师', NULL, NULL, NULL, 8, NULL, 6, 'school', NULL, NULL, NULL, NULL, '2025-07-18 15:21:31', '2025-07-18 16:13:26'),
 (41, 'teacher_5_3', 'teacher_5_3@example.com', NULL, '$2y$12$HmO7O4XcKQf/mZWrwHrHc.qMniM.SYh4.xCONC8DtqH9LrrUwThm6', '郑州市二七区九年制学校实验教师3', NULL, NULL, NULL, NULL, 1, '任课教师', NULL, NULL, NULL, 9, NULL, 6, 'school', NULL, NULL, NULL, NULL, '2025-07-18 15:21:31', '2025-07-18 16:13:26'),
-(42, 'province_admin_test', 'province_admin@hebei.edu.cn', '0311-12345678', '$2y$12$RiSgNjSRKelrCh0NoQ1E7OcpvJ2ikV9gpGZOS91qgSHJ4C3iijrGW', '河北省管理员', NULL, NULL, NULL, NULL, 1, '省级管理员', NULL, NULL, NULL, NULL, NULL, 1, 'region', 1, '2025-07-18 20:03:01', NULL, NULL, '2025-07-18 15:31:17', '2025-07-18 20:03:01'),
-(43, 'city_admin_test', 'city_admin@sjz.edu.cn', '0311-23456789', '$2y$12$3AuJimHjo0YeHW5zaLPJvuVH6ININ7jYKqPbdFBwLinuU265nxRfu', '石家庄市管理员', NULL, NULL, NULL, NULL, 1, '市级管理员', NULL, NULL, NULL, NULL, NULL, 9, 'region', 2, '2025-07-18 15:50:02', NULL, NULL, '2025-07-18 15:31:17', '2025-07-18 16:09:34'),
+(42, 'province_admin_test', 'province_admin@hebei.edu.cn', '0311-12345678', '$2y$12$RiSgNjSRKelrCh0NoQ1E7OcpvJ2ikV9gpGZOS91qgSHJ4C3iijrGW', '河北省管理员', NULL, NULL, NULL, NULL, 1, '省级管理员', NULL, NULL, NULL, NULL, NULL, 1, 'region', 1, '2025-07-21 23:59:37', NULL, NULL, '2025-07-18 15:31:17', '2025-07-21 23:59:37'),
+(43, 'city_admin_test', 'city_admin@sjz.edu.cn', '0311-23456789', '$2y$12$3AuJimHjo0YeHW5zaLPJvuVH6ININ7jYKqPbdFBwLinuU265nxRfu', '石家庄市管理员', NULL, NULL, NULL, NULL, 1, '市级管理员', NULL, NULL, NULL, NULL, NULL, 9, 'region', 2, '2025-07-21 17:04:42', NULL, NULL, '2025-07-18 15:31:17', '2025-07-21 17:04:42'),
 (44, 'county_admin_test', 'county_admin@gaocheng.edu.cn', '0311-34567890', '$2y$12$Kc.X162hdYNfs/LnUcfcmexnbECQ9qiRuMibtwdhiR6CGT9Q4GyTC', '藁城区管理员', NULL, NULL, NULL, NULL, 1, '区县管理员', NULL, NULL, NULL, NULL, NULL, 10, 'region', 3, NULL, NULL, NULL, '2025-07-18 15:31:17', '2025-07-18 16:09:34'),
 (45, 'district_admin_test', 'district_admin@lianzhou.edu.cn', '0311-45678901', '$2y$12$KjcDqoNnyFdHjAlBcQDzmuxPUcFjHcStKe6M6FDHCUhYTSpxNa.5G', '廉州学区管理员', NULL, NULL, NULL, NULL, 1, '学区管理员', NULL, NULL, NULL, NULL, NULL, 11, 'region', 4, NULL, NULL, NULL, '2025-07-18 15:31:18', '2025-07-18 16:09:34'),
-(46, 'school_admin_test', 'school_admin@school.edu.cn', '0311-56789012', '$2y$12$FNK9kzw3gdZLplLvz5yBoubzpj7JPLlb8UF3kpCid8obOHueAyFpC', '学校管理员', NULL, NULL, NULL, NULL, 1, '学校管理员', NULL, NULL, NULL, 15, NULL, 11, 'school', 5, NULL, NULL, NULL, '2025-07-18 15:31:18', '2025-07-18 16:09:34'),
+(46, 'school_admin_test', 'school_admin@school.edu.cn', '0311-56789012', '$2y$12$FNK9kzw3gdZLplLvz5yBoubzpj7JPLlb8UF3kpCid8obOHueAyFpC', '学校管理员', NULL, NULL, NULL, NULL, 1, '学校管理员', NULL, NULL, NULL, 15, NULL, 11, 'school', 5, '2025-07-19 02:07:44', NULL, NULL, '2025-07-18 15:31:18', '2025-07-19 02:07:44'),
 (47, 'province_school_admin', 'province_school@test.com', NULL, '$2y$12$RseUUp9UeNuAq9PkdznhIOsAYVbsolwT5icZDZXOfDAR8bvXTLIle', '石家庄精英中学管理员', NULL, NULL, NULL, NULL, 1, '学校管理员', NULL, NULL, NULL, 7, NULL, 7, 'school', 5, NULL, NULL, NULL, '2025-07-18 15:31:18', '2025-07-18 16:13:26'),
 (48, 'city_school_admin', 'city_school@test.com', NULL, '$2y$12$4cBIduQCinkyfr1HymX4eOBawsln5MTM6HnF9UP8yeJdaC6sMROe2', '石家庄市第一中学管理员', NULL, NULL, NULL, NULL, 1, '学校管理员', NULL, NULL, NULL, 11, NULL, 11, 'school', 5, NULL, NULL, NULL, '2025-07-18 15:31:19', '2025-07-18 16:13:26'),
 (49, 'county_school_admin', 'county_school@test.com', NULL, '$2y$12$L6tI7Ac/TplCp7FbNyhrZevOkiOpitGgdkaOlLON2hjOvrdU3eF/K', '通安小学管理员', NULL, NULL, NULL, NULL, 1, '学校管理员', NULL, NULL, NULL, 19, NULL, 19, 'school', 5, NULL, NULL, NULL, '2025-07-18 15:31:19', '2025-07-18 16:13:26'),
 (50, 'school_admin', 'school_admin@example.com', NULL, '$2y$12$HorJAWuhBDWFbICg8WctkOYSqdcJK.Jt7lotaJbTc4VOJa4Shccu6', '校长', NULL, NULL, NULL, NULL, 1, '学校管理员', NULL, NULL, NULL, 1, NULL, 11, NULL, NULL, NULL, NULL, NULL, '2025-07-18 15:31:38', '2025-07-18 16:12:20'),
-(51, 'student001', 'student001@163.com', NULL, '$2y$12$BGGyj2edBlfsRFWxbL389uY5lvlAxMcZwWP1xV4ro8oZMwnTJc7pW', 'student001', NULL, NULL, NULL, NULL, 1, '任课教师', NULL, NULL, NULL, 1, NULL, 11, NULL, NULL, NULL, NULL, NULL, '2025-07-18 15:31:39', '2025-07-18 16:12:20');
+(51, 'student001', 'student001@163.com', NULL, '$2y$12$BGGyj2edBlfsRFWxbL389uY5lvlAxMcZwWP1xV4ro8oZMwnTJc7pW', 'student001', NULL, NULL, NULL, NULL, 1, '任课教师', NULL, NULL, NULL, 1, NULL, 11, NULL, NULL, NULL, NULL, NULL, '2025-07-18 15:31:39', '2025-07-18 16:12:20'),
+(53, 'teacher_1_4', 'teacher_1_4@example.com', NULL, '$2y$12$wut2VEVVuC6DnN6hA17D3uwDM5haFcjUPyDGNrnV/sjmqrRxTexXS', '石家庄市藁城区实验小学实验教师4', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 1, NULL, 1, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:42', '2025-07-19 23:52:42'),
+(54, 'teacher_1_5', 'teacher_1_5@example.com', NULL, '$2y$12$GueqASAfp2pBgWXlJ/Yod.bFy8GAYtS5UI0jzoP7dShDUnFbVPIou', '石家庄市藁城区实验小学实验教师5', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 1, NULL, 1, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:42', '2025-07-19 23:52:42'),
+(55, 'teacher_2_4', 'teacher_2_4@example.com', NULL, '$2y$12$tmMFb3xWS21OqKxdmNXo..S66YxOzL4zzq2/W4qLiHZRYGbTf31rS', '石家庄市第一中学实验教师4', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 2, NULL, 2, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:42', '2025-07-19 23:52:42'),
+(56, 'teacher_2_5', 'teacher_2_5@example.com', NULL, '$2y$12$tGgHWu/Q9M34SOKkPEBayui0OLQlBh1qE8JsbpLbVkbaVfkOuaS6W', '石家庄市第一中学实验教师5', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 2, NULL, 2, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:42', '2025-07-19 23:52:42'),
+(57, 'teacher_3_4', 'teacher_3_4@example.com', NULL, '$2y$12$Q.Y5EznFtXCqipDnyknpfOLK7/awJzZ7whEIxQ5lx3x8Ekmq.Q4zO', '石家庄市藁城区第二小学实验教师4', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 3, NULL, 3, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:43', '2025-07-19 23:52:43'),
+(58, 'teacher_3_5', 'teacher_3_5@example.com', NULL, '$2y$12$cUtskyVGT6nzf0hOKdG02u03RCr0Li9FT/4OHD5hJ3HSYahny2ume', '石家庄市藁城区第二小学实验教师5', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 3, NULL, 3, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:43', '2025-07-19 23:52:43'),
+(59, 'teacher_4_4', 'teacher_4_4@example.com', NULL, '$2y$12$9syvA9of7/Uwl8gaemOUOeLy7/C/8OQGvIzH2BEkIx49SQru1i3Yy', '石家庄市藁城区实验中学实验教师4', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 4, NULL, 4, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:43', '2025-07-19 23:52:43'),
+(60, 'teacher_4_5', 'teacher_4_5@example.com', NULL, '$2y$12$3z3bjXLJMlEmJUP9Tk5QROJoEbIGFjTTpf4ttkAwPqx.v139OSpAG', '石家庄市藁城区实验中学实验教师5', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 4, NULL, 4, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:44', '2025-07-19 23:52:44'),
+(61, 'teacher_5_4', 'teacher_5_4@example.com', NULL, '$2y$12$./SGG24/shEaLBauh.YQ7.nP.CM7PkMlbwDgbgNQkDEEK/n34D2Gi', '石家庄市栾城区实验小学实验教师4', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 5, NULL, 5, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:44', '2025-07-19 23:52:44'),
+(62, 'teacher_5_5', 'teacher_5_5@example.com', NULL, '$2y$12$ijRmE3fzGnRmOheTz9Wj4e/lBFG//zF6xgcgmH.mXgxul/6uqjGO6', '石家庄市栾城区实验小学实验教师5', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 5, NULL, 5, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:44', '2025-07-19 23:52:44'),
+(63, 'teacher_6_1', 'teacher_6_1@example.com', NULL, '$2y$12$C53PazXzVpqbm.oD/GOqEuvygxW6K1GKg67sURgzRiznAWQUQdXoa', '石家庄市栾城区九年制学校实验教师1', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 6, NULL, 6, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:44', '2025-07-19 23:52:44'),
+(64, 'teacher_6_2', 'teacher_6_2@example.com', NULL, '$2y$12$2SpHH.9nZ3mRPERGv9whWuDMW58piKyphCl/IBOFxUjS14taBygbi', '石家庄市栾城区九年制学校实验教师2', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 6, NULL, 6, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:45', '2025-07-19 23:52:45'),
+(65, 'teacher_6_3', 'teacher_6_3@example.com', NULL, '$2y$12$spaFXwKOW0xLTlFcgO3iBe8bbQg3Lnn7Thv6qtpwljBeZKlfpVwiS', '石家庄市栾城区九年制学校实验教师3', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 6, NULL, 6, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:45', '2025-07-19 23:52:45'),
+(66, 'teacher_6_4', 'teacher_6_4@example.com', NULL, '$2y$12$rZ59m4/vYydJ7zJWdVUNn.Aosz499CK93RuUFEHsYUG9ymWNE5Iwi', '石家庄市栾城区九年制学校实验教师4', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 6, NULL, 6, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:45', '2025-07-19 23:52:45'),
+(67, 'teacher_6_5', 'teacher_6_5@example.com', NULL, '$2y$12$qMgRBpHpg82v08qy7cyyaOdJFEJhHS8Pm/tL9vp0dGav6PKi9uuye', '石家庄市栾城区九年制学校实验教师5', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 6, NULL, 6, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:45', '2025-07-19 23:52:45'),
+(68, 'teacher_7_1', 'teacher_7_1@example.com', NULL, '$2y$12$BC.uAWjES04Khqjz6aXoIeSDUuoTSXmKsv3rQv1kXslJjpYx4ahLG', '石家庄精英中学实验教师1', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 7, NULL, 7, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:45', '2025-07-19 23:52:45'),
+(69, 'teacher_7_2', 'teacher_7_2@example.com', NULL, '$2y$12$rR8b7JioYEreZ5TknXA05O4Wco25x5bT89gmywaWJAZPLxlLqdxI6', '石家庄精英中学实验教师2', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 7, NULL, 7, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:46', '2025-07-19 23:52:46'),
+(70, 'teacher_7_3', 'teacher_7_3@example.com', NULL, '$2y$12$phcpkimeOKM5FKimt6DWaORyr/ihz7a/JnEAU2zrOYjFR88FExFrK', '石家庄精英中学实验教师3', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 7, NULL, 7, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:46', '2025-07-19 23:52:46'),
+(71, 'teacher_7_4', 'teacher_7_4@example.com', NULL, '$2y$12$y/.7eO/jR3hIgoXVMTeupe3BlHFwaeSU5PFsSFtKtfcKMVlQ1p/fO', '石家庄精英中学实验教师4', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 7, NULL, 7, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:46', '2025-07-19 23:52:46'),
+(72, 'teacher_7_5', 'teacher_7_5@example.com', NULL, '$2y$12$TGzwZZk/vDQq1nqPG.RFhuuxtz0n204KLItK8CuZpGbdBMFgVVAB.', '石家庄精英中学实验教师5', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 7, NULL, 7, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:46', '2025-07-19 23:52:46'),
+(73, 'teacher_8_1', 'teacher_8_1@example.com', NULL, '$2y$12$YsXn6.JZCfboGuEozbbEDuUQoQywjLMd45I26p80E5uJ8VEmy/EyC', '衡水中学实验教师1', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 8, NULL, 8, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:47', '2025-07-19 23:52:47'),
+(74, 'teacher_8_2', 'teacher_8_2@example.com', NULL, '$2y$12$rcT99LPJ8c8J0q9VPvCUSulEoUqk85mCjXSqWGkZEyGUEPY26mLnK', '衡水中学实验教师2', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 8, NULL, 8, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:47', '2025-07-19 23:52:47'),
+(75, 'teacher_8_3', 'teacher_8_3@example.com', NULL, '$2y$12$whke8jjodF6iVVKN4LxOae4oVvB8nMYOet8g1pu/IXJE121g2HFwW', '衡水中学实验教师3', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 8, NULL, 8, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:47', '2025-07-19 23:52:47'),
+(76, 'teacher_8_4', 'teacher_8_4@example.com', NULL, '$2y$12$cZVgyb9p.Qa2jT8orJTUXerl4Qkv6wMiadzgoniib0YJy9qbF9.ei', '衡水中学实验教师4', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 8, NULL, 8, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:48', '2025-07-19 23:52:48'),
+(77, 'teacher_8_5', 'teacher_8_5@example.com', NULL, '$2y$12$qdNgz2xmUVSIn7VQcCZFL.FK1B.D6vbtTgNJxOy8JB6oNxxdGOLfS', '衡水中学实验教师5', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 8, NULL, 8, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:48', '2025-07-19 23:52:48'),
+(78, 'teacher_9_1', 'teacher_9_1@example.com', NULL, '$2y$12$uxDXC8w.1w7SXqHSCn2mF.PvDRVqg4IQbyShNv8Cj8qJk/I1rtx.W', '保定七中实验教师1', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 9, NULL, 9, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:48', '2025-07-19 23:52:48'),
+(79, 'teacher_9_2', 'teacher_9_2@example.com', NULL, '$2y$12$M8NalE/t4Z0QlAOD/7dzXOnE3LSEruIGrvo82PWEFf0oUUJcMO8vy', '保定七中实验教师2', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 9, NULL, 9, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:48', '2025-07-19 23:52:48'),
+(80, 'teacher_9_3', 'teacher_9_3@example.com', NULL, '$2y$12$p7/XPZAcm14CMJzAq05OT.qTzyYdpKMBmz8I/wd1q1wMjpNuXSFR2', '保定七中实验教师3', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 9, NULL, 9, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:49', '2025-07-19 23:52:49'),
+(81, 'teacher_9_4', 'teacher_9_4@example.com', NULL, '$2y$12$VpF28kGJJgrYpS4.PuyI8.NVWA5YrFpOoEWc.1zjBOjRSX6khly82', '保定七中实验教师4', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 9, NULL, 9, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:49', '2025-07-19 23:52:49'),
+(82, 'teacher_9_5', 'teacher_9_5@example.com', NULL, '$2y$12$703UlXh8kUGuiE4.X797j.ivD9iKZWYv4P4OPoQ46xloF8sMHyAeW', '保定七中实验教师5', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 9, NULL, 9, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:49', '2025-07-19 23:52:49'),
+(83, 'teacher_10_1', 'teacher_10_1@example.com', NULL, '$2y$12$hVw3DAug4d0Fq1UBj2K7KuLItQSMsLdh2DGxxkcTNVq3xi8UEg2Va', '邢台一中实验教师1', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 10, NULL, 10, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:49', '2025-07-19 23:52:49'),
+(84, 'teacher_10_2', 'teacher_10_2@example.com', NULL, '$2y$12$wd.3yTP8.p9Gs.TqSp8YEO.Gd30ren/MsSF5hNWakYuGDK57Q7Ati', '邢台一中实验教师2', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 10, NULL, 10, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:50', '2025-07-19 23:52:50'),
+(85, 'teacher_10_3', 'teacher_10_3@example.com', NULL, '$2y$12$oYOSlg/u5OxQ/h4Xpv.9vecqZmyVivgqhdAkK0URmSJQU/mFy0y9O', '邢台一中实验教师3', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 10, NULL, 10, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:50', '2025-07-19 23:52:50'),
+(86, 'teacher_10_4', 'teacher_10_4@example.com', NULL, '$2y$12$YpeEKxWPHV3LvrEU01DfL.tybXqRdSGpOv1xn603325xgkfRwmGIe', '邢台一中实验教师4', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 10, NULL, 10, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:50', '2025-07-19 23:52:50'),
+(87, 'teacher_10_5', 'teacher_10_5@example.com', NULL, '$2y$12$0eAE2SJU6DHtsAKPhbE9JeHVnP/nmn87Ucd8f1MExfjAVJGk4yCE6', '邢台一中实验教师5', NULL, NULL, NULL, NULL, 1, 'teacher', '实验教学部', '实验教师', NULL, 10, NULL, 10, 'school', 5, NULL, NULL, NULL, '2025-07-19 23:52:50', '2025-07-19 23:52:50');
 
 -- --------------------------------------------------------
 
@@ -1813,7 +2166,35 @@ ALTER TABLE `experiment_catalogs`
   ADD KEY `experiment_catalogs_grade_index` (`grade`),
   ADD KEY `experiment_catalogs_semester_index` (`semester`),
   ADD KEY `experiment_catalogs_is_standard_index` (`is_standard`),
-  ADD KEY `experiment_catalogs_status_index` (`status`);
+  ADD KEY `experiment_catalogs_status_index` (`status`),
+  ADD KEY `experiment_catalogs_management_level_index` (`management_level`);
+
+--
+-- 表的索引 `experiment_catalog_deletions`
+--
+ALTER TABLE `experiment_catalog_deletions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_catalog_org` (`catalog_id`,`deleted_by_org_type`,`deleted_by_org_id`),
+  ADD KEY `experiment_catalog_deletions_deleted_by_user_id_foreign` (`deleted_by_user_id`),
+  ADD KEY `experiment_catalog_deletions_restored_by_foreign` (`restored_by`);
+
+--
+-- 表的索引 `experiment_catalog_permissions`
+--
+ALTER TABLE `experiment_catalog_permissions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_catalog_org` (`catalog_id`,`organization_type`,`organization_id`),
+  ADD KEY `idx_user_permission` (`user_id`,`permission_type`),
+  ADD KEY `experiment_catalog_permissions_subject_id_foreign` (`subject_id`),
+  ADD KEY `experiment_catalog_permissions_granted_by_foreign` (`granted_by`);
+
+--
+-- 表的索引 `experiment_catalog_versions`
+--
+ALTER TABLE `experiment_catalog_versions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_catalog_version` (`catalog_id`,`version`),
+  ADD KEY `experiment_catalog_versions_changed_by_foreign` (`changed_by`);
 
 --
 -- 表的索引 `experiment_equipment_requirements`
@@ -1984,6 +2365,24 @@ ALTER TABLE `teaching_equipment_standards`
   ADD KEY `idx_item_standard_code` (`item_code`,`standard_code`);
 
 --
+-- 表的索引 `textbook_chapters`
+--
+ALTER TABLE `textbook_chapters`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_subject_version_grade` (`subject_id`,`textbook_version_id`,`grade_level`),
+  ADD KEY `idx_parent` (`parent_id`),
+  ADD KEY `idx_level_sort` (`level`,`sort_order`),
+  ADD KEY `textbook_chapters_textbook_version_id_foreign` (`textbook_version_id`);
+
+--
+-- 表的索引 `textbook_versions`
+--
+ALTER TABLE `textbook_versions`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `textbook_versions_code_unique` (`code`),
+  ADD KEY `textbook_versions_status_sort_order_index` (`status`,`sort_order`);
+
+--
 -- 表的索引 `users`
 --
 ALTER TABLE `users`
@@ -2070,13 +2469,31 @@ ALTER TABLE `equipment_standards`
 -- 使用表AUTO_INCREMENT `experiment_catalogs`
 --
 ALTER TABLE `experiment_catalogs`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+
+--
+-- 使用表AUTO_INCREMENT `experiment_catalog_deletions`
+--
+ALTER TABLE `experiment_catalog_deletions`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- 使用表AUTO_INCREMENT `experiment_catalog_permissions`
+--
+ALTER TABLE `experiment_catalog_permissions`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- 使用表AUTO_INCREMENT `experiment_catalog_versions`
+--
+ALTER TABLE `experiment_catalog_versions`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- 使用表AUTO_INCREMENT `experiment_equipment_requirements`
 --
 ALTER TABLE `experiment_equipment_requirements`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- 使用表AUTO_INCREMENT `experiment_records`
@@ -2088,7 +2505,7 @@ ALTER TABLE `experiment_records`
 -- 使用表AUTO_INCREMENT `experiment_reservations`
 --
 ALTER TABLE `experiment_reservations`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=151;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=154;
 
 --
 -- 使用表AUTO_INCREMENT `failed_jobs`
@@ -2118,7 +2535,7 @@ ALTER TABLE `laboratory_types`
 -- 使用表AUTO_INCREMENT `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- 使用表AUTO_INCREMENT `operation_logs`
@@ -2136,7 +2553,7 @@ ALTER TABLE `roles`
 -- 使用表AUTO_INCREMENT `role_permissions`
 --
 ALTER TABLE `role_permissions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=281;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=419;
 
 --
 -- 使用表AUTO_INCREMENT `schools`
@@ -2169,10 +2586,22 @@ ALTER TABLE `teaching_equipment_standards`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
+-- 使用表AUTO_INCREMENT `textbook_chapters`
+--
+ALTER TABLE `textbook_chapters`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- 使用表AUTO_INCREMENT `textbook_versions`
+--
+ALTER TABLE `textbook_versions`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
 -- 使用表AUTO_INCREMENT `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
 
 --
 -- 使用表AUTO_INCREMENT `user_roles`
@@ -2237,6 +2666,30 @@ ALTER TABLE `experiment_catalogs`
   ADD CONSTRAINT `experiment_catalogs_subject_id_foreign` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`);
 
 --
+-- 限制表 `experiment_catalog_deletions`
+--
+ALTER TABLE `experiment_catalog_deletions`
+  ADD CONSTRAINT `experiment_catalog_deletions_catalog_id_foreign` FOREIGN KEY (`catalog_id`) REFERENCES `experiment_catalogs` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `experiment_catalog_deletions_deleted_by_user_id_foreign` FOREIGN KEY (`deleted_by_user_id`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `experiment_catalog_deletions_restored_by_foreign` FOREIGN KEY (`restored_by`) REFERENCES `users` (`id`);
+
+--
+-- 限制表 `experiment_catalog_permissions`
+--
+ALTER TABLE `experiment_catalog_permissions`
+  ADD CONSTRAINT `experiment_catalog_permissions_catalog_id_foreign` FOREIGN KEY (`catalog_id`) REFERENCES `experiment_catalogs` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `experiment_catalog_permissions_granted_by_foreign` FOREIGN KEY (`granted_by`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `experiment_catalog_permissions_subject_id_foreign` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`),
+  ADD CONSTRAINT `experiment_catalog_permissions_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+
+--
+-- 限制表 `experiment_catalog_versions`
+--
+ALTER TABLE `experiment_catalog_versions`
+  ADD CONSTRAINT `experiment_catalog_versions_catalog_id_foreign` FOREIGN KEY (`catalog_id`) REFERENCES `experiment_catalogs` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `experiment_catalog_versions_changed_by_foreign` FOREIGN KEY (`changed_by`) REFERENCES `users` (`id`);
+
+--
 -- 限制表 `experiment_equipment_requirements`
 --
 ALTER TABLE `experiment_equipment_requirements`
@@ -2293,6 +2746,14 @@ ALTER TABLE `schools`
 --
 ALTER TABLE `statistics_summary`
   ADD CONSTRAINT `statistics_summary_subject_id_foreign` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`);
+
+--
+-- 限制表 `textbook_chapters`
+--
+ALTER TABLE `textbook_chapters`
+  ADD CONSTRAINT `textbook_chapters_parent_id_foreign` FOREIGN KEY (`parent_id`) REFERENCES `textbook_chapters` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `textbook_chapters_subject_id_foreign` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `textbook_chapters_textbook_version_id_foreign` FOREIGN KEY (`textbook_version_id`) REFERENCES `textbook_versions` (`id`) ON DELETE CASCADE;
 
 --
 -- 限制表 `user_roles`

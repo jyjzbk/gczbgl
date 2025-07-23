@@ -11,6 +11,20 @@ class ExperimentCatalog extends Model
 
     protected $fillable = [
         'subject_id',
+        'textbook_version_id',
+        'chapter_id',
+        'grade_level',
+        'volume',
+        'management_level',
+        'experiment_type',
+        'parent_catalog_id',
+        'original_catalog_id',
+        'version',
+        'is_deleted_by_lower',
+        'delete_reason',
+        'created_by_level',
+        'created_by_org_id',
+        'created_by_org_type',
         'name',
         'code',
         'type',
@@ -94,6 +108,54 @@ class ExperimentCatalog extends Model
     public function subject()
     {
         return $this->belongsTo(Subject::class);
+    }
+
+    /**
+     * 关联教材版本
+     */
+    public function textbookVersion()
+    {
+        return $this->belongsTo(TextbookVersion::class);
+    }
+
+    /**
+     * 关联章节
+     */
+    public function chapter()
+    {
+        return $this->belongsTo(TextbookChapter::class, 'chapter_id');
+    }
+
+    /**
+     * 关联上级实验目录
+     */
+    public function parentCatalog()
+    {
+        return $this->belongsTo(ExperimentCatalog::class, 'parent_catalog_id');
+    }
+
+    /**
+     * 关联下级实验目录
+     */
+    public function childCatalogs()
+    {
+        return $this->hasMany(ExperimentCatalog::class, 'parent_catalog_id');
+    }
+
+    /**
+     * 关联原始实验目录
+     */
+    public function originalCatalog()
+    {
+        return $this->belongsTo(ExperimentCatalog::class, 'original_catalog_id');
+    }
+
+    /**
+     * 关联删除记录
+     */
+    public function deletionRecords()
+    {
+        return $this->hasMany(ExperimentCatalogDeletion::class, 'catalog_id');
     }
 
     /**

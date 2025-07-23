@@ -270,13 +270,14 @@ const dateRange = computed(() => {
 // 方法
 const loadLaboratories = async () => {
   try {
-    const response = await laboratoryApi.getList({ per_page: 100 })
+    const response = await laboratoryApi.getOptions()
     laboratories.value = response.data
-    
+
     if (laboratories.value.length > 0 && !filterForm.laboratory_id) {
       filterForm.laboratory_id = laboratories.value[0].id
     }
   } catch (error) {
+    console.error('加载实验室列表失败:', error)
     ElMessage.error('加载实验室列表失败')
   }
 }

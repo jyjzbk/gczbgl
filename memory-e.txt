@@ -1,0 +1,39 @@
+# Project Environment
+- User's project is located at F:\xampp\htdocs\gczbgl with working environment: PHP 8.2.12, MariaDB 10.4.32, Composer 2.8.6, Node v22.17.0, Git 2.49.0.
+- The experimental teaching management platform development environment is fully configured and ready for development, with reference documentation located in the docs folder.
+- User's operating system is Windows 11, should provide Windows-compatible commands and instructions.
+- User's development environment: Windows 11, XAMPP database, VS Code IDE, PowerShell for commands, always check if frontend/backend services are running before starting them.
+- User's experimental teaching management platform project uses PHP 8.2.12, MariaDB 10.4.32, Vue 3 + TypeScript + Element Plus frontend, Laravel 12 backend, with 5-level organizational hierarchy (Province→City→District→School District→School) and strict data access control.
+
+# Development Progress
+- User has completed the first phase of development for a middle/elementary school experimental teaching management system and is ready to proceed to the next development phase.
+- User has completed both frontend (Vue 3 + TypeScript + Element Plus, 10,500+ lines, 22 pages) and backend (Laravel 12 + MySQL + JWT, 4,600+ lines, 25 APIs) development for the experimental teaching management platform, with complete equipment management system including QR codes, RBAC permissions (5 roles), and 7 database tables, now ready for frontend-backend integration testing.
+- User has completed the user management module (user list, role management, permission management) and prefers to clean up documentation and upload completed modules to GitHub after each major milestone.
+- User has completed organization hierarchy management system (5-level: Province→City→District→School District→School) with recursive permission control, user management, experiment management, and equipment management systems, now ready for frontend-backend integration testing phase with specific test users and permission verification completed.
+
+# Development Preferences
+- User prefers to test each development phase thoroughly before proceeding to next phase.
+- User wants to continue development in new conversations with detailed handoff documentation for consistency.
+- User prefers to reference the detailed development documentation located in the docs folder for guidance on development approach and implementation details.
+- User follows a phased development approach with documentation in PHASE2_DEVELOPMENT_SUMMARY.md and docs folder for guidance between phases.
+- User prefers Vue.js projects configured with Router (SPA), Pinia (state management), ESLint (error prevention), and Prettier (code formatting) for frontend development.
+- User prefers detailed project status summaries and handoff documentation when transitioning between development phases to ensure consistency and continuity.
+- User mentioned that docs folder contains additional reference files that should be consulted for development guidance.
+- User prefers backend API development sequence: 1) develop APIs based on frontend interface definitions, 2) implement database table structure design, 3) add data validation and permission control.
+- User prefers role-based permission systems to have pre-configured permission templates for different roles that administrators can then modify through the permission management interface.
+- User prefers systematic analysis and consistent application of organization hierarchy principles across all modules and data tables in the codebase.
+- User prefers to move implementation summaries to docs folder and clean up outdated documentation and temporary test files after completing major development phases.
+- User prefers permission management interface to include all permissions (including advanced ones like export/reset password) with default role-based selections, and wants smaller/more aesthetic permission icons for users without advanced permissions.
+- User prefers logical organization and hierarchical display for large datasets in management interfaces (user lists, school management, equipment archives) rather than simple pagination, finding flat paginated lists confusing for provincial-level administrators managing large amounts of data.
+- User approved implementing hierarchical tree display with organizational structure for user management, school management, equipment archives and other modules to replace flat paginated lists for better data organization.
+
+# Development Roadmap
+- User's next development phase roadmap: 1) Frontend-backend integration testing, 2) Role permission refinement, 3) Statistical reports, 4) Mobile application, 5) Production deployment preparation.
+- User's next development phase focuses on complete equipment management system with QR code identification, intelligent reminders, resource allocation optimization, and seamless integration with experiment management, following patterns from frontend/src/views/experiment/ directory and referencing NEXT_DEVELOPMENT_GUIDE.md.
+
+# Organizational Hierarchy and Data Access Control
+- User's educational management platform has a 5-level organizational hierarchy (Province→City→District→School District→School) with specific example structure for Hebei Province, and users should only see data at their organizational level and below (e.g., city-level users see only their city's data, district-level users see only their district's data).
+- User's educational management platform requires strict organizational hierarchy data access control where each level (Province→City→District→School District→School) can only manage and view data from their level and below, with specific example structure provided for Hebei Province educational system.
+
+# Credentials
+- User's database password is: liningyu2000

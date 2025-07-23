@@ -230,63 +230,79 @@ class RoleController extends Controller
             'province_admin' => [
                 'user', 'user.list', 'user.create', 'user.update', 'user.delete', 'user.edit', 'user.export', 'user.reset_password',
                 'role', 'role.list', 'role.create', 'role.update', 'role.delete',
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.create', 'experiment.catalog.edit', 'experiment.catalog.delete', 'experiment.catalog.copy', 'experiment.catalog.manage_level',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
+                'basic', 'basic.subject', 'basic.subject.view', 'basic.subject.create', 'basic.subject.edit', 'basic.subject.delete',
+                'basic.equipment_standard', 'basic.equipment_standard.view', 'basic.equipment_standard.create', 'basic.equipment_standard.edit', 'basic.equipment_standard.delete', 'basic.equipment_standard.check_compliance',
+                'basic.textbook_version', 'basic.textbook_version.view', 'basic.textbook_version.create', 'basic.textbook_version.edit', 'basic.textbook_version.delete', 'basic.textbook_version.batch_status', 'basic.textbook_version.sort',
+                'basic.textbook_chapter', 'basic.textbook_chapter.view', 'basic.textbook_chapter.tree', 'basic.textbook_chapter.create', 'basic.textbook_chapter.edit', 'basic.textbook_chapter.delete',
                 'statistics', 'statistics.view', 'statistics.dashboard', 'statistics.experiment', 'statistics.equipment', 'statistics.user', 'statistics.performance', 'statistics.export',
                 'system', 'system.read', 'log', 'log.read'
             ],
             'province_researcher' => [
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list'
             ],
 
             // 市级角色
             'city_admin' => [
                 'user', 'user.list', 'user.create', 'user.update',
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.create', 'experiment.catalog.edit', 'experiment.catalog.delete', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.borrow', 'equipment.maintenance'
             ],
             'city_researcher' => [
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list'
             ],
 
             // 区县级角色
             'county_admin' => [
                 'user', 'user.list', 'user.create', 'user.update',
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.create', 'experiment.catalog.edit', 'experiment.catalog.delete', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.borrow', 'equipment.maintenance'
             ],
             'county_researcher' => [
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list'
             ],
 
             // 学区级角色
             'district_admin' => [
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.create', 'experiment.catalog.edit', 'experiment.catalog.delete', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.borrow', 'equipment.maintenance'
             ],
 
             // 学校级角色
             'school_principal' => [
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.create', 'experiment.catalog.edit', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list'
             ],
             'school_dean' => [
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.create', 'experiment.catalog.edit', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.borrow', 'equipment.maintenance'
             ],
             'school_experimenter' => [
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.borrow', 'equipment.maintenance'
             ],
             'school_teacher' => [
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.borrow'
             ],
             'school_student' => [
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.borrow'
             ]
         ];
@@ -394,28 +410,37 @@ class RoleController extends Controller
             1 => [ // 省级管理员
                 'user', 'user.list', 'user.create', 'user.update', 'user.delete', 'user.edit', 'user.export', 'user.reset_password',
                 'role', 'role.list', 'role.create', 'role.update', 'role.delete',
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.create', 'experiment.catalog.edit', 'experiment.catalog.delete', 'experiment.catalog.copy', 'experiment.catalog.manage_level',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
+                'basic', 'basic.subject', 'basic.subject.view', 'basic.subject.create', 'basic.subject.edit', 'basic.subject.delete',
+                'basic.equipment_standard', 'basic.equipment_standard.view', 'basic.equipment_standard.create', 'basic.equipment_standard.edit', 'basic.equipment_standard.delete', 'basic.equipment_standard.check_compliance',
+                'basic.textbook_version', 'basic.textbook_version.view', 'basic.textbook_version.create', 'basic.textbook_version.edit', 'basic.textbook_version.delete', 'basic.textbook_version.batch_status', 'basic.textbook_version.sort',
+                'basic.textbook_chapter', 'basic.textbook_chapter.view', 'basic.textbook_chapter.tree', 'basic.textbook_chapter.create', 'basic.textbook_chapter.edit', 'basic.textbook_chapter.delete',
                 'system', 'system.read', 'log', 'log.read'
             ],
             2 => [ // 市级管理员
                 'user', 'user.list', 'user.create', 'user.update', 'user.delete', 'user.edit',
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.create', 'experiment.catalog.edit', 'experiment.catalog.delete', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance'
             ],
             3 => [ // 区县管理员
                 'user', 'user.list', 'user.create', 'user.update', 'user.delete', 'user.edit',
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.create', 'experiment.catalog.edit', 'experiment.catalog.delete', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance'
             ],
             4 => [ // 学区管理员
                 'user', 'user.list', 'user.create', 'user.update',
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.create', 'experiment.catalog.edit', 'experiment.catalog.delete', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update'
             ],
             5 => [ // 学校管理员
                 'user', 'user.list', 'user.create', 'user.update',
-                'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
+                'experiment', 'experiment.catalog', 'experiment.catalog.view', 'experiment.catalog.create', 'experiment.catalog.edit', 'experiment.catalog.copy',
+                'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.borrow'
             ]
         ];

@@ -10,7 +10,7 @@ export function useExperimentPermission() {
   const authStore = useAuthStore()
 
   // 当前用户信息
-  const currentUser = computed(() => authStore.user)
+  const currentUser = computed(() => authStore.userInfo)
   const currentUserLevel = computed(() => permissionController.getCurrentUserLevel())
   const currentUserOrgId = computed(() => permissionController.getCurrentUserOrgId())
   const currentUserOrgType = computed(() => permissionController.getCurrentUserOrgType())

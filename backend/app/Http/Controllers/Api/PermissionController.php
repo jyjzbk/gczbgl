@@ -45,7 +45,20 @@ class PermissionController extends Controller
                 'name' => '实验管理',
                 'code' => 'experiment',
                 'children' => [
-                    ['id' => 'experiment.catalog', 'name' => '实验目录', 'code' => 'experiment.catalog', 'type' => 'read'],
+                    [
+                        'id' => 'experiment.catalog',
+                        'name' => '实验目录',
+                        'code' => 'experiment.catalog',
+                        'type' => 'read',
+                        'children' => [
+                            ['id' => 'experiment.catalog.view', 'name' => '查看实验目录', 'code' => 'experiment.catalog.view', 'type' => 'read'],
+                            ['id' => 'experiment.catalog.create', 'name' => '创建实验目录', 'code' => 'experiment.catalog.create', 'type' => 'write'],
+                            ['id' => 'experiment.catalog.edit', 'name' => '编辑实验目录', 'code' => 'experiment.catalog.edit', 'type' => 'write'],
+                            ['id' => 'experiment.catalog.delete', 'name' => '删除实验目录', 'code' => 'experiment.catalog.delete', 'type' => 'delete'],
+                            ['id' => 'experiment.catalog.copy', 'name' => '复制实验目录', 'code' => 'experiment.catalog.copy', 'type' => 'write'],
+                            ['id' => 'experiment.catalog.manage_level', 'name' => '管理级别权限', 'code' => 'experiment.catalog.manage_level', 'type' => 'advanced', 'level' => 'high']
+                        ]
+                    ],
                     ['id' => 'experiment.booking', 'name' => '实验预约', 'code' => 'experiment.booking', 'type' => 'write'],
                     ['id' => 'experiment.record', 'name' => '实验记录', 'code' => 'experiment.record', 'type' => 'write']
                 ]
@@ -61,6 +74,65 @@ class PermissionController extends Controller
                     ['id' => 'equipment.delete', 'name' => '删除设备', 'code' => 'equipment.delete', 'type' => 'delete'],
                     ['id' => 'equipment.borrow', 'name' => '设备借用', 'code' => 'equipment.borrow', 'type' => 'write'],
                     ['id' => 'equipment.maintenance', 'name' => '设备维修', 'code' => 'equipment.maintenance', 'type' => 'write']
+                ]
+            ],
+            [
+                'id' => 'basic',
+                'name' => '基础数据',
+                'code' => 'basic',
+                'children' => [
+                    [
+                        'id' => 'basic.subject',
+                        'name' => '学科管理',
+                        'code' => 'basic.subject',
+                        'type' => 'read',
+                        'children' => [
+                            ['id' => 'basic.subject.view', 'name' => '查看学科', 'code' => 'basic.subject.view', 'type' => 'read'],
+                            ['id' => 'basic.subject.create', 'name' => '创建学科', 'code' => 'basic.subject.create', 'type' => 'write'],
+                            ['id' => 'basic.subject.edit', 'name' => '编辑学科', 'code' => 'basic.subject.edit', 'type' => 'write'],
+                            ['id' => 'basic.subject.delete', 'name' => '删除学科', 'code' => 'basic.subject.delete', 'type' => 'delete']
+                        ]
+                    ],
+                    [
+                        'id' => 'basic.equipment_standard',
+                        'name' => '教学仪器配备标准',
+                        'code' => 'basic.equipment_standard',
+                        'type' => 'read',
+                        'children' => [
+                            ['id' => 'basic.equipment_standard.view', 'name' => '查看配备标准', 'code' => 'basic.equipment_standard.view', 'type' => 'read'],
+                            ['id' => 'basic.equipment_standard.create', 'name' => '创建配备标准', 'code' => 'basic.equipment_standard.create', 'type' => 'write'],
+                            ['id' => 'basic.equipment_standard.edit', 'name' => '编辑配备标准', 'code' => 'basic.equipment_standard.edit', 'type' => 'write'],
+                            ['id' => 'basic.equipment_standard.delete', 'name' => '删除配备标准', 'code' => 'basic.equipment_standard.delete', 'type' => 'delete'],
+                            ['id' => 'basic.equipment_standard.check_compliance', 'name' => '合规性检查', 'code' => 'basic.equipment_standard.check_compliance', 'type' => 'advanced', 'level' => 'high']
+                        ]
+                    ],
+                    [
+                        'id' => 'basic.textbook_version',
+                        'name' => '📚 教材版本管理',
+                        'code' => 'basic.textbook_version',
+                        'type' => 'read',
+                        'children' => [
+                            ['id' => 'basic.textbook_version.view', 'name' => '查看教材版本', 'code' => 'basic.textbook_version.view', 'type' => 'read'],
+                            ['id' => 'basic.textbook_version.create', 'name' => '创建教材版本', 'code' => 'basic.textbook_version.create', 'type' => 'write'],
+                            ['id' => 'basic.textbook_version.edit', 'name' => '编辑教材版本', 'code' => 'basic.textbook_version.edit', 'type' => 'write'],
+                            ['id' => 'basic.textbook_version.delete', 'name' => '删除教材版本', 'code' => 'basic.textbook_version.delete', 'type' => 'delete'],
+                            ['id' => 'basic.textbook_version.batch_status', 'name' => '批量状态更新', 'code' => 'basic.textbook_version.batch_status', 'type' => 'write'],
+                            ['id' => 'basic.textbook_version.sort', 'name' => '排序管理', 'code' => 'basic.textbook_version.sort', 'type' => 'write']
+                        ]
+                    ],
+                    [
+                        'id' => 'basic.textbook_chapter',
+                        'name' => '📖 章节结构管理',
+                        'code' => 'basic.textbook_chapter',
+                        'type' => 'read',
+                        'children' => [
+                            ['id' => 'basic.textbook_chapter.view', 'name' => '查看章节结构', 'code' => 'basic.textbook_chapter.view', 'type' => 'read'],
+                            ['id' => 'basic.textbook_chapter.tree', 'name' => '章节树形结构', 'code' => 'basic.textbook_chapter.tree', 'type' => 'read'],
+                            ['id' => 'basic.textbook_chapter.create', 'name' => '创建章节', 'code' => 'basic.textbook_chapter.create', 'type' => 'write'],
+                            ['id' => 'basic.textbook_chapter.edit', 'name' => '编辑章节', 'code' => 'basic.textbook_chapter.edit', 'type' => 'write'],
+                            ['id' => 'basic.textbook_chapter.delete', 'name' => '删除章节', 'code' => 'basic.textbook_chapter.delete', 'type' => 'delete']
+                        ]
+                    ]
                 ]
             ],
             [

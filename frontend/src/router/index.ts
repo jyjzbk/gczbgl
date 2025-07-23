@@ -237,6 +237,20 @@ const router = createRouter({
         }
       ]
     },
+    // 权限测试路由
+    {
+      path: '/permission-test',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'PermissionTest',
+          component: () => import('@/views/test/PermissionTest.vue'),
+          meta: { title: '权限测试' }
+        }
+      ]
+    },
     {
       path: '/experiment-bookings',
       component: DefaultLayout,

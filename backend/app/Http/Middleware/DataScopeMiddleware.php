@@ -50,8 +50,8 @@ class DataScopeMiddleware
     {
         $dataScope = $request->get('data_scope');
 
-        if (!$dataScope || $dataScope['type'] === 'all') {
-            return $query; // 超级管理员或无限制
+        if (!$dataScope || $dataScope['type'] === 'all' || $dataScope['type'] === 'province') {
+            return $query; // 超级管理员、无限制或省级管理员可以访问所有数据
         }
 
         $schoolIds = $dataScope['school_ids'];

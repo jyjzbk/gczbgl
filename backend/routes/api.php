@@ -204,6 +204,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('equipment', [StatisticsController::class, 'getEquipmentStats']);
         Route::get('users', [StatisticsController::class, 'getUserActivityStats']);
         Route::get('performance', [StatisticsController::class, 'getOrganizationPerformance']);
+        Route::get('experiment-completion-trend', [StatisticsController::class, 'getExperimentCompletionTrend']);
     });
 });
 
@@ -211,7 +212,7 @@ Route::middleware('auth:api')->group(function () {
 Route::get('qrcode/scan/{code}', [EquipmentQrcodeController::class, 'scan']);
 
 // 器材需求配置路由
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:api'])->group(function () {
     // 实验器材需求配置
     Route::prefix('experiment-catalogs/{catalogId}/equipment-requirements')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\EquipmentRequirementController::class, 'index']);
@@ -222,9 +223,38 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/{requirementId}', [App\Http\Controllers\Api\EquipmentRequirementController::class, 'update']);
         Route::delete('/{requirementId}', [App\Http\Controllers\Api\EquipmentRequirementController::class, 'destroy']);
     });
-    
+
     // 器材配置模板
     Route::apiResource('equipment-requirement-templates', App\Http\Controllers\Api\EquipmentRequirementTemplateController::class);
+
+    // 教材版本管理
+    Route::prefix('textbook-versions')->group(function () {
+        Route::get('/options', [App\Http\Controllers\Api\TextbookVersionController::class, 'options']);
+        Route::get('/', [App\Http\Controllers\Api\TextbookVersionController::class, 'index']);
+        Route::post('/', [App\Http\Controllers\Api\TextbookVersionController::class, 'store']);
+        Route::get('/{id}', [App\Http\Controllers\Api\TextbookVersionController::class, 'show']);
+        Route::put('/{id}', [App\Http\Controllers\Api\TextbookVersionController::class, 'update']);
+        Route::delete('/{id}', [App\Http\Controllers\Api\TextbookVersionController::class, 'destroy']);
+        Route::put('/batch/status', [App\Http\Controllers\Api\TextbookVersionController::class, 'batchUpdateStatus']);
+        Route::put('/sort-order', [App\Http\Controllers\Api\TextbookVersionController::class, 'updateSortOrder']);
+    });
+
+    // 章节结构管理
+    Route::prefix('textbook-chapters')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\TextbookChapterController::class, 'index']);
+        Route::get('/tree', [App\Http\Controllers\Api\TextbookChapterController::class, 'tree']);
+        Route::post('/', [App\Http\Controllers\Api\TextbookChapterController::class, 'store']);
+        Route::get('/{id}', [App\Http\Controllers\Api\TextbookChapterController::class, 'show']);
+        Route::put('/{id}', [App\Http\Controllers\Api\TextbookChapterController::class, 'update']);
+        Route::delete('/{id}', [App\Http\Controllers\Api\TextbookChapterController::class, 'destroy']);
+    });
+
+    // 实验目录增强功能
+    Route::prefix('experiment-catalogs')->group(function () {
+        Route::post('/{id}/copy', [App\Http\Controllers\Api\ExperimentCatalogController::class, 'copy']);
+        Route::put('/{id}/mark-deleted', [App\Http\Controllers\Api\ExperimentCatalogController::class, 'markAsDeleted']);
+        Route::put('/{id}/restore', [App\Http\Controllers\Api\ExperimentCatalogController::class, 'restoreDeleted']);
+    });
 
     // 智能预约相关路由
     Route::prefix('smart-reservations')->group(function () {

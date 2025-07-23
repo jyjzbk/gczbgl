@@ -295,11 +295,8 @@ class ExperimentReservationController extends Controller
                 ? round(($stats['completed_experiments'] / $stats['total_reservations']) * 100, 2)
                 : 0;
 
-            // 获取作品总数
-            $stats['total_works'] = \DB::table('experiment_records')
-                ->join('experiment_reservations', 'experiment_records.reservation_id', '=', 'experiment_reservations.id')
-                ->where('experiment_reservations.teacher_id', $teacherId)
-                ->sum('experiment_records.work_count');
+            // 获取作品总数 - 暂时设为0，等待work_count字段迁移完成
+            $stats['total_works'] = 0;
 
             return response()->json([
                 'success' => true,

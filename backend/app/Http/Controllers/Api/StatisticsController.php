@@ -438,4 +438,55 @@ class StatisticsController extends Controller
             'data' => $stats
         ]);
     }
+
+    /**
+     * 获取实验完成率趋势
+     */
+    public function getExperimentCompletionTrend(Request $request)
+    {
+        $request->validate([
+            'teacher_id' => 'nullable',
+            'months' => 'nullable|integer|min:1|max:24'
+        ]);
+
+        $teacherId = $request->teacher_id === 'current' ? auth()->id() : $request->teacher_id;
+        $months = $request->months ?? 12;
+
+        // 获取指定月份数的趋势数据
+        $startDate = Carbon::now()->subMonths($months)->startOfMonth();
+        $endDate = Carbon::now()->endOfMonth();
+
+        $trendData = [];
+        $current = $startDate->copy();
+
+        while ($current <= $endDate) {
+            $monthStart = $current->copy()->startOfMonth();
+            $monthEnd = $current->copy()->endOfMonth();
+
+            $query = ExperimentReservation::whereBetween('reservation_date', [$monthStart, $monthEnd]);
+
+            if ($teacherId) {
+                $query->where('teacher_id', $teacherId);
+            }
+
+            $totalExperiments = $query->count();
+            $completedExperiments = $query->where('status', ExperimentReservation::STATUS_COMPLETED)->count();
+
+            $completionRate = $totalExperiments > 0 ? round(($completedExperiments / $totalExperiments) * 100, 2) : 0;
+
+            $trendData[] = [
+                'month' => $current->format('Y-m'),
+                'completion_rate' => $completionRate,
+                'total_experiments' => $totalExperiments,
+                'completed_experiments' => $completedExperiments
+            ];
+
+            $current->addMonth();
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $trendData
+        ]);
+    }
 }
