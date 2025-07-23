@@ -181,6 +181,7 @@
                 type="date"
                 placeholder="选择日期"
                 style="width: 100%"
+                value-format="YYYY-MM-DD"
                 :disabled-date="disabledDate"
                 @change="checkConflicts"
               />
@@ -885,16 +886,24 @@ const generateEquipmentRequirements = async () => {
 }
 
 const checkConflicts = async () => {
-  if (!reservationForm.laboratory_id || !reservationForm.reservation_date || 
+  if (!reservationForm.laboratory_id || !reservationForm.reservation_date ||
       !reservationForm.start_time || !reservationForm.end_time) {
     return
   }
 
   checkingConflicts.value = true
   try {
+    // 格式化日期和时间
+    const formatDate = (date: any) => {
+      if (!date) return ''
+      if (typeof date === 'string') return date.split('T')[0] // 如果是ISO字符串，取日期部分
+      if (date instanceof Date) return date.toISOString().split('T')[0]
+      return date
+    }
+
     const response = await smartReservationApi.checkConflicts({
       laboratory_id: reservationForm.laboratory_id,
-      reservation_date: reservationForm.reservation_date,
+      reservation_date: formatDate(reservationForm.reservation_date),
       start_time: reservationForm.start_time,
       end_time: reservationForm.end_time,
       student_count: reservationForm.student_count
@@ -921,10 +930,23 @@ const submitReservation = async () => {
 
   submitting.value = true
   try {
-    const response = await smartReservationApi.create(reservationForm)
-    
+    // 格式化日期和时间
+    const formatDate = (date: any) => {
+      if (!date) return ''
+      if (typeof date === 'string') return date.split('T')[0] // 如果是ISO字符串，取日期部分
+      if (date instanceof Date) return date.toISOString().split('T')[0]
+      return date
+    }
+
+    const formData = {
+      ...reservationForm,
+      reservation_date: formatDate(reservationForm.reservation_date)
+    }
+
+    const response = await smartReservationApi.create(formData)
+
     ElMessage.success('预约提交成功')
-    
+
     if (response.data.has_conflicts) {
       ElMessageBox.alert(
         '预约已提交，但检测到一些冲突，请注意处理',

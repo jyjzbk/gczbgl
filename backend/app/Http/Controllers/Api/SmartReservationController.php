@@ -67,7 +67,9 @@ class SmartReservationController extends Controller
             $current = $dateStart->copy();
             
             while ($current <= $dateEnd) {
-                $dayReservations = $reservations->where('reservation_date', $current->toDateString());
+                $dayReservations = $reservations->filter(function ($reservation) use ($current) {
+                    return $reservation->reservation_date->isSameDay($current);
+                });
                 
                 $schedule[] = [
                     'date' => $current->toDateString(),
@@ -164,7 +166,7 @@ class SmartReservationController extends Controller
 
             // 生成器材需求清单
             $equipmentRequirements = $this->equipmentRequirementService
-                ->generateRequirements($request->catalog_id, $request->student_count);
+                ->generateRequirements($request->catalog_id, $request->student_count, auth()->user()->school_id);
 
             // 创建预约记录
             $reservation = ExperimentReservation::create([

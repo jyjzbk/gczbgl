@@ -14,7 +14,7 @@ class EquipmentRequirementService
     /**
      * 根据实验目录和学生人数生成器材需求清单
      */
-    public function generateRequirements(int $catalogId, int $studentCount): array
+    public function generateRequirements(int $catalogId, int $studentCount, int $schoolId = null): array
     {
         $catalog = ExperimentCatalog::findOrFail($catalogId);
 
@@ -31,18 +31,40 @@ class EquipmentRequirementService
             $quantity = $this->calculateQuantity($requirement, $studentCount);
 
             if ($quantity > 0) {
+                // 如果提供了学校ID，查找该学校对应的设备
+                $equipment = $requirement->equipment;
+                $actualEquipmentId = $requirement->equipment_id;
+                $availableQuantity = 0;
+
+                if ($schoolId && $equipment) {
+                    // 在指定学校中查找同名同型号的设备
+                    $schoolEquipment = Equipment::where('school_id', $schoolId)
+                        ->where('name', $equipment->name)
+                        ->where('model', $equipment->model)
+                        ->where('status', Equipment::STATUS_NORMAL)
+                        ->first();
+
+                    if ($schoolEquipment) {
+                        $actualEquipmentId = $schoolEquipment->id;
+                        $availableQuantity = $this->getAvailableQuantity($schoolEquipment->id);
+                        $equipment = $schoolEquipment;
+                    }
+                } else {
+                    $availableQuantity = $this->getAvailableQuantity($requirement->equipment_id);
+                }
+
                 $equipmentList[] = [
-                    'equipment_id' => $requirement->equipment_id,
-                    'equipment_name' => $requirement->equipment->name,
-                    'equipment_code' => $requirement->equipment->code,
+                    'equipment_id' => $actualEquipmentId,
+                    'equipment_name' => $equipment->name,
+                    'equipment_code' => $equipment->code,
                     'required_quantity' => $quantity,
                     'min_quantity' => $this->calculateMinQuantity($requirement, $studentCount),
                     'is_required' => $requirement->is_required,
                     'calculation_type' => $requirement->calculation_type,
                     'usage_note' => $requirement->usage_note,
                     'safety_note' => $requirement->safety_note,
-                    'available_quantity' => $this->getAvailableQuantity($requirement->equipment_id),
-                    'shortage' => max(0, $quantity - $this->getAvailableQuantity($requirement->equipment_id))
+                    'available_quantity' => $availableQuantity,
+                    'shortage' => max(0, $quantity - $availableQuantity)
                 ];
             }
         }

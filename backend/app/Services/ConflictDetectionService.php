@@ -74,9 +74,9 @@ class ConflictDetectionService
         ?int $excludeReservationId = null
     ): array {
         $conflicts = [];
-        $date = Carbon::parse($reservationDate);
-        $start = Carbon::parse($reservationDate . ' ' . $startTime);
-        $end = Carbon::parse($reservationDate . ' ' . $endTime);
+        $date = Carbon::parse($reservationDate)->startOfDay();
+        $start = Carbon::parse($reservationDate)->setTimeFromTimeString($startTime);
+        $end = Carbon::parse($reservationDate)->setTimeFromTimeString($endTime);
 
         // 检查实验室时间冲突
         $existingReservations = ExperimentReservation::where('laboratory_id', $laboratoryId)
@@ -88,8 +88,8 @@ class ConflictDetectionService
             ->get();
 
         foreach ($existingReservations as $existing) {
-            $existingStart = Carbon::parse($existing->reservation_date . ' ' . $existing->start_time);
-            $existingEnd = Carbon::parse($existing->reservation_date . ' ' . $existing->end_time);
+            $existingStart = Carbon::parse($existing->reservation_date)->setTimeFromTimeString($existing->start_time->format('H:i'));
+            $existingEnd = Carbon::parse($existing->reservation_date)->setTimeFromTimeString($existing->end_time->format('H:i'));
 
             if ($this->isTimeOverlap($start, $end, $existingStart, $existingEnd)) {
                 $conflicts[] = [
@@ -116,8 +116,8 @@ class ConflictDetectionService
                 ->get();
 
             foreach ($teacherReservations as $existing) {
-                $existingStart = Carbon::parse($existing->reservation_date . ' ' . $existing->start_time);
-                $existingEnd = Carbon::parse($existing->reservation_date . ' ' . $existing->end_time);
+                $existingStart = Carbon::parse($existing->reservation_date)->setTimeFromTimeString($existing->start_time->format('H:i'));
+                $existingEnd = Carbon::parse($existing->reservation_date)->setTimeFromTimeString($existing->end_time->format('H:i'));
 
                 if ($this->isTimeOverlap($start, $end, $existingStart, $existingEnd)) {
                     $conflicts[] = [
@@ -171,8 +171,8 @@ class ConflictDetectionService
     private function checkTimeConflicts(ExperimentReservation $reservation): array
     {
         $conflicts = [];
-        $start = Carbon::parse($reservation->reservation_date . ' ' . $reservation->start_time);
-        $end = Carbon::parse($reservation->reservation_date . ' ' . $reservation->end_time);
+        $start = Carbon::parse($reservation->reservation_date)->setTimeFromTimeString($reservation->start_time->format('H:i'));
+        $end = Carbon::parse($reservation->reservation_date)->setTimeFromTimeString($reservation->end_time->format('H:i'));
 
         $existingReservations = ExperimentReservation::where('laboratory_id', $reservation->laboratory_id)
             ->where('reservation_date', $reservation->reservation_date)
@@ -181,8 +181,8 @@ class ConflictDetectionService
             ->get();
 
         foreach ($existingReservations as $existing) {
-            $existingStart = Carbon::parse($existing->reservation_date . ' ' . $existing->start_time);
-            $existingEnd = Carbon::parse($existing->reservation_date . ' ' . $existing->end_time);
+            $existingStart = Carbon::parse($existing->reservation_date)->setTimeFromTimeString($existing->start_time->format('H:i'));
+            $existingEnd = Carbon::parse($existing->reservation_date)->setTimeFromTimeString($existing->end_time->format('H:i'));
 
             if ($this->isTimeOverlap($start, $end, $existingStart, $existingEnd)) {
                 $conflicts[] = [
@@ -204,8 +204,8 @@ class ConflictDetectionService
     private function checkTeacherConflicts(ExperimentReservation $reservation): array
     {
         $conflicts = [];
-        $start = Carbon::parse($reservation->reservation_date . ' ' . $reservation->start_time);
-        $end = Carbon::parse($reservation->reservation_date . ' ' . $reservation->end_time);
+        $start = Carbon::parse($reservation->reservation_date)->setTimeFromTimeString($reservation->start_time->format('H:i'));
+        $end = Carbon::parse($reservation->reservation_date)->setTimeFromTimeString($reservation->end_time->format('H:i'));
 
         $teacherReservations = ExperimentReservation::where('teacher_id', $reservation->teacher_id)
             ->where('reservation_date', $reservation->reservation_date)
@@ -214,8 +214,8 @@ class ConflictDetectionService
             ->get();
 
         foreach ($teacherReservations as $existing) {
-            $existingStart = Carbon::parse($existing->reservation_date . ' ' . $existing->start_time);
-            $existingEnd = Carbon::parse($existing->reservation_date . ' ' . $existing->end_time);
+            $existingStart = Carbon::parse($existing->reservation_date)->setTimeFromTimeString($existing->start_time->format('H:i'));
+            $existingEnd = Carbon::parse($existing->reservation_date)->setTimeFromTimeString($existing->end_time->format('H:i'));
 
             if ($this->isTimeOverlap($start, $end, $existingStart, $existingEnd)) {
                 $conflicts[] = [
@@ -264,8 +264,8 @@ class ConflictDetectionService
         return $this->checkEquipmentTimeConflicts(
             $equipmentIds,
             $reservation->reservation_date,
-            Carbon::parse($reservation->reservation_date . ' ' . $reservation->start_time),
-            Carbon::parse($reservation->reservation_date . ' ' . $reservation->end_time),
+            Carbon::parse($reservation->reservation_date)->setTimeFromTimeString($reservation->start_time->format('H:i')),
+            Carbon::parse($reservation->reservation_date)->setTimeFromTimeString($reservation->end_time->format('H:i')),
             $reservation->id
         );
     }
