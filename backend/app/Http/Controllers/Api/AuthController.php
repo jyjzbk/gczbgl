@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
+use App\Models\School;
+use App\Models\Role;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
@@ -113,6 +115,7 @@ class AuthController extends Controller
             'real_name' => 'required|string|max:50',
             'email' => 'nullable|email|unique:users',
             'phone' => 'nullable|string|max:20|unique:users',
+            'school_id' => 'required|exists:schools,id',
         ]);
 
         if ($validator->fails()) {
@@ -123,14 +126,37 @@ class AuthController extends Controller
             ], 422);
         }
 
+        // 获取学校信息
+        $school = School::find($request->school_id);
+        if (!$school) {
+            return response()->json([
+                'success' => false,
+                'message' => '所选学校不存在'
+            ], 422);
+        }
+
         $user = User::create([
             'username' => $request->username,
             'password' => Hash::make($request->password),
             'real_name' => $request->real_name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'school_id' => $request->school_id,
+            'role' => 'school_teacher', // 注册用户默认为任课教师
+            'organization_id' => $school->id,
+            'organization_type' => 'school',
+            'organization_level' => 5, // 学校级别
             'status' => User::STATUS_ACTIVE
         ]);
+
+        // 为用户分配任课教师角色
+        $teacherRole = Role::where('code', 'school_teacher')->first();
+        if ($teacherRole) {
+            $user->roles()->attach($teacherRole->id, [
+                'scope_type' => 'school',
+                'scope_id' => $school->id
+            ]);
+        }
 
         $token = auth('api')->login($user);
 

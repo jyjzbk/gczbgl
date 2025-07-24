@@ -152,7 +152,7 @@
         <el-table-column prop="quality_score" label="质量评分" width="100">
           <template #default="{ row }">
             <el-rate
-              :model-value="row.quality_score / 20"
+              :model-value="row.quality_score"
               disabled
               show-score
               text-color="#ff9900"
@@ -476,6 +476,13 @@ const handleView = (record: ExperimentRecord) => {
 
 // 完成实验
 const handleComplete = (record: ExperimentRecord) => {
+  // 检查记录状态
+  if (record.status !== 1) {
+    const statusText = getStatusLabel(record.status)
+    ElMessage.warning(`该实验记录状态为"${statusText}"，无法完成操作`)
+    return
+  }
+
   currentRecord.value = record
   completeVisible.value = true
 }

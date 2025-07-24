@@ -648,12 +648,39 @@ class OrganizationController extends Controller
 
         // 分页
         $perPage = $request->get('per_page', 20);
-        $users = $query->paginate($perPage);
+        $users = $query->with('school')->paginate($perPage);
+
+        // 为每个用户添加组织名称信息
+        $usersWithOrganization = $users->getCollection()->map(function ($user) {
+            $organizationName = null;
+
+            // 优先使用school_id获取学校信息
+            if ($user->school_id && $user->school) {
+                $organizationName = $user->school->name;
+            } elseif ($user->organization_id) {
+                // 根据organization_type获取对应的组织名称
+                if (in_array($user->organization_type, ['province', 'city', 'county', 'district', 'region'])) {
+                    // 获取行政区域名称
+                    $region = AdministrativeRegion::find($user->organization_id);
+                    $organizationName = $region ? $region->name : null;
+                } elseif ($user->organization_type === 'school') {
+                    // 如果organization_type是school，但没有school_id，尝试通过organization_id获取学校
+                    $school = School::find($user->organization_id);
+                    $organizationName = $school ? $school->name : null;
+                }
+            }
+
+            // 添加组织名称到用户数据
+            $userData = $user->toArray();
+            $userData['organization_name'] = $organizationName;
+
+            return $userData;
+        });
 
         return response()->json([
             'success' => true,
             'data' => [
-                'items' => $users->items(),
+                'items' => $usersWithOrganization->toArray(),
                 'pagination' => [
                     'current_page' => $users->currentPage(),
                     'per_page' => $users->perPage(),

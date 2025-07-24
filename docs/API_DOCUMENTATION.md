@@ -1,5 +1,75 @@
 # API 接口文档
 
+## 认证相关接口
+
+### 用户注册
+
+**接口地址**：`POST /api/register`
+
+**请求参数**：
+```json
+{
+  "username": "string",
+  "password": "string",
+  "password_confirmation": "string",
+  "real_name": "string",
+  "email": "string",
+  "phone": "string",
+  "school_id": "integer"
+}
+```
+
+**参数说明**：
+- `school_id`: 必填，用户所属学校ID，需要在schools表中存在
+- 注册成功后自动分配任课教师角色和相应权限
+
+**响应数据**：
+```json
+{
+  "success": true,
+  "message": "注册成功",
+  "data": {
+    "token": "jwt_token_string",
+    "token_type": "bearer",
+    "expires_in": 3600,
+    "user": {
+      "id": 1,
+      "username": "test_user",
+      "real_name": "测试用户",
+      "email": "test@example.com",
+      "phone": "13800138000",
+      "status": 1
+    }
+  }
+}
+```
+
+### 获取学校列表（公开接口）
+
+**接口地址**：`GET /api/public/schools`
+
+**请求参数**：
+```json
+{
+  "search": "string"  // 可选，搜索关键词
+}
+```
+
+**响应数据**：
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "石家庄市藁城区实验小学",
+      "code": "ZY001",
+      "region_name": "藁城区"
+    }
+  ]
+}
+```
+
 ## 组织管理相关接口
 
 ### 1. 获取组织统计信息

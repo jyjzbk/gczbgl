@@ -72,7 +72,7 @@ class ExperimentRecordSeeder extends Seeder
                         'start_time' => $startTime,
                         'end_time' => $endTime,
                         'completion_rate' => rand(80, 100),
-                        'quality_score' => rand(7, 10),
+                        'quality_score' => rand(3, 5),
                         'summary' => '实验' . $experiment->name . '顺利完成，学生掌握了实验要点。',
                         'problems' => rand(0, 1) ? '部分学生操作不够熟练' : null,
                         'suggestions' => '建议增加预习环节，提高实验效率。',

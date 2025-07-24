@@ -233,15 +233,48 @@ const searchSchools = async (query: string) => {
   if (query) {
     schoolLoading.value = true
     try {
+      console.log('搜索学校:', query)
       const response = await getSchoolsApi({ search: query })
-      schools.value = response.data.data || response.data
+      console.log('搜索响应:', response)
+
+      // 处理不同的响应格式
+      let schoolData = []
+      if (response.data) {
+        if (response.data.data) {
+          schoolData = response.data.data
+        } else if (Array.isArray(response.data)) {
+          schoolData = response.data
+        } else {
+          schoolData = response.data
+        }
+      }
+
+      schools.value = Array.isArray(schoolData) ? schoolData : []
+      console.log('搜索结果:', schools.value)
     } catch (error) {
       console.error('搜索学校失败:', error)
     } finally {
       schoolLoading.value = false
     }
   } else {
-    schools.value = []
+    // 如果没有搜索词，重新加载初始列表
+    try {
+      const response = await getSchoolsApi()
+      let schoolData = []
+      if (response.data) {
+        if (response.data.data) {
+          schoolData = response.data.data
+        } else if (Array.isArray(response.data)) {
+          schoolData = response.data
+        } else {
+          schoolData = response.data
+        }
+      }
+      schools.value = Array.isArray(schoolData) ? schoolData.slice(0, 20) : []
+    } catch (error) {
+      console.error('重新加载学校列表失败:', error)
+      schools.value = []
+    }
   }
 }
 
@@ -295,9 +328,25 @@ const showPrivacy = () => {
 // 初始化加载学校列表
 onMounted(async () => {
   try {
+    console.log('开始加载学校列表...')
     const response = await getSchoolsApi()
-    const schoolData = response.data.data || response.data
-    schools.value = Array.isArray(schoolData) ? schoolData.slice(0, 10) : [] // 显示前10个学校
+    console.log('API响应:', response)
+
+    // 处理不同的响应格式
+    let schoolData = []
+    if (response.data) {
+      if (response.data.data) {
+        schoolData = response.data.data
+      } else if (Array.isArray(response.data)) {
+        schoolData = response.data
+      } else {
+        schoolData = response.data
+      }
+    }
+
+    console.log('处理后的学校数据:', schoolData)
+    schools.value = Array.isArray(schoolData) ? schoolData.slice(0, 20) : [] // 显示前20个学校
+    console.log('设置的学校列表:', schools.value)
   } catch (error) {
     console.error('加载学校列表失败:', error)
   }

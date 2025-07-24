@@ -120,6 +120,20 @@
                 </el-avatar>
               </template>
             </el-table-column>
+            <el-table-column label="所属组织" width="150">
+              <template #default="{ row }">
+                <div class="organization-info">
+                  <el-tag
+                    v-if="row.organization_name"
+                    :type="getOrganizationTagType(row.organization_level)"
+                    size="small"
+                  >
+                    {{ row.organization_name }}
+                  </el-tag>
+                  <span v-else class="no-organization">未分配</span>
+                </div>
+              </template>
+            </el-table-column>
             <el-table-column prop="username" label="用户名" />
             <el-table-column prop="real_name" label="真实姓名" />
             <el-table-column prop="email" label="邮箱" />
@@ -909,6 +923,18 @@ onMounted(async () => {
 
 .action-buttons .el-button {
   margin-left: 0;
+}
+
+.organization-info {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.no-organization {
+  color: #909399;
+  font-size: 12px;
+  font-style: italic;
 }
 
 /* 响应式设计 */

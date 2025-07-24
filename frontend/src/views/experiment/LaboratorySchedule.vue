@@ -197,6 +197,10 @@ import { laboratoryApi } from '@/api/laboratory'
 import QuickReservationForm from './components/QuickReservationForm.vue'
 import ReservationDetail from './components/ReservationDetail.vue'
 import dayjs from 'dayjs'
+import isBetween from 'dayjs/plugin/isBetween'
+
+// 扩展dayjs插件
+dayjs.extend(isBetween)
 
 // 响应式数据
 const laboratories = ref([])
@@ -359,11 +363,43 @@ const getReservationsForTimeSlot = (date: string, time: string) => {
   if (!dayData) return []
 
   return dayData.reservations.filter(reservation => {
-    const startTime = dayjs(`${date} ${reservation.start_time}`)
-    const endTime = dayjs(`${date} ${reservation.end_time}`)
-    const slotTime = dayjs(`${date} ${time}`)
-    
-    return slotTime.isBetween(startTime, endTime, null, '[)')
+    try {
+      // 确保时间格式正确
+      if (!reservation.start_time || !reservation.end_time || !time) {
+        console.warn('Invalid time data:', { reservation, time })
+        return false
+      }
+
+      // 确保时间格式统一为 HH:mm
+      const formatTime = (timeStr: string) => {
+        if (timeStr.includes(':')) {
+          return timeStr.substring(0, 5) // 取前5位 HH:mm
+        }
+        return timeStr
+      }
+
+      const startTime = dayjs(`${date} ${formatTime(reservation.start_time)}`)
+      const endTime = dayjs(`${date} ${formatTime(reservation.end_time)}`)
+      const slotTime = dayjs(`${date} ${formatTime(time)}`)
+
+      // 验证dayjs对象是否有效
+      if (!startTime.isValid() || !endTime.isValid() || !slotTime.isValid()) {
+        console.warn('Invalid dayjs objects:', {
+          startTime: startTime.isValid(),
+          endTime: endTime.isValid(),
+          slotTime: slotTime.isValid(),
+          startTimeStr: `${date} ${reservation.start_time}`,
+          endTimeStr: `${date} ${reservation.end_time}`,
+          slotTimeStr: `${date} ${time}`
+        })
+        return false
+      }
+
+      return slotTime.isBetween(startTime, endTime, null, '[)')
+    } catch (error) {
+      console.error('Error in getReservationsForTimeSlot:', error, { date, time, reservation })
+      return false
+    }
   })
 }
 

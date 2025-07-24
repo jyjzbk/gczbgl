@@ -49,7 +49,7 @@
           </el-descriptions-item>
           <el-descriptions-item label="质量评分">
             <el-rate
-              :model-value="record.quality_score / 20"
+              :model-value="record.quality_score"
               disabled
               show-score
               text-color="#ff9900"

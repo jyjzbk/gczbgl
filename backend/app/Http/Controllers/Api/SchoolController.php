@@ -13,6 +13,38 @@ use Illuminate\Support\Facades\Validator;
 class SchoolController extends Controller
 {
     /**
+     * 公开的学校列表（用于注册页面，不需要认证）
+     */
+    public function publicList(Request $request): JsonResponse
+    {
+        $query = School::with('region')->where('status', 1); // 只显示启用的学校
+
+        // 搜索条件
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
+        // 限制返回数量，避免数据过多
+        $schools = $query->limit(100)->get()->map(function ($school) {
+            return [
+                'id' => $school->id,
+                'name' => $school->name,
+                'code' => $school->code,
+                'region_name' => $school->region ? $school->region->name : ''
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $schools
+        ]);
+    }
+
+    /**
      * 获取学校列表
      */
     public function index(Request $request): JsonResponse

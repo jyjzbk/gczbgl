@@ -311,13 +311,31 @@ watch(() => props.user, (user) => {
     form.real_name = user.real_name
     form.email = user.email
     form.phone = user.phone || ''
-    form.role = user.role
+
+    // 处理角色：如果是角色名称，需要转换为角色代码
+    const userRole = user.role
+    const roleOption = roleOptions.value.find(r => r.code === userRole || r.name === userRole)
+    form.role = roleOption ? roleOption.code : userRole
+
     form.department = user.department || ''
     form.position = user.position || ''
   } else {
     resetForm()
   }
 }, { immediate: true })
+
+// 监听角色选项变化，重新处理用户角色
+watch(() => roleOptions.value, () => {
+  if (props.user && form.role) {
+    const userRole = props.user.role
+    const roleOption = roleOptions.value.find(r => r.code === userRole || r.name === userRole)
+    if (roleOption && form.role !== roleOption.code) {
+      form.role = roleOption.code
+      // 更新角色级别
+      selectedRoleLevel.value = roleOption.level
+    }
+  }
+}, { deep: true })
 
 // 提交表单
 const handleSubmit = async () => {

@@ -37,11 +37,21 @@ use App\Http\Controllers\Api\ExperimentWorkController;
 |
 */
 
+// 公开API（不需要认证）
+Route::get('public/schools', [SchoolController::class, 'publicList']); // 注册页面使用的学校列表
+Route::get('public/test', function() {
+    return response()->json([
+        'success' => true,
+        'message' => 'Public API test successful',
+        'timestamp' => now()
+    ]);
+}); // 测试公开API
+
 // 认证相关路由
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
-    
+
     Route::middleware('auth:api')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         Route::post('logout', [AuthController::class, 'logout']);

@@ -11,6 +11,10 @@ export interface UserProfile {
   role: string
   school_id?: number
   school_name?: string
+  organization_id?: number
+  organization_type?: string
+  organization_level?: number
+  organization_name?: string
   department?: string
   position?: string
   bio?: string
@@ -148,7 +152,7 @@ export interface School {
 }
 
 export const getSchoolsApi = (params?: { search?: string }) => {
-  return request.get<{ data: School[] }>('/schools', { params })
+  return request.get<{ data: School[] }>('/public/schools', { params })
 }
 
 // 用户API对象（为了兼容组件中的使用方式）

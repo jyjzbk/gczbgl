@@ -67,7 +67,7 @@
                 :texts="['很差', '较差', '一般', '良好', '优秀']"
                 @change="handleRateChange"
               />
-              <div class="score-display">{{ form.quality_score }}分</div>
+              <div class="score-display">{{ form.quality_score }}星</div>
             </el-form-item>
           </el-col>
         </el-row>
@@ -253,7 +253,7 @@ const formatDateTime = (datetime: string) => {
 
 // 处理评分变化
 const handleRateChange = (value: number) => {
-  form.quality_score = value * 20 // 转换为100分制
+  form.quality_score = value // 直接使用星级评分(1-5)
 }
 
 // 初始化表单
@@ -262,13 +262,13 @@ const initForm = () => {
     // 设置默认结束时间为当前时间
     form.end_time = new Date().toISOString().slice(0, 19).replace('T', ' ')
     form.completion_rate = props.record.completion_rate || 100
-    form.quality_score = props.record.quality_score || 80
+    form.quality_score = props.record.quality_score || 4 // 默认4星评分
     form.summary = props.record.summary || ''
     form.problems = props.record.problems || ''
     form.suggestions = props.record.suggestions || ''
-    
-    // 设置评分值
-    rateValue.value = Math.round(form.quality_score / 20)
+
+    // 设置评分值（直接使用星级评分）
+    rateValue.value = form.quality_score
   }
   
   // 清空文件列表
@@ -384,18 +384,34 @@ const handleSubmit = async () => {
     
     // 完成实验记录
     await completeExperimentRecordApi(props.record.id, data)
-    
+
     // 上传文件
     if (photoFiles.value.length > 0 || videoFiles.value.length > 0) {
       await uploadFiles(props.record.id)
     }
-    
+
     ElMessage.success('实验记录完成成功')
-    
+
     emit('success')
     handleClose()
-  } catch (error) {
+  } catch (error: any) {
     console.error('完成实验记录失败:', error)
+
+    // 处理特定错误
+    if (error.response?.status === 400) {
+      const message = error.response.data?.message || '操作失败'
+      ElMessage.error(message)
+    } else if (error.response?.status === 422) {
+      const errors = error.response.data?.errors
+      if (errors) {
+        const firstError = Object.values(errors)[0] as string[]
+        ElMessage.error(firstError[0] || '数据验证失败')
+      } else {
+        ElMessage.error('数据验证失败')
+      }
+    } else {
+      ElMessage.error('完成实验记录失败，请稍后重试')
+    }
   } finally {
     loading.value = false
   }
