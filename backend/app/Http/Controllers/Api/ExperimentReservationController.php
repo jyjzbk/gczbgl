@@ -19,7 +19,7 @@ class ExperimentReservationController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = ExperimentReservation::with(['catalog', 'laboratory', 'teacher', 'reviewer']);
+        $query = ExperimentReservation::with(['catalog', 'laboratory.school', 'teacher', 'reviewer', 'record']);
 
         // 应用数据权限过滤
         DataScopeMiddleware::applyDataScope($query, $request, 'experiment_reservations');
@@ -149,7 +149,7 @@ class ExperimentReservationController extends Controller
      */
     public function show(ExperimentReservation $experimentReservation): JsonResponse
     {
-        $experimentReservation->load(['catalog', 'laboratory', 'teacher', 'reviewer', 'record']);
+        $experimentReservation->load(['catalog', 'laboratory.school', 'teacher', 'reviewer', 'record']);
 
         return response()->json([
             'code' => 200,
@@ -295,8 +295,19 @@ class ExperimentReservationController extends Controller
                 ? round(($stats['completed_experiments'] / $stats['total_reservations']) * 100, 2)
                 : 0;
 
-            // 获取作品总数 - 暂时设为0，等待work_count字段迁移完成
-            $stats['total_works'] = 0;
+            // 获取作品总数 - 统计实验记录中的照片数量
+            $recordsWithPhotos = \App\Models\ExperimentRecord::where('teacher_id', $teacherId)
+                ->whereNotNull('photos')
+                ->get();
+
+            $totalPhotos = 0;
+            foreach ($recordsWithPhotos as $record) {
+                $photos = $record->photos;
+                if (is_array($photos)) {
+                    $totalPhotos += count($photos);
+                }
+            }
+            $stats['total_works'] = $totalPhotos;
 
             return response()->json([
                 'success' => true,

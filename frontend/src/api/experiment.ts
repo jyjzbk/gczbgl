@@ -319,11 +319,13 @@ export const completeExperimentRecordApi = (id: number, data: UpdateExperimentRe
 }
 
 // 上传实验照片
-export const uploadExperimentPhotoApi = (id: number, file: File) => {
+export const uploadExperimentPhotoApi = (id: number, files: File[]) => {
   const formData = new FormData()
-  formData.append('photo', file)
-  
-  return request.post(`/experiment-records/${id}/photos`, formData, {
+  files.forEach(file => {
+    formData.append('photos[]', file)
+  })
+
+  return request.post(`/experiment-records/${id}/upload-photos`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
@@ -331,11 +333,13 @@ export const uploadExperimentPhotoApi = (id: number, file: File) => {
 }
 
 // 上传实验视频
-export const uploadExperimentVideoApi = (id: number, file: File) => {
+export const uploadExperimentVideoApi = (id: number, files: File[]) => {
   const formData = new FormData()
-  formData.append('video', file)
-  
-  return request.post(`/experiment-records/${id}/videos`, formData, {
+  files.forEach(file => {
+    formData.append('videos[]', file)
+  })
+
+  return request.post(`/experiment-records/${id}/upload-videos`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }

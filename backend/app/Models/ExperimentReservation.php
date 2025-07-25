@@ -251,8 +251,8 @@ class ExperimentReservation extends Model
      */
     public function canStartExperiment()
     {
-        return $this->status === self::STATUS_APPROVED 
-               && $this->reservation_date <= Carbon::today()
+        return $this->status === self::STATUS_APPROVED
+               && $this->reservation_date >= Carbon::today()
                && !$this->record;
     }
 

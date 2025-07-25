@@ -16,6 +16,9 @@
       <el-descriptions-item label="实验室">
         {{ reservation.laboratory?.name }}
       </el-descriptions-item>
+      <el-descriptions-item label="所属学校">
+        {{ reservation.laboratory?.school?.name || '未知学校' }}
+      </el-descriptions-item>
       <el-descriptions-item label="预约日期">
         {{ formatDate(reservation.reservation_date) }}
       </el-descriptions-item>

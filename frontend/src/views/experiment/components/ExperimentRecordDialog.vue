@@ -113,6 +113,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import {
   createExperimentRecordApi,
+  updateExperimentRecordApi,
   getExperimentReservationsApi,
   type ExperimentRecord,
   type ExperimentReservation
@@ -257,26 +258,45 @@ const loadReservations = async () => {
 // 处理提交
 const handleSubmit = async () => {
   if (!formRef.value) return
-  
+
   try {
     await formRef.value.validate()
-    
+
     loading.value = true
-    
-    const data = {
-      reservation_id: form.reservation_id,
-      student_count: form.student_count,
-      start_time: form.start_time,
-      remark: form.remark || undefined
+
+    if (props.mode === 'create') {
+      // 创建模式
+      const data = {
+        reservation_id: form.reservation_id,
+        student_count: form.student_count,
+        start_time: form.start_time,
+        remark: form.remark || undefined
+      }
+
+      await createExperimentRecordApi(data)
+      ElMessage.success('实验记录创建成功')
+    } else {
+      // 编辑模式
+      if (!props.record?.id) {
+        ElMessage.error('缺少实验记录ID')
+        return
+      }
+
+      const data = {
+        student_count: form.student_count,
+        start_time: form.start_time,
+        remark: form.remark || undefined
+      }
+
+      await updateExperimentRecordApi(props.record.id, data)
+      ElMessage.success('实验记录更新成功')
     }
-    
-    await createExperimentRecordApi(data)
-    ElMessage.success('实验记录创建成功')
-    
+
     emit('success')
     handleClose()
   } catch (error) {
-    console.error('创建实验记录失败:', error)
+    console.error(props.mode === 'create' ? '创建实验记录失败:' : '更新实验记录失败:', error)
+    ElMessage.error(props.mode === 'create' ? '创建实验记录失败' : '更新实验记录失败')
   } finally {
     loading.value = false
   }

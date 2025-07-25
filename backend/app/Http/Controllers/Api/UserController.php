@@ -37,7 +37,18 @@ class UserController extends Controller
 
         // 角色筛选
         if ($request->filled('role')) {
-            $query->where('role', $request->role);
+            $role = $request->role;
+            if ($role === 'teacher') {
+                // 当筛选教师时，包含所有教师相关角色
+                $query->where(function($q) {
+                    $q->where('role', 'teacher')
+                      ->orWhere('role', 'school_teacher')
+                      ->orWhere('role', 'subject_teacher')
+                      ->orWhere('role', '任课教师');
+                });
+            } else {
+                $query->where('role', $role);
+            }
         }
 
         // 状态筛选

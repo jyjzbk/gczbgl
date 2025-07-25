@@ -22,7 +22,7 @@ return new class extends Migration
             $table->integer('student_count')->comment('实际学生人数');
             $table->datetime('start_time')->nullable()->comment('实际开始时间');
             $table->datetime('end_time')->nullable()->comment('实际结束时间');
-            $table->decimal('completion_rate', 5, 2)->default(100.00)->comment('完成率(%)');
+            $table->decimal('completion_rate', 5, 2)->default(0.00)->comment('完成率(%)');
             $table->tinyInteger('quality_score')->nullable()->comment('质量评分(1-5)');
             $table->json('photos')->nullable()->comment('实验照片');
             $table->json('videos')->nullable()->comment('实验视频');

@@ -118,6 +118,8 @@
           :data="reservations"
           v-loading="loading"
           border
+          :row-style="{ height: '60px' }"
+          :cell-style="{ padding: '12px 0' }"
           @row-click="showReservationDetail"
         >
           <el-table-column prop="reservation_date" label="预约日期" width="120">
@@ -162,11 +164,13 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="作品数" width="80" align="center">
+          <el-table-column label="作品数" width="100" align="center">
             <template #default="{ row }">
-              <el-badge :value="row.record?.work_count || 0" type="primary">
-                <el-icon><Picture /></el-icon>
-              </el-badge>
+              <div class="work-count-cell">
+                <el-badge :value="row.record?.work_count || 0" type="primary">
+                  <el-icon size="18"><Picture /></el-icon>
+                </el-badge>
+              </div>
             </template>
           </el-table-column>
 
@@ -247,6 +251,7 @@ import { ElMessage } from 'element-plus'
 import { Calendar, Check, TrendCharts, Picture } from '@element-plus/icons-vue'
 import { experimentReservationApi } from '@/api/experimentReservation'
 import { statisticsApi } from '@/api/statistics'
+import { useAuthStore } from '@/stores/auth'
 import ReservationDetail from './components/ReservationDetail.vue'
 import ExperimentWorks from './components/ExperimentWorks.vue'
 import * as echarts from 'echarts'
@@ -298,10 +303,14 @@ const loadStats = async () => {
 const loadReservations = async () => {
   loading.value = true
   try {
+    // 获取当前用户ID
+    const authStore = useAuthStore()
+    const currentUserId = authStore.userInfo?.id
+
     const params = {
       page: pagination.current_page,
       per_page: pagination.per_page,
-      teacher_id: 'current', // 当前用户
+      teacher_id: currentUserId, // 使用当前用户ID
       ...filterForm,
       date_start: filterForm.date_range?.[0],
       date_end: filterForm.date_range?.[1]
@@ -312,6 +321,7 @@ const loadReservations = async () => {
     reservations.value = response.data.data || response.data
     pagination.total = response.data.total || response.pagination?.total || 0
   } catch (error) {
+    console.error('加载预约记录失败:', error)
     ElMessage.error('加载预约记录失败')
   } finally {
     loading.value = false
@@ -320,14 +330,18 @@ const loadReservations = async () => {
 
 const loadCompletionTrend = async () => {
   try {
+    const authStore = useAuthStore()
+    const currentUserId = authStore.userInfo?.id
+
     const response = await statisticsApi.getExperimentCompletionTrend({
-      teacher_id: 'current',
+      teacher_id: currentUserId,
       months: 12
     })
-    
+
     await nextTick()
     renderChart(response.data)
   } catch (error) {
+    console.error('加载趋势数据失败:', error)
     ElMessage.error('加载趋势数据失败')
   }
 }
@@ -400,16 +414,19 @@ const resetFilter = () => {
 
 const exportData = async () => {
   try {
+    const authStore = useAuthStore()
+    const currentUserId = authStore.userInfo?.id
+
     const response = await experimentReservationApi.export({
-      teacher_id: 'current',
+      teacher_id: currentUserId,
       ...filterForm,
       date_start: filterForm.date_range?.[0],
       date_end: filterForm.date_range?.[1]
     })
-    
+
     // 处理文件下载
-    const blob = new Blob([response.data], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -417,9 +434,10 @@ const exportData = async () => {
     link.download = `个人实验档案_${dayjs().format('YYYY-MM-DD')}.xlsx`
     link.click()
     window.URL.revokeObjectURL(url)
-    
+
     ElMessage.success('导出成功')
   } catch (error) {
+    console.error('导出失败:', error)
     ElMessage.error('导出失败')
   }
 }
@@ -525,6 +543,14 @@ onMounted(() => {
   font-size: 12px;
   text-align: center;
   margin-top: 4px;
+}
+
+.work-count-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 8px 0;
 }
 
 .no-record {

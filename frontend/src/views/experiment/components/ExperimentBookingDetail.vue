@@ -225,10 +225,11 @@ watch(visible, (newVal) => {
 // 获取状态标签类型
 const getStatusTagType = (status: number) => {
   const statusMap: Record<number, string> = {
-    0: 'warning',
-    1: 'success',
-    2: 'danger',
-    3: 'info'
+    1: 'warning',  // 待审核
+    2: 'success',  // 已通过
+    3: 'danger',   // 已拒绝
+    4: 'success',  // 已完成
+    5: 'info'      // 已取消
   }
   return statusMap[status] || 'info'
 }
@@ -236,10 +237,11 @@ const getStatusTagType = (status: number) => {
 // 获取状态标签文本
 const getStatusLabel = (status: number) => {
   const statusMap: Record<number, string> = {
-    0: '待审核',
-    1: '已通过',
-    2: '已拒绝',
-    3: '已取消'
+    1: '待审核',
+    2: '已通过',
+    3: '已拒绝',
+    4: '已完成',
+    5: '已取消'
   }
   return statusMap[status] || '未知'
 }

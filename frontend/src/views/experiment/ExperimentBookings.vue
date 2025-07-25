@@ -131,6 +131,11 @@
         <el-table-column type="selection" width="55" />
         <el-table-column prop="catalog.name" label="实验名称" min-width="180" show-overflow-tooltip />
         <el-table-column prop="laboratory.name" label="实验室" width="120" />
+        <el-table-column label="所属学校" width="140" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.laboratory?.school?.name || '未知学校' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="teacher.real_name" label="申请教师" width="100" />
         <el-table-column prop="class_name" label="班级" width="120" />
         <el-table-column prop="student_count" label="学生数" width="80" />

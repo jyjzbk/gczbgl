@@ -1,5 +1,66 @@
 # API 接口文档
 
+## 实验记录相关接口
+
+### 上传实验照片
+
+**接口地址**：`POST /api/experiment-records/{id}/upload-photos`
+
+**请求方式**：`multipart/form-data`
+
+**请求参数**：
+- `photos[]`: 文件数组，最多10张照片
+- 支持格式：jpeg, png, jpg, gif
+- 单张照片最大5MB
+
+**请求头**：
+```
+Authorization: Bearer {token}
+Content-Type: multipart/form-data
+```
+
+**响应数据**：
+```json
+{
+  "code": 200,
+  "message": "照片上传成功",
+  "data": {
+    "photos": [
+      "http://localhost:8000/storage/experiment_photos/1753432611_6883422344144.jpg",
+      "http://localhost:8000/storage/experiment_photos/1753432611_68834223e259d.jpg"
+    ]
+  }
+}
+```
+
+### 获取个人实验统计
+
+**接口地址**：`GET /api/personal/experiment-stats`
+
+**请求参数**：
+- `teacher_id`: 可选，默认为当前用户
+
+**响应数据**：
+```json
+{
+  "success": true,
+  "data": {
+    "total_reservations": 3,
+    "completed_experiments": 3,
+    "completion_rate": 100.00,
+    "total_works": 3,
+    "pending_reservations": 0,
+    "approved_reservations": 0
+  }
+}
+```
+
+**字段说明**：
+- `total_works`: 基于照片数量统计的实验作品总数
+- 其他字段保持原有含义
+
+---
+
 ## 认证相关接口
 
 ### 用户注册

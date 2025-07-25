@@ -161,7 +161,7 @@
     <el-dialog
       v-model="showQuickReservation"
       title="快速预约"
-      width="600px"
+      width="700px"
       :close-on-click-modal="false"
     >
       <QuickReservationForm

@@ -339,17 +339,17 @@ const handleVideoRemove = (file: UploadFile) => {
 // 上传文件
 const uploadFiles = async (recordId: number) => {
   const uploadPromises = []
-  
-  // 上传照片
-  for (const photo of photoFiles.value) {
-    uploadPromises.push(uploadExperimentPhotoApi(recordId, photo))
+
+  // 批量上传照片
+  if (photoFiles.value.length > 0) {
+    uploadPromises.push(uploadExperimentPhotoApi(recordId, photoFiles.value))
   }
-  
-  // 上传视频
-  for (const video of videoFiles.value) {
-    uploadPromises.push(uploadExperimentVideoApi(recordId, video))
+
+  // 批量上传视频
+  if (videoFiles.value.length > 0) {
+    uploadPromises.push(uploadExperimentVideoApi(recordId, videoFiles.value))
   }
-  
+
   if (uploadPromises.length > 0) {
     await Promise.all(uploadPromises)
   }

@@ -226,6 +226,31 @@ class ExperimentRecord extends Model
     }
 
     /**
+     * 获取照片URL列表
+     */
+    public function getPhotosAttribute($value)
+    {
+        if (!$value) {
+            return [];
+        }
+
+        $photos = is_string($value) ? json_decode($value, true) : $value;
+
+        if (!is_array($photos)) {
+            return [];
+        }
+
+        return array_map(function ($photo) {
+            // 如果已经是完整URL，直接返回
+            if (str_starts_with($photo, 'http')) {
+                return $photo;
+            }
+            // 转换为完整的存储URL
+            return \Storage::disk('public')->url($photo);
+        }, $photos);
+    }
+
+    /**
      * 获取照片数量
      */
     public function getPhotosCountAttribute()
@@ -234,11 +259,51 @@ class ExperimentRecord extends Model
     }
 
     /**
+     * 获取视频URL列表
+     */
+    public function getVideosAttribute($value)
+    {
+        if (!$value) {
+            return [];
+        }
+
+        $videos = is_string($value) ? json_decode($value, true) : $value;
+
+        if (!is_array($videos)) {
+            return [];
+        }
+
+        return array_map(function ($video) {
+            // 如果已经是完整URL，直接返回
+            if (str_starts_with($video, 'http')) {
+                return $video;
+            }
+            // 转换为完整的存储URL
+            return \Storage::disk('public')->url($video);
+        }, $videos);
+    }
+
+    /**
      * 获取视频数量
      */
     public function getVideosCountAttribute()
     {
         return is_array($this->videos) ? count($this->videos) : 0;
+    }
+
+    /**
+     * 获取作品数量（基于照片数量）
+     */
+    public function getWorkCountAttribute($value)
+    {
+        // 如果数据库中有值且不为0，使用数据库的值
+        if ($value !== null && $value > 0) {
+            return $value;
+        }
+
+        // 否则基于照片数量计算
+        $photos = $this->photos; // 使用已经处理过的photos属性
+        return is_array($photos) ? count($photos) : 0;
     }
 
     /**

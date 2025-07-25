@@ -46,7 +46,7 @@
       </el-row>
 
       <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="开始时间" prop="start_time">
             <el-time-picker
               v-model="form.start_time"
@@ -57,7 +57,7 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="结束时间" prop="end_time">
             <el-time-picker
               v-model="form.end_time"
@@ -68,15 +68,22 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+      </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="12">
           <el-form-item label="学生人数" prop="student_count">
             <el-input-number
               v-model="form.student_count"
               :min="1"
               :max="100"
               style="width: 100%"
+              controls-position="right"
             />
           </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <!-- 预留空间，可以添加其他字段 -->
         </el-col>
       </el-row>
 
@@ -314,5 +321,25 @@ onMounted(() => {
 
 .form-actions .el-button {
   margin-left: 12px;
+}
+
+/* 确保表单项有足够的空间 */
+:deep(.el-form-item__label) {
+  white-space: nowrap;
+  overflow: visible;
+}
+
+:deep(.el-form-item__content) {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 确保时间选择器和数字输入框有合适的最小宽度 */
+:deep(.el-time-picker) {
+  min-width: 120px;
+}
+
+:deep(.el-input-number) {
+  min-width: 120px;
 }
 </style>
