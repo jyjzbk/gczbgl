@@ -131,7 +131,11 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="school_name" label="所属学校" />
+            <el-table-column label="所属学校">
+              <template #default="{ row }">
+                {{ row.school?.name || '未知学校' }}
+              </template>
+            </el-table-column>
             <el-table-column prop="location" label="位置" show-overflow-tooltip />
             <el-table-column prop="capacity" label="容量" width="80" />
             <el-table-column prop="manager_name" label="管理员" />
@@ -343,6 +347,7 @@ const laboratoryForm = reactive({
   location: '',
   area: 0,
   capacity: 30,
+  manager_id: undefined as number | undefined,
   equipment_list: '',
   safety_rules: '',
   status: 1
@@ -455,11 +460,19 @@ const fetchLaboratoryList = async () => {
 
       // 使用普通的实验室列表API
       const response = await getLaboratoryListApi(params)
-      laboratoryList.value = response.data.data || response.data
 
-      // 更新分页信息
-      if (response.data.pagination) {
-        Object.assign(pagination, response.data.pagination)
+      // 处理分页数据
+      if (response.data.data) {
+        // Laravel分页格式
+        laboratoryList.value = response.data.data
+        pagination.current_page = response.data.current_page
+        pagination.per_page = response.data.per_page
+        pagination.total = response.data.total
+        pagination.last_page = response.data.last_page
+      } else {
+        // 简单数组格式
+        laboratoryList.value = response.data
+        pagination.total = response.data.length
       }
     } else {
       // 区域节点：按组织层级过滤
@@ -472,11 +485,25 @@ const fetchLaboratoryList = async () => {
       }
 
       const response = await getOrganizationLaboratoriesApi(params)
-      laboratoryList.value = response.data.items || response.data.data
 
-      // 更新分页信息
-      if (response.data.pagination) {
-        Object.assign(pagination, response.data.pagination)
+      // 处理分页数据
+      if (response.data.data) {
+        // Laravel分页格式
+        laboratoryList.value = response.data.data
+        pagination.current_page = response.data.current_page
+        pagination.per_page = response.data.per_page
+        pagination.total = response.data.total
+        pagination.last_page = response.data.last_page
+      } else if (response.data.items) {
+        // 自定义分页格式
+        laboratoryList.value = response.data.items
+        if (response.data.pagination) {
+          Object.assign(pagination, response.data.pagination)
+        }
+      } else {
+        // 简单数组格式
+        laboratoryList.value = response.data
+        pagination.total = response.data.length
       }
     }
   } catch (error) {
@@ -577,12 +604,14 @@ const handleEdit = (laboratory: Laboratory) => {
   isEdit.value = true
   Object.assign(laboratoryForm, {
     id: laboratory.id,
+    school_id: laboratory.school_id,
     name: laboratory.name,
     code: laboratory.code,
     type_id: laboratory.type_id || laboratory.type, // 优先使用type_id，兼容旧数据
     location: laboratory.location,
     area: laboratory.area,
     capacity: laboratory.capacity,
+    manager_id: laboratory.manager_id,
     equipment_list: laboratory.equipment_list,
     safety_rules: laboratory.safety_rules,
     status: laboratory.status
@@ -630,6 +659,7 @@ const handleSubmit = async () => {
       location: laboratoryForm.location,
       area: laboratoryForm.area,
       capacity: laboratoryForm.capacity,
+      manager_id: laboratoryForm.manager_id || null,
       equipment_list: laboratoryForm.equipment_list,
       safety_rules: laboratoryForm.safety_rules,
       status: laboratoryForm.status
@@ -663,6 +693,7 @@ const resetForm = () => {
     location: '',
     area: 0,
     capacity: 30,
+    manager_id: undefined,
     equipment_list: '',
     safety_rules: '',
     status: 1

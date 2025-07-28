@@ -4,11 +4,17 @@
     <div class="page-header">
       <div class="header-content">
         <h2>学校管理</h2>
-        <p>按组织架构管理系统中的学校信息</p>
+        <p>统一管理学校信息、班级、教师和实验室</p>
       </div>
       <div class="header-actions">
-        <el-button type="primary" :icon="Plus" @click="handleCreate">
+        <el-button type="primary" :icon="Plus" @click="handleCreate" v-if="activeTab === 'schools'">
           新增学校
+        </el-button>
+        <el-button type="primary" :icon="Plus" @click="handleCreateClass" v-if="activeTab === 'classes'">
+          新增班级
+        </el-button>
+        <el-button type="primary" :icon="Plus" @click="handleCreateTeacher" v-if="activeTab === 'teachers'">
+          新增教师
         </el-button>
         <el-button :icon="Refresh" @click="refreshData">
           刷新
@@ -16,26 +22,56 @@
       </div>
     </div>
 
-    <!-- 工具栏区域 -->
-    <div class="toolbar-section">
-      <div class="search-area">
-        <el-input
-          v-model="searchQuery"
-          placeholder="搜索学校名称或代码"
-          :prefix-icon="Search"
-          clearable
-          style="width: 300px"
-          @input="handleSearch"
-        />
-      </div>
-      <div class="toolbar-buttons">
-        <el-button :icon="Plus" @click="expandAll">展开全部</el-button>
-        <el-button :icon="Minus" @click="collapseAll">折叠全部</el-button>
-        <el-button :icon="Refresh" @click="refreshData">刷新</el-button>
-      </div>
+    <!-- 标签页导航 -->
+    <div class="tabs-section">
+      <el-tabs v-model="activeTab" @tab-change="handleTabChange">
+        <el-tab-pane label="学校信息" name="schools">
+          <template #label>
+            <span><el-icon><SchoolIcon /></el-icon> 学校信息</span>
+          </template>
+        </el-tab-pane>
+        <el-tab-pane label="班级管理" name="classes">
+          <template #label>
+            <span><el-icon><UserFilled /></el-icon> 班级管理</span>
+          </template>
+        </el-tab-pane>
+        <el-tab-pane label="教师管理" name="teachers">
+          <template #label>
+            <span><el-icon><Avatar /></el-icon> 教师管理</span>
+          </template>
+        </el-tab-pane>
+        <el-tab-pane label="实验室管理" name="laboratories">
+          <template #label>
+            <span><el-icon><OfficeBuilding /></el-icon> 实验室管理</span>
+          </template>
+        </el-tab-pane>
+      </el-tabs>
     </div>
 
-    <!-- 学校树形结构 -->
+    <!-- 标签页内容 -->
+    <div class="tab-content">
+      <!-- 学校信息标签页 -->
+      <div v-show="activeTab === 'schools'">
+        <!-- 工具栏区域 -->
+        <div class="toolbar-section">
+          <div class="search-area">
+            <el-input
+              v-model="searchQuery"
+              placeholder="搜索学校名称或代码"
+              :prefix-icon="Search"
+              clearable
+              style="width: 300px"
+              @input="handleSearch"
+            />
+          </div>
+          <div class="toolbar-buttons">
+            <el-button :icon="Plus" @click="expandAll">展开全部</el-button>
+            <el-button :icon="Minus" @click="collapseAll">折叠全部</el-button>
+            <el-button :icon="Refresh" @click="refreshData">刷新</el-button>
+          </div>
+        </div>
+
+        <!-- 学校树形结构 -->
     <div class="school-tree">
       <el-tree
         ref="treeRef"
@@ -115,6 +151,23 @@
           </div>
         </template>
       </el-tree>
+        </div>
+      </div>
+
+      <!-- 班级管理标签页 -->
+      <div v-show="activeTab === 'classes'">
+        <SchoolClassManagement />
+      </div>
+
+      <!-- 教师管理标签页 -->
+      <div v-show="activeTab === 'teachers'">
+        <SchoolTeacherManagement />
+      </div>
+
+      <!-- 实验室管理标签页 -->
+      <div v-show="activeTab === 'laboratories'">
+        <LaboratoryManagement />
+      </div>
     </div>
 
     <!-- 学校详情对话框 -->
@@ -231,7 +284,8 @@ import {
   OfficeBuilding,
   Operation,
   MapLocation,
-  Location
+  Location,
+  UserFilled
 } from '@element-plus/icons-vue'
 import {
   getOrganizationTreeApi,
@@ -245,6 +299,11 @@ import {
   type UpdateSchoolParams
 } from '@/api/school'
 
+// 导入子组件
+import SchoolClassManagement from './components/SchoolClassManagement.vue'
+import SchoolTeacherManagement from './components/SchoolTeacherManagement.vue'
+import LaboratoryManagement from '../basic/LaboratoryManagement.vue'
+
 // 响应式数据
 const loading = ref(false)
 const submitting = ref(false)
@@ -253,6 +312,9 @@ const detailDialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
 const treeRef = ref()
+
+// 标签页相关
+const activeTab = ref('schools')
 
 // 树形数据
 const treeData = ref<any[]>([])
@@ -587,9 +649,31 @@ const submitForm = async () => {
   }
 }
 
+// 标签页相关方法
+const handleTabChange = (tabName: string) => {
+  activeTab.value = tabName
+  // 根据标签页刷新对应数据
+  if (tabName === 'schools') {
+    fetchOrganizationTree()
+  }
+}
+
+const handleCreateClass = () => {
+  // 这里可以触发班级管理组件的新增方法
+  console.log('新增班级')
+}
+
+const handleCreateTeacher = () => {
+  // 这里可以触发教师管理组件的新增方法
+  console.log('新增教师')
+}
+
 // 刷新数据
 const refreshData = () => {
-  fetchOrganizationTree()
+  if (activeTab.value === 'schools') {
+    fetchOrganizationTree()
+  }
+  // 其他标签页的刷新逻辑可以通过事件传递给子组件
 }
 
 // 生命周期

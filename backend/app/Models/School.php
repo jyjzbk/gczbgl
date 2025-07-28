@@ -66,6 +66,30 @@ class School extends Model
     }
 
     /**
+     * 获取学校的班级
+     */
+    public function classes(): HasMany
+    {
+        return $this->hasMany(SchoolClass::class);
+    }
+
+    /**
+     * 获取学校的教师
+     */
+    public function teachers(): HasMany
+    {
+        return $this->hasMany(SchoolTeacher::class);
+    }
+
+    /**
+     * 获取学校的实验预约
+     */
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(ExperimentReservation::class);
+    }
+
+    /**
      * 学校类型常量
      */
     const TYPE_PRIMARY = 1;        // 小学

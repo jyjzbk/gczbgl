@@ -28,7 +28,10 @@ class RolePermissionSeeder extends Seeder
                 'laboratory_type', 'laboratory_type.list', 'laboratory_type.create', 'laboratory_type.update', 'laboratory_type.delete',
                 'equipment_standard', 'equipment_standard.list', 'equipment_standard.create', 'equipment_standard.update', 'equipment_standard.delete',
                 'statistics.view', 'statistics.dashboard', 'statistics.experiment', 'statistics.equipment', 'statistics.user', 'statistics.performance', 'statistics.export',
-                'system', 'system.read', 'log', 'log.read'
+                'system', 'system.read', 'log', 'log.read',
+                // 学校实验目录管理权限
+                'school_experiment_catalog.view', 'school_experiment_catalog.assign', 'school_experiment_catalog.completion_stats', 'school_experiment_catalog.baseline_manage',
+                'experiment_catalog.create_province', 'experiment_catalog.approve_baseline'
             ],
             'province_researcher' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
@@ -45,7 +48,10 @@ class RolePermissionSeeder extends Seeder
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
                 'laboratory_type', 'laboratory_type.list', 'laboratory_type.create', 'laboratory_type.update', 'laboratory_type.delete',
                 'equipment_standard', 'equipment_standard.list', 'equipment_standard.create', 'equipment_standard.update', 'equipment_standard.delete',
-                'statistics', 'statistics.view', 'statistics.dashboard', 'statistics.experiment', 'statistics.equipment', 'statistics.user', 'statistics.performance', 'statistics.export'
+                'statistics', 'statistics.view', 'statistics.dashboard', 'statistics.experiment', 'statistics.equipment', 'statistics.user', 'statistics.performance', 'statistics.export',
+                // 学校实验目录管理权限
+                'school_experiment_catalog.view', 'school_experiment_catalog.assign', 'school_experiment_catalog.completion_stats',
+                'experiment_catalog.create_city'
             ],
             'city_researcher' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
@@ -62,7 +68,10 @@ class RolePermissionSeeder extends Seeder
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
                 'laboratory_type', 'laboratory_type.list', 'laboratory_type.create', 'laboratory_type.update', 'laboratory_type.delete',
                 'equipment_standard', 'equipment_standard.list', 'equipment_standard.create', 'equipment_standard.update', 'equipment_standard.delete',
-                'statistics', 'statistics.view', 'statistics.dashboard', 'statistics.experiment', 'statistics.equipment', 'statistics.user', 'statistics.performance', 'statistics.export'
+                'statistics', 'statistics.view', 'statistics.dashboard', 'statistics.experiment', 'statistics.equipment', 'statistics.user', 'statistics.performance', 'statistics.export',
+                // 学校实验目录管理权限
+                'school_experiment_catalog.view', 'school_experiment_catalog.assign', 'school_experiment_catalog.completion_stats', 'school_experiment_catalog.baseline_manage',
+                'experiment_catalog.create_county'
             ],
             'county_researcher' => [
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
@@ -111,7 +120,9 @@ class RolePermissionSeeder extends Seeder
                 'experiment', 'experiment.catalog', 'experiment.booking', 'experiment.record',
                 'equipment', 'equipment.list', 'equipment.create', 'equipment.update', 'equipment.delete', 'equipment.borrow', 'equipment.maintenance',
                 'laboratory_type', 'laboratory_type.list',
-                'equipment_standard', 'equipment_standard.list'
+                'equipment_standard', 'equipment_standard.list',
+                // 学校实验目录管理权限
+                'school_experiment_catalog.view', 'school_experiment_catalog.config', 'school_experiment_catalog.completion_stats'
             ],
             'school_student' => [
                 'experiment', 'experiment.catalog', 'experiment.booking',

@@ -129,6 +129,20 @@ const router = createRouter({
         }
       ]
     },
+    // 测试路由
+    {
+      path: '/test',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'TestPage',
+          component: () => import('@/views/test/TestPage.vue'),
+          meta: { title: '测试页面' }
+        }
+      ]
+    },
     // 基础数据管理路由
     {
       path: '/schools',
@@ -234,6 +248,86 @@ const router = createRouter({
           name: 'ExperimentCatalogs',
           component: () => import('@/views/experiment/ExperimentCatalogs.vue'),
           meta: { title: '实验目录' }
+        }
+      ]
+    },
+    {
+      path: '/experiment-requirements-config',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'ExperimentRequirementsConfig',
+          component: () => import('@/views/experiment/ExperimentRequirementsConfig.vue'),
+          meta: { title: '实验要求配置管理' }
+        }
+      ]
+    },
+    // 实验开出情况监控预警系统路由
+    {
+      path: '/experiment-monitoring',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'ExperimentMonitoring',
+          component: () => import('@/views/experiment/ExperimentMonitoring.vue'),
+          meta: { title: '实验开出情况监控' }
+        }
+      ]
+    },
+    {
+      path: '/experiment-alerts',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'ExperimentAlerts',
+          component: () => import('@/views/experiment/ExperimentAlerts.vue'),
+          meta: { title: '实验预警管理' }
+        }
+      ]
+    },
+    // 学校实验目录管理路由
+    {
+      path: '/school-experiment-catalog',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'SchoolExperimentCatalog',
+          component: () => import('@/views/experiment/SchoolExperimentCatalog.vue'),
+          meta: { title: '学校实验目录管理' }
+        }
+      ]
+    },
+    // 学校目录配置管理路由
+    {
+      path: '/school-catalog-config',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'my-config',
+          name: 'MyCatalogConfig',
+          component: () => import('@/views/school-catalog/MyCatalogConfig.vue'),
+          meta: { title: '我的目录配置' }
+        },
+        {
+          path: 'subordinate-assignment',
+          name: 'SubordinateAssignment',
+          component: () => import('@/views/school-catalog/SubordinateAssignment.vue'),
+          meta: { title: '下级目录指定' }
+        },
+        {
+          path: 'completion-statistics',
+          name: 'CompletionStatistics',
+          component: () => import('@/views/school-catalog/CompletionStatistics.vue'),
+          meta: { title: '完成率统计' }
         }
       ]
     },

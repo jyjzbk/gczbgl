@@ -225,7 +225,7 @@ import {
   Location,
   House
 } from '@element-plus/icons-vue'
-import { getOrganizationUsersApi, deleteUserApi, type UserProfile } from '@/api/user'
+import { getOrganizationUsersApi, deleteUserApi, type UserProfile, type UserListResponse } from '@/api/user'
 import { getRoleListApi, type Role } from '@/api/role'
 import {
   getOrganizationStatsApi,
@@ -631,7 +631,7 @@ const handleExport = async () => {
     console.log('导出参数:', exportParams)
 
     // 获取所有用户数据
-    const allUsers = await getOrganizationUsersApi(exportParams)
+    const allUsers = await getOrganizationUsersApi(exportParams) as UserListResponse
 
     console.log('API响应:', allUsers)
     console.log('用户数据:', allUsers.data)

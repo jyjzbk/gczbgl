@@ -16,6 +16,13 @@ class RoleController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Role::query();
+        $user = auth()->user();
+
+        // 根据用户组织层级过滤可见角色
+        // 用户只能看到自己级别及以下的角色
+        if ($user && $user->organization_level) {
+            $query->where('level', '>=', $user->organization_level);
+        }
 
         // 按级别筛选
         if ($request->has('level')) {

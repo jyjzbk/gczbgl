@@ -291,3 +291,67 @@ interface DataScope {
 $hasPermission = in_array($school->id, $schoolIds) ||
                in_array($school->region_id, $regionIds);
 ```
+
+## 🆕 第三阶段新增API接口
+
+### 实验要求配置管理
+
+#### 获取配置列表
+- **GET** `/api/experiment-requirements-config`
+- **功能**：获取实验要求配置列表，支持分页和筛选
+
+#### 创建配置
+- **POST** `/api/experiment-requirements-config`
+- **功能**：创建新的实验要求配置
+
+#### 获取有效配置
+- **POST** `/api/experiment-requirements-config/effective-config`
+- **功能**：获取指定组织和实验类型的有效配置（考虑继承）
+
+### 学校实验目录管理
+
+#### 获取学校选择
+- **GET** `/api/school-experiment-catalog/selection`
+- **功能**：获取学校的实验目录标准选择
+
+#### 设置学校选择
+- **POST** `/api/school-experiment-catalog/selection`
+- **功能**：设置学校选择的实验目录标准
+
+#### 删除实验目录
+- **POST** `/api/school-experiment-catalog/delete-catalog`
+- **功能**：学校删除不适合的实验目录
+
+### 实验监控预警
+
+#### 获取监控仪表板
+- **GET** `/api/experiment-monitoring/dashboard`
+- **功能**：获取实验开出情况监控仪表板数据
+
+#### 获取预警列表
+- **GET** `/api/experiment-monitoring/alerts`
+- **功能**：获取预警列表，支持多种筛选条件
+
+#### 解决预警
+- **POST** `/api/experiment-monitoring/alerts/resolve`
+- **功能**：批量解决预警并记录处理说明
+
+### 预警配置管理
+
+#### 获取预警配置
+- **GET** `/api/experiment-alert-config`
+- **功能**：获取预警配置列表
+
+#### 创建预警配置
+- **POST** `/api/experiment-alert-config`
+- **功能**：创建新的预警配置
+
+## 注意事项
+
+1. 所有接口都需要在请求头中携带有效的JWT token
+2. 文件上传接口需要使用multipart/form-data格式
+3. 分页接口默认每页15条记录，可通过per_page参数调整
+4. 时间格式统一使用ISO 8601标准（YYYY-MM-DD HH:mm:ss）
+5. 所有接口都会返回统一的响应格式
+6. 🆕 新增接口支持分级权限控制和数据范围过滤
+7. 🆕 预警相关接口支持实时数据更新和智能算法

@@ -83,6 +83,11 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await loginApi(credentials)
 
       console.log('登录API响应:', response)
+      console.log('登录响应数据结构:', response.data)
+      console.log('登录响应用户信息:', response.data?.user)
+      console.log('登录响应用户权限:', response.data?.user?.permissions)
+      console.log('登录响应用户权限类型:', typeof response.data?.user?.permissions)
+      console.log('登录响应用户权限长度:', response.data?.user?.permissions?.length)
 
       // 检查响应格式
       if (response.data && response.data.token) {
@@ -91,6 +96,8 @@ export const useAuthStore = defineStore('auth', () => {
 
         // 设置用户权限
         permissions.value = response.data.user.permissions || []
+        console.log('登录时设置的权限数组:', permissions.value)
+        console.log('登录时设置的权限数组长度:', permissions.value.length)
 
         setUserInfo({
           ...response.data.user,
@@ -155,9 +162,15 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await getUserInfoApi()
 
       console.log('用户信息API响应:', response)
+      console.log('API响应数据类型:', typeof response.data)
+      console.log('API响应权限字段:', response.data.permissions)
+      console.log('API响应权限类型:', typeof response.data.permissions)
+      console.log('API响应权限长度:', response.data.permissions?.length)
 
       // 设置用户权限
       permissions.value = response.data.permissions || []
+      console.log('设置后的权限数组:', permissions.value)
+      console.log('设置后的权限数组长度:', permissions.value.length)
 
       setUserInfo({
         ...response.data,

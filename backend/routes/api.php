@@ -25,6 +25,13 @@ use App\Http\Controllers\EquipmentQrcodeController;
 use App\Http\Controllers\Api\StatisticsController;
 use App\Http\Controllers\Api\SmartReservationController;
 use App\Http\Controllers\Api\ExperimentWorkController;
+use App\Http\Controllers\Api\ExperimentRequirementsConfigController;
+use App\Http\Controllers\Api\SchoolExperimentCatalogController;
+use App\Http\Controllers\Api\ExperimentCatalogDeletePermissionController;
+use App\Http\Controllers\Api\ExperimentMonitoringController;
+use App\Http\Controllers\Api\ExperimentAlertConfigController;
+use App\Http\Controllers\Api\SchoolCatalogConfigController;
+use App\Http\Controllers\Api\CompletionStatisticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -108,6 +115,15 @@ Route::middleware('auth:api')->group(function () {
     Route::middleware(['data.scope'])->group(function () {
         Route::get('schools/options', [SchoolController::class, 'options']);
         Route::apiResource('schools', SchoolController::class);
+
+        // 学校班级管理
+        Route::post('school-classes/batch-create', [\App\Http\Controllers\Api\SchoolClassController::class, 'batchCreate']);
+        Route::apiResource('school-classes', \App\Http\Controllers\Api\SchoolClassController::class);
+
+        // 学校教师管理
+        Route::get('school-teachers/available-users', [\App\Http\Controllers\Api\SchoolTeacherController::class, 'getAvailableUsers']);
+        Route::post('school-teachers/batch-import', [\App\Http\Controllers\Api\SchoolTeacherController::class, 'batchImport']);
+        Route::apiResource('school-teachers', \App\Http\Controllers\Api\SchoolTeacherController::class);
     });
 
     // 学科管理
@@ -207,6 +223,61 @@ Route::middleware('auth:api')->group(function () {
         Route::post('equipments/batch-qrcode', [EquipmentQrcodeController::class, 'batchGenerate']);
     });
 
+    // 实验要求配置管理路由
+    Route::prefix('experiment-requirements-config')->middleware(['data.scope'])->group(function () {
+        Route::get('/', [ExperimentRequirementsConfigController::class, 'index']);
+        Route::post('/', [ExperimentRequirementsConfigController::class, 'store']);
+        Route::get('/{id}', [ExperimentRequirementsConfigController::class, 'show']);
+        Route::put('/{id}', [ExperimentRequirementsConfigController::class, 'update']);
+        Route::delete('/{id}', [ExperimentRequirementsConfigController::class, 'destroy']);
+        Route::post('/effective-config', [ExperimentRequirementsConfigController::class, 'getEffectiveConfig']);
+        Route::get('/organization-options/{organization_type}', [ExperimentRequirementsConfigController::class, 'getOrganizationOptions']);
+    });
+
+    // 学校实验目录管理路由
+    Route::prefix('school-experiment-catalog')->middleware(['data.scope'])->group(function () {
+        Route::get('/selection', [SchoolExperimentCatalogController::class, 'getSchoolSelection']);
+        Route::post('/selection', [SchoolExperimentCatalogController::class, 'setSchoolSelection']);
+        Route::get('/available-standards', [SchoolExperimentCatalogController::class, 'getAvailableStandards']);
+        Route::get('/available-catalogs', [SchoolExperimentCatalogController::class, 'getAvailableCatalogs']);
+        Route::post('/delete-catalog', [SchoolExperimentCatalogController::class, 'deleteExperimentCatalog']);
+        Route::post('/restore-catalog', [SchoolExperimentCatalogController::class, 'restoreExperimentCatalog']);
+        Route::get('/deleted-catalogs', [SchoolExperimentCatalogController::class, 'getDeletedCatalogs']);
+    });
+
+    // 实验目录删除权限管理路由
+    Route::prefix('experiment-catalog-delete-permission')->middleware(['data.scope'])->group(function () {
+        Route::get('/', [ExperimentCatalogDeletePermissionController::class, 'index']);
+        Route::post('/', [ExperimentCatalogDeletePermissionController::class, 'store']);
+        Route::get('/{id}', [ExperimentCatalogDeletePermissionController::class, 'show']);
+        Route::put('/{id}', [ExperimentCatalogDeletePermissionController::class, 'update']);
+        Route::delete('/{id}', [ExperimentCatalogDeletePermissionController::class, 'destroy']);
+        Route::post('/effective-permission', [ExperimentCatalogDeletePermissionController::class, 'getEffectivePermission']);
+        Route::post('/school-delete-statistics', [ExperimentCatalogDeletePermissionController::class, 'getSchoolDeleteStatistics']);
+    });
+
+    // 实验监控预警路由
+    Route::prefix('experiment-monitoring')->middleware(['data.scope'])->group(function () {
+        Route::get('/dashboard', [ExperimentMonitoringController::class, 'getDashboard']);
+        Route::get('/alerts', [ExperimentMonitoringController::class, 'getAlerts']);
+        Route::post('/alerts/mark-read', [ExperimentMonitoringController::class, 'markAlertAsRead']);
+        Route::post('/alerts/resolve', [ExperimentMonitoringController::class, 'resolveAlert']);
+        Route::get('/school-monitoring', [ExperimentMonitoringController::class, 'getSchoolMonitoring']);
+        Route::post('/trigger-alert-check', [ExperimentMonitoringController::class, 'triggerAlertCheck']);
+        Route::get('/alert-statistics', [ExperimentMonitoringController::class, 'getAlertStatistics']);
+    });
+
+    // 实验预警配置管理路由
+    Route::prefix('experiment-alert-config')->middleware(['data.scope'])->group(function () {
+        Route::get('/', [ExperimentAlertConfigController::class, 'index']);
+        Route::post('/', [ExperimentAlertConfigController::class, 'store']);
+        Route::get('/{id}', [ExperimentAlertConfigController::class, 'show']);
+        Route::put('/{id}', [ExperimentAlertConfigController::class, 'update']);
+        Route::delete('/{id}', [ExperimentAlertConfigController::class, 'destroy']);
+        Route::post('/effective-config', [ExperimentAlertConfigController::class, 'getEffectiveConfig']);
+        Route::get('/organization-options', [ExperimentAlertConfigController::class, 'getOrganizationOptions']);
+    });
+
     // 统计报表相关路由
     Route::prefix('statistics')->middleware(['data.scope'])->group(function () {
         Route::get('dashboard', [StatisticsController::class, 'getDashboardStats']);
@@ -280,6 +351,25 @@ Route::middleware(['auth:api'])->group(function () {
     Route::prefix('personal')->group(function () {
         Route::get('experiment-stats', [App\Http\Controllers\Api\ExperimentReservationController::class, 'getPersonalStats']);
         Route::get('experiment-archive/export', [App\Http\Controllers\Api\ExperimentReservationController::class, 'exportPersonalArchive']);
+    });
+
+    // 学校实验目录配置管理
+    Route::prefix('school-catalog-config')->group(function () {
+        Route::get('my-config', [SchoolCatalogConfigController::class, 'getMyConfig']);
+        Route::post('configure', [SchoolCatalogConfigController::class, 'configureSchool']);
+        Route::get('subordinate-schools', [SchoolCatalogConfigController::class, 'getSubordinateSchools']);
+        Route::post('batch-assign', [SchoolCatalogConfigController::class, 'batchAssignSchools']);
+        Route::get('available-organizations', [SchoolCatalogConfigController::class, 'getAvailableOrganizations']);
+        Route::get('config-history', [SchoolCatalogConfigController::class, 'getConfigHistory']);
+    });
+
+    // 完成率统计分析
+    Route::prefix('completion-statistics')->group(function () {
+        Route::get('school/{schoolId}', [CompletionStatisticsController::class, 'getSchoolStatistics']);
+        Route::get('ranking', [CompletionStatisticsController::class, 'getCompletionRanking']);
+        Route::get('school/{schoolId}/by-dimension', [CompletionStatisticsController::class, 'getCompletionByDimension']);
+        Route::post('recalculate', [CompletionStatisticsController::class, 'recalculateCompletion']);
+        Route::get('overview', [CompletionStatisticsController::class, 'getStatisticsOverview']);
     });
 });
 

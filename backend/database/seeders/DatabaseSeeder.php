@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             EquipmentBorrowSeeder::class,
             EquipmentMaintenanceSeeder::class,
             EquipmentRequirementSeeder::class, // 新增器材需求配置数据
+            SchoolExperimentCatalogConfigSeeder::class, // 新增学校实验目录配置数据
         ]);
 
         // 创建测试用户

@@ -106,6 +106,21 @@ class PermissionService
             'experiment.record.edit',
             'experiment.record.complete',
 
+            // 学校实验目录管理权限
+            'school_experiment_catalog.view',
+            'school_experiment_catalog.config',
+            'school_experiment_catalog.assign',
+            'school_experiment_catalog.modify',
+            'school_experiment_catalog.delete_experiments',
+            'school_experiment_catalog.completion_stats',
+            'school_experiment_catalog.baseline_manage',
+
+            // 实验目录制定权限
+            'experiment_catalog.create_province',
+            'experiment_catalog.create_city',
+            'experiment_catalog.create_county',
+            'experiment_catalog.approve_baseline',
+
             // 统计报表权限
             'statistics.view',
             'statistics.dashboard',
@@ -236,6 +251,14 @@ class PermissionService
                     'experiment.record.create',
                     'experiment.record.edit',
                     'experiment.record.complete',
+                    // 学校实验目录管理权限
+                    'school_experiment_catalog.view',
+                    'school_experiment_catalog.assign',
+                    'school_experiment_catalog.completion_stats',
+                    'school_experiment_catalog.baseline_manage',
+                    // 实验目录制定权限
+                    'experiment_catalog.create_province',
+                    'experiment_catalog.approve_baseline',
                     'equipment.category.edit',
                     'equipment.category.delete',
                     'statistics.view',
@@ -298,6 +321,97 @@ class PermissionService
                     'statistics.user',
                     'statistics.performance',
                     'statistics.export',
+                ]
+            ],
+            'city_admin' => [
+                'name' => '市级管理员',
+                'permissions' => [
+                    'equipment.view',
+                    'equipment.create',
+                    'equipment.edit',
+                    'equipment.delete',
+                    'equipment.import',
+                    'equipment.export',
+                    'experiment.catalog.view',
+                    'experiment.catalog.create',
+                    'experiment.catalog.edit',
+                    'experiment.catalog.delete',
+                    'experiment.booking.view',
+                    'experiment.booking.approve',
+                    'experiment.record.view',
+                    'experiment.record.create',
+                    'experiment.record.edit',
+                    'experiment.record.complete',
+                    // 学校实验目录管理权限
+                    'school_experiment_catalog.view',
+                    'school_experiment_catalog.assign',
+                    'school_experiment_catalog.completion_stats',
+                    // 实验目录制定权限
+                    'experiment_catalog.create_city',
+                    'statistics.view',
+                    'statistics.dashboard',
+                    'statistics.experiment',
+                    'statistics.equipment',
+                ]
+            ],
+            'county_admin' => [
+                'name' => '区县级管理员',
+                'permissions' => [
+                    'equipment.view',
+                    'equipment.create',
+                    'equipment.edit',
+                    'equipment.delete',
+                    'equipment.import',
+                    'equipment.export',
+                    'experiment.catalog.view',
+                    'experiment.catalog.create',
+                    'experiment.catalog.edit',
+                    'experiment.catalog.delete',
+                    'experiment.booking.view',
+                    'experiment.booking.approve',
+                    'experiment.record.view',
+                    'experiment.record.create',
+                    'experiment.record.edit',
+                    'experiment.record.complete',
+                    // 学校实验目录管理权限
+                    'school_experiment_catalog.view',
+                    'school_experiment_catalog.assign',
+                    'school_experiment_catalog.completion_stats',
+                    'school_experiment_catalog.baseline_manage',
+                    // 实验目录制定权限
+                    'experiment_catalog.create_county',
+                    'statistics.view',
+                    'statistics.dashboard',
+                    'statistics.experiment',
+                    'statistics.equipment',
+                ]
+            ],
+            'school_admin' => [
+                'name' => '学校管理员',
+                'permissions' => [
+                    'equipment.view',
+                    'equipment.create',
+                    'equipment.edit',
+                    'equipment.borrow.view',
+                    'equipment.borrow.approve',
+                    'equipment.maintenance.view',
+                    'equipment.maintenance.assign',
+                    'experiment.catalog.view',
+                    'experiment.booking.view',
+                    'experiment.booking.create',
+                    'experiment.booking.edit',
+                    'experiment.record.view',
+                    'experiment.record.create',
+                    'experiment.record.edit',
+                    'experiment.record.complete',
+                    // 学校实验目录管理权限
+                    'school_experiment_catalog.view',
+                    'school_experiment_catalog.config',
+                    'school_experiment_catalog.completion_stats',
+                    'statistics.view',
+                    'statistics.dashboard',
+                    'statistics.experiment',
+                    'statistics.equipment',
                 ]
             ],
             'teacher' => [

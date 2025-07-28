@@ -90,24 +90,35 @@
               placeholder="请选择教师"
               filterable
               style="width: 100%"
+              :disabled="!form.school_id"
             >
               <el-option
-                v-for="teacher in teachers"
+                v-for="teacher in filteredTeachers"
                 :key="teacher.id"
-                :label="teacher.real_name"
+                :label="`${teacher.real_name} (${teacher.subject || '未设置学科'})`"
                 :value="teacher.id"
               />
             </el-select>
           </el-form-item>
         </el-col>
-        
+
         <el-col :span="12">
-          <el-form-item label="班级名称" prop="class_name">
-            <el-input
-              v-model="form.class_name"
-              placeholder="请输入班级名称"
-              maxlength="100"
-            />
+          <el-form-item label="班级" prop="class_id">
+            <el-select
+              v-model="form.class_id"
+              placeholder="请选择班级"
+              filterable
+              style="width: 100%"
+              :disabled="!form.school_id"
+              @change="handleClassChange"
+            >
+              <el-option
+                v-for="schoolClass in filteredClasses"
+                :key="schoolClass.id"
+                :label="`${schoolClass.name} (${schoolClass.student_count}人)`"
+                :value="schoolClass.id"
+              />
+            </el-select>
           </el-form-item>
         </el-col>
       </el-row>
@@ -224,6 +235,8 @@ import {
   type Laboratory
 } from '@/api/experiment'
 import { getSchoolsApi, getUserListApi, type School } from '@/api/user'
+import { getSchoolClassListApi, type SchoolClass } from '@/api/schoolClass'
+import { getSchoolTeacherListApi, type SchoolTeacher } from '@/api/schoolTeacher'
 import { useAuthStore } from '@/stores/auth'
 import dayjs from 'dayjs'
 
@@ -255,6 +268,8 @@ const schools = ref<School[]>([])
 const laboratories = ref<Laboratory[]>([])
 const catalogs = ref<ExperimentCatalog[]>([])
 const teachers = ref<any[]>([])
+const schoolClasses = ref<SchoolClass[]>([])
+const schoolTeachers = ref<SchoolTeacher[]>([])
 
 // 对话框显示状态
 const visible = ref(false)
@@ -270,7 +285,8 @@ const form = reactive({
   catalog_id: undefined as number | undefined,
   laboratory_id: undefined as number | undefined,
   teacher_id: undefined as number | undefined,
-  class_name: '',
+  class_id: undefined as number | undefined,
+  class_name: '', // 保留用于兼容性，但优先使用class_id
   student_count: 1,
   reservation_date: '',
   start_time: '',
@@ -289,9 +305,32 @@ const filteredLaboratories = computed(() => {
   return laboratories.value.filter(lab => lab.school_id === form.school_id)
 })
 
+// 过滤后的教师
+const filteredTeachers = computed(() => {
+  if (!form.school_id) return []
+  return schoolTeachers.value
+    .filter(teacher => teacher.school_id === form.school_id)
+    .map(teacher => ({
+      id: teacher.user_id,
+      real_name: teacher.user?.real_name,
+      subject: teacher.subject
+    }))
+})
+
+// 过滤后的班级
+const filteredClasses = computed(() => {
+  if (!form.school_id) return []
+  return schoolClasses.value.filter(schoolClass => schoolClass.school_id === form.school_id)
+})
+
 // 选中的实验室
 const selectedLaboratory = computed(() => {
   return laboratories.value.find(lab => lab.id === form.laboratory_id)
+})
+
+// 选中的班级
+const selectedClass = computed(() => {
+  return schoolClasses.value.find(schoolClass => schoolClass.id === form.class_id)
 })
 
 // 选中的实验目录
@@ -313,9 +352,8 @@ const rules: FormRules = {
   teacher_id: [
     { required: true, message: '请选择申请教师', trigger: 'change' }
   ],
-  class_name: [
-    { required: true, message: '请输入班级名称', trigger: 'blur' },
-    { min: 2, max: 100, message: '班级名称长度在 2 到 100 个字符', trigger: 'blur' }
+  class_id: [
+    { required: true, message: '请选择班级', trigger: 'change' }
   ],
   student_count: [
     { required: true, message: '请输入学生人数', trigger: 'blur' }
@@ -378,8 +416,10 @@ const initForm = () => {
     // 如果是学校级用户，自动设置学校ID
     if (!canSelectSchool.value && authStore.userInfo?.school_id) {
       form.school_id = authStore.userInfo.school_id
-      // 自动加载教师列表
+      // 自动加载相关数据
       loadTeachers()
+      loadSchoolClasses()
+      loadSchoolTeachers()
     }
   }
 }
@@ -391,6 +431,7 @@ const resetForm = () => {
     catalog_id: undefined,
     laboratory_id: undefined,
     teacher_id: undefined,
+    class_id: undefined,
     class_name: '',
     student_count: 1,
     reservation_date: '',
@@ -405,7 +446,19 @@ const resetForm = () => {
 const handleSchoolChange = () => {
   form.laboratory_id = undefined
   form.teacher_id = undefined
+  form.class_id = undefined
+  form.class_name = ''
   loadTeachers()
+  loadSchoolClasses()
+  loadSchoolTeachers()
+}
+
+// 处理班级变化
+const handleClassChange = () => {
+  if (selectedClass.value) {
+    form.class_name = selectedClass.value.name
+    form.student_count = selectedClass.value.student_count
+  }
 }
 
 // 处理实验目录变化
@@ -464,6 +517,48 @@ const loadCatalogs = async () => {
   } catch (error) {
     console.error('加载实验目录失败:', error)
     catalogs.value = []
+  }
+}
+
+const loadSchoolClasses = async () => {
+  if (!form.school_id) {
+    schoolClasses.value = []
+    return
+  }
+
+  try {
+    const response = await getSchoolClassListApi({
+      school_id: form.school_id,
+      all: 'true'
+    })
+
+    if (response.data) {
+      schoolClasses.value = Array.isArray(response.data) ? response.data : response.data.data || []
+    }
+  } catch (error) {
+    console.error('加载班级列表失败:', error)
+    schoolClasses.value = []
+  }
+}
+
+const loadSchoolTeachers = async () => {
+  if (!form.school_id) {
+    schoolTeachers.value = []
+    return
+  }
+
+  try {
+    const response = await getSchoolTeacherListApi({
+      school_id: form.school_id,
+      all: 'true'
+    })
+
+    if (response.data) {
+      schoolTeachers.value = Array.isArray(response.data) ? response.data : response.data.data || []
+    }
+  } catch (error) {
+    console.error('加载教师列表失败:', error)
+    schoolTeachers.value = []
   }
 }
 

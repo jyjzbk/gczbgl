@@ -44,7 +44,6 @@
           <span>基础数据</span>
         </template>
         <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list', 'user.create'])" index="/schools">学校管理</el-menu-item>
-        <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list', 'user.create'])" index="/laboratories">实验室管理</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['laboratory_type', 'laboratory_type.list'])" index="/laboratory-types">实验室类型管理</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list', 'user.create'])" index="/subjects">学科管理</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['equipment_standard', 'equipment_standard.list'])" index="/equipment-standards">教学仪器配备标准</el-menu-item>
@@ -65,6 +64,22 @@
         <el-menu-item v-if="authStore.hasAnyPermission(['experiment.record', 'experiment.record.view'])" index="/experiment-records">实验记录</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['experiment.record', 'experiment.record.view'])" index="/personal-archive">个人实验档案</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'experiment.record', 'statistics.experiment'])" index="/experiment-statistics">实验统计</el-menu-item>
+        <!-- 第三阶段新功能模块 -->
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'user', 'role'])" index="/experiment-requirements-config">🆕 实验要求配置</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'user', 'role'])" index="/experiment-monitoring">🆕 实验监控预警</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'user', 'role'])" index="/experiment-alerts">🆕 预警管理</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'user'])" index="/school-experiment-catalog">🆕 学校目录管理</el-menu-item>
+        <!-- 调试权限信息 -->
+        <el-menu-item v-if="true" @click="debugPermissions" index="debug-permissions">🔍 调试权限</el-menu-item>
+        <!-- 学校目录配置管理 -->
+        <el-sub-menu v-if="authStore.hasAnyPermission(['school_experiment_catalog.view', 'school_experiment_catalog.config', 'school_experiment_catalog.assign'])" index="school-catalog-config">
+          <template #title>
+            <span>📋 学校目录配置</span>
+          </template>
+          <el-menu-item v-if="authStore.hasAnyPermission(['school_experiment_catalog.view', 'school_experiment_catalog.config'])" index="/school-catalog-config/my-config">我的目录配置</el-menu-item>
+          <el-menu-item v-if="authStore.hasAnyPermission(['school_experiment_catalog.assign'])" index="/school-catalog-config/subordinate-assignment">下级目录指定</el-menu-item>
+          <el-menu-item v-if="authStore.hasAnyPermission(['school_experiment_catalog.completion_stats'])" index="/school-catalog-config/completion-statistics">完成率统计</el-menu-item>
+        </el-sub-menu>
       </el-sub-menu>
 
       <!-- 设备管理 -->
@@ -108,6 +123,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import {
   Odometer,
   User,
@@ -173,6 +189,42 @@ const handleMenuSelect = (index: string) => {
     appStore.closeMobileSidebar()
   }
 }
+
+// 调试权限方法
+const debugPermissions = async () => {
+  console.log('=== 权限调试信息 ===')
+  console.log('当前用户信息:', authStore.user)
+  console.log('当前用户权限数量:', authStore.permissions.length)
+  console.log('当前用户权限列表:', authStore.permissions)
+  console.log('当前用户角色:', authStore.userRole)
+
+  console.log('=== 检查学校目录配置权限 ===')
+  console.log('- school_experiment_catalog.view:', authStore.hasPermission('school_experiment_catalog.view'))
+  console.log('- school_experiment_catalog.config:', authStore.hasPermission('school_experiment_catalog.config'))
+  console.log('- school_experiment_catalog.assign:', authStore.hasPermission('school_experiment_catalog.assign'))
+  console.log('- school_experiment_catalog.completion_stats:', authStore.hasPermission('school_experiment_catalog.completion_stats'))
+
+  console.log('=== 检查其他权限 ===')
+  console.log('- experiment:', authStore.hasPermission('experiment'))
+  console.log('- equipment:', authStore.hasPermission('equipment'))
+  console.log('- user:', authStore.hasPermission('user'))
+
+  // 尝试刷新权限
+  try {
+    console.log('=== 刷新权限 ===')
+    await authStore.fetchUserInfo()
+    console.log('权限刷新成功，新权限数量:', authStore.permissions.length)
+    console.log('刷新后的权限:', authStore.permissions)
+    ElMessage.success('权限已刷新，请查看控制台')
+  } catch (error) {
+    console.error('刷新权限失败:', error)
+    ElMessage.error('刷新权限失败')
+  }
+}
+
+
+
+
 </script>
 
 <style scoped>

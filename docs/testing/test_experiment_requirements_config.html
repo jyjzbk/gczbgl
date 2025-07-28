@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实验要求配置管理功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .section h2 {
+            color: #34495e;
+            margin-top: 0;
+        }
+        .feature-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.in-progress {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .status.pending {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .api-test {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        .code {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        .test-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .result.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .result.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 实验要求配置管理功能测试</h1>
+        
+        <div class="section">
+            <h2>📋 功能完成状态</h2>
+            <ul class="feature-list">
+                <li>
+                    <span class="status completed">✅ 已完成</span>
+                    数据库表结构设计 (experiment_requirements_config)
+                </li>
+                <li>
+                    <span class="status completed">✅ 已完成</span>
+                    后端模型 (ExperimentRequirementsConfig)
+                </li>
+                <li>
+                    <span class="status completed">✅ 已完成</span>
+                    后端控制器 (ExperimentRequirementsConfigController)
+                </li>
+                <li>
+                    <span class="status completed">✅ 已完成</span>
+                    API路由配置
+                </li>
+                <li>
+                    <span class="status completed">✅ 已完成</span>
+                    前端API接口 (experimentRequirementsConfig.ts)
+                </li>
+                <li>
+                    <span class="status completed">✅ 已完成</span>
+                    前端管理页面 (ExperimentRequirementsConfig.vue)
+                </li>
+                <li>
+                    <span class="status completed">✅ 已完成</span>
+                    路由配置
+                </li>
+                <li>
+                    <span class="status completed">✅ 已完成</span>
+                    测试数据种子文件
+                </li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🔧 核心功能特性</h2>
+            <ul class="feature-list">
+                <li><strong>分级配置管理：</strong>支持省、市、区县三级组织的实验要求配置</li>
+                <li><strong>实验类型区分：</strong>分别配置分组实验和演示实验的要求</li>
+                <li><strong>灵活的数量要求：</strong>可设置图片和视频的最少、最多数量要求</li>
+                <li><strong>继承机制：</strong>下级可选择继承上级配置或独立配置</li>
+                <li><strong>权限控制：</strong>基于组织层级的权限控制，确保数据安全</li>
+                <li><strong>有效配置计算：</strong>自动计算并显示实际生效的配置</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🌐 API接口测试</h2>
+            <div class="api-test">
+                <h3>测试API接口</h3>
+                <p>点击下面的按钮测试各个API接口：</p>
+                
+                <button class="test-button" onclick="testGetList()">获取配置列表</button>
+                <button class="test-button" onclick="testGetEffectiveConfig()">获取有效配置</button>
+                <button class="test-button" onclick="testGetOrganizationOptions()">获取组织选项</button>
+                
+                <div id="api-result" class="result" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 数据库结构</h2>
+            <div class="code">
+CREATE TABLE experiment_requirements_config (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    organization_type ENUM('province', 'city', 'county') COMMENT '组织类型',
+    organization_id BIGINT UNSIGNED COMMENT '组织ID',
+    experiment_type ENUM('分组实验', '演示实验') COMMENT '实验类型',
+    min_images INT DEFAULT 0 COMMENT '最少图片数量',
+    max_images INT DEFAULT 10 COMMENT '最多图片数量',
+    min_videos INT DEFAULT 0 COMMENT '最少视频数量',
+    max_videos INT DEFAULT 3 COMMENT '最多视频数量',
+    is_inherited BOOLEAN DEFAULT TRUE COMMENT '是否继承上级配置',
+    created_by BIGINT UNSIGNED COMMENT '创建人',
+    description TEXT COMMENT '配置说明',
+    is_active BOOLEAN DEFAULT TRUE COMMENT '是否启用',
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎯 访问方式</h2>
+            <p><strong>前端页面访问：</strong></p>
+            <div class="code">http://localhost:3000/experiment-requirements-config</div>
+            
+            <p><strong>API接口基础路径：</strong></p>
+            <div class="code">http://localhost:8000/api/experiment-requirements-config</div>
+        </div>
+
+        <div class="section">
+            <h2>👥 权限说明</h2>
+            <ul class="feature-list">
+                <li><strong>省级管理员：</strong>可以管理省级配置，查看所有配置</li>
+                <li><strong>市级管理员：</strong>可以管理本市配置，查看省级和本市配置</li>
+                <li><strong>区县级管理员：</strong>可以管理本区县配置，查看省级、市级和本区县配置</li>
+                <li><strong>学校用户：</strong>只能查看有效配置，不能创建或修改</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        
+        function showResult(data, isError = false) {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function testGetList() {
+            try {
+                const response = await fetch(`${API_BASE}/experiment-requirements-config`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer YOUR_TOKEN_HERE' // 需要替换为实际token
+                    }
+                });
+                const data = await response.json();
+                showResult(data);
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        }
+
+        async function testGetEffectiveConfig() {
+            try {
+                const response = await fetch(`${API_BASE}/experiment-requirements-config/effective-config`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer YOUR_TOKEN_HERE' // 需要替换为实际token
+                    },
+                    body: JSON.stringify({
+                        organization_type: 'province',
+                        organization_id: 1,
+                        experiment_type: '分组实验'
+                    })
+                });
+                const data = await response.json();
+                showResult(data);
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        }
+
+        async function testGetOrganizationOptions() {
+            try {
+                const response = await fetch(`${API_BASE}/experiment-requirements-config/organization-options/province`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer YOUR_TOKEN_HERE' // 需要替换为实际token
+                    }
+                });
+                const data = await response.json();
+                showResult(data);
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        }
+    </script>
+</body>
+</html>

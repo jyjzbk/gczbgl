@@ -1175,7 +1175,7 @@ class OrganizationController extends Controller
 
                 // 统计学校用户
                 $node['user_count'] = User::where('school_id', $schoolId)->count();
-                $node['school_count'] = 0; // 学校节点本身不包含其他学校
+                $node['school_count'] = 1; // 学校节点本身算作1个学校
 
                 // 统计学校设备和实验室
                 if (class_exists(Equipment::class)) {

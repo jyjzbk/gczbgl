@@ -18,6 +18,7 @@ export interface UserProfile {
   department?: string
   position?: string
   bio?: string
+  status?: number
   created_at: string
   updated_at: string
 }
