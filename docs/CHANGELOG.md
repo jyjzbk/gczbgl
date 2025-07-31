@@ -1,5 +1,53 @@
 # 更新日志
 
+## 2025-07-31 - 前端组织ID解析问题修复
+
+### 🔧 修复问题
+
+#### 前端组织ID解析问题修复
+**问题描述：** 在多个管理页面中，当学校管理员点击组织架构中的学校节点时，出现403 Forbidden错误。
+
+**根本原因：** 前端组件直接传递格式为`'school_15'`的字符串ID给后端API，但后端期望数字ID `15`。
+
+**修复范围：**
+- `frontend/src/views/basic/components/SchoolClassManagement.vue` - 班级管理组件
+- `frontend/src/views/basic/components/SchoolTeacherManagement.vue` - 教师管理组件
+- `frontend/src/views/basic/LaboratoryManagement.vue` - 实验室管理页面
+- `frontend/src/views/user/UserList.vue` - 用户管理页面
+- `frontend/src/views/equipment/EquipmentManagement.vue` - 设备管理页面
+- `frontend/src/views/basic/SchoolManagement.vue` - 学校管理页面
+
+**解决方案：**
+1. 创建组织工具函数 `frontend/src/utils/organization.ts`：
+   - `parseSchoolId()`: 从学校节点提取正确的数字ID
+   - `isSchoolNode()`: 判断是否为学校节点
+   - `getOrganizationType()`: 获取组织类型
+
+2. 统一修复模式应用到所有相关页面：
+   ```typescript
+   // 导入工具函数
+   import { parseSchoolId, isSchoolNode, getOrganizationType } from '@/utils/organization'
+
+   // 修复组织选择处理
+   const handleOrganizationSelect = async (organization: OrganizationNode) => {
+     const orgId = isSchoolNode(organization) ? parseSchoolId(organization) : organization.id
+     const orgType = getOrganizationType(organization)
+     await fetchOrganizationStats(orgId, orgType)
+   }
+
+   // 修复API调用参数
+   const params = {
+     organization_id: isSchoolNode(selectedOrganization.value) ? parseSchoolId(selectedOrganization.value) : selectedOrganization.value.id,
+     // 其他参数...
+   }
+   ```
+
+3. 更新API类型定义支持 `number | string` 类型
+
+**验证结果：** ✅ 所有管理页面的学校节点点击功能正常，数据一致性问题已解决
+
+---
+
 ## 2025-07-28 - 界面优化和菜单调整
 
 ### 🎨 界面优化

@@ -17,7 +17,7 @@
     <!-- 主要内容区域 -->
     <div class="main-content">
       <!-- 左侧组织架构 -->
-      <div class="sidebar">
+      <div class="sidebar" :style="{ width: sidebarWidth + 'px' }">
         <div class="sidebar-header">
           <h3>
             <el-icon><OfficeBuilding /></el-icon>
@@ -57,6 +57,12 @@
           />
         </div>
       </div>
+
+      <!-- 分割线 -->
+      <div
+        class="resize-handle"
+        @mousedown="startResize"
+      ></div>
 
       <!-- 右侧内容区域 -->
       <div class="content-area">
@@ -361,6 +367,7 @@ import {
 import { getSchoolOptionsApi, type School } from '@/api/school'
 import OrganizationTree from '@/components/OrganizationTree.vue'
 import type { OrganizationNode } from '@/types/organization'
+import { parseSchoolId, isSchoolNode } from '@/utils/organization'
 
 // 响应式数据
 const loading = ref(false)
@@ -378,6 +385,10 @@ const schools = ref<School[]>([])
 // 组织架构相关
 const selectedOrganization = ref<OrganizationNode | null>(null)
 const organizationSearchText = ref('')
+
+// 侧边栏宽度调整
+const sidebarWidth = ref(300)
+const isResizing = ref(false)
 
 // 搜索参数
 const searchParams = reactive({
@@ -524,8 +535,8 @@ const handleOrganizationSelect = (node: OrganizationNode) => {
   selectedOrganization.value = node
 
   // 根据选中的组织节点设置搜索条件
-  if (node.level === 5) { // 学校级别
-    searchParams.school_id = node.id
+  if (isSchoolNode(node)) { // 学校级别
+    searchParams.school_id = parseSchoolId(node)
   } else {
     searchParams.school_id = undefined
   }
@@ -538,6 +549,38 @@ const handleOrganizationSelect = (node: OrganizationNode) => {
 const refreshOrganization = () => {
   // 刷新组织架构树
   organizationSearchText.value = ''
+}
+
+// 侧边栏宽度调整方法
+const startResize = (e: MouseEvent) => {
+  isResizing.value = true
+  const startX = e.clientX
+  const startWidth = sidebarWidth.value
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing.value) return
+
+    const deltaX = e.clientX - startX
+    const newWidth = startWidth + deltaX
+
+    // 限制最小和最大宽度
+    if (newWidth >= 250 && newWidth <= 600) {
+      sidebarWidth.value = newWidth
+    }
+  }
+
+  const handleMouseUp = () => {
+    isResizing.value = false
+    document.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('mouseup', handleMouseUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }
+
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', handleMouseUp)
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
 }
 
 const expandAll = () => {
@@ -708,14 +751,45 @@ onMounted(() => {
   flex: 1;
   display: flex;
   min-height: 0;
+  position: relative;
 }
 
 .sidebar {
-  width: 300px;
   background: white;
   border-right: 1px solid #e4e7ed;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+.resize-handle {
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+  flex-shrink: 0;
+  margin: 0 8px;
+}
+
+.resize-handle::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #e4e7ed;
+  transform: translateX(-50%);
+}
+
+.resize-handle:hover::before {
+  background: #409eff;
+  width: 2px;
+}
+
+.resize-handle:active::before {
+  background: #409eff;
+  width: 2px;
 }
 
 .sidebar-header {
@@ -754,6 +828,7 @@ onMounted(() => {
 
 .content-area {
   flex: 1;
+  min-width: 0; /* 允许弹性收缩 */
   display: flex;
   flex-direction: column;
   background: #f5f7fa;

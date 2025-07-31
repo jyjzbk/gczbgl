@@ -76,7 +76,7 @@ export const getOrganizationTreeApi = () => {
 /**
  * 获取组织统计信息
  */
-export const getOrganizationStatsApi = (organizationId?: number, organizationType?: string) => {
+export const getOrganizationStatsApi = (organizationId?: number | string, organizationType?: string) => {
   const params: any = {}
   if (organizationId) {
     params.organization_id = organizationId

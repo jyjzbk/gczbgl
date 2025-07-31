@@ -19,7 +19,7 @@
     <!-- 主要内容区域 -->
     <div class="main-content">
       <!-- 左侧组织树 -->
-      <div class="left-panel">
+      <div class="left-panel" :style="{ width: sidebarWidth + 'px' }">
         <OrganizationTree
           ref="organizationTreeRef"
           :show-stats="true"
@@ -28,6 +28,12 @@
           @node-click="handleOrganizationSelect"
         />
       </div>
+
+      <!-- 分割线 -->
+      <div
+        class="resize-handle"
+        @mousedown="startResize"
+      ></div>
 
       <!-- 右侧实验室列表 -->
       <div class="right-panel">
@@ -292,6 +298,7 @@ import {
 } from '@/api/organization'
 import { useAuthStore } from '@/stores/auth'
 import OrganizationTree from '@/components/OrganizationTree.vue'
+import { parseSchoolId, isSchoolNode, getOrganizationType } from '@/utils/organization'
 
 // 权限检查
 const authStore = useAuthStore()
@@ -311,6 +318,10 @@ const laboratoryList = ref<Laboratory[]>([])
 const selectedOrganization = ref<OrganizationNode | null>(null)
 const selectedOrganizationId = ref<number | undefined>(undefined)
 const organizationStats = ref<OrganizationStats | null>(null)
+
+// 侧边栏宽度调整
+const sidebarWidth = ref(300)
+const isResizing = ref(false)
 
 // 学校选项
 const schoolOptions = ref<any[]>([])
@@ -444,15 +455,14 @@ const fetchLaboratoryList = async () => {
 
     // 判断是否是学校节点（通过 type 字段或 level === 5 来判断）
     // 如果是学校节点，直接按学校ID过滤；否则按组织层级过滤
-    const isSchoolNode = (selectedOrganization.value as any).type === 'school' ||
-                        selectedOrganization.value.level === 5
+    const isSchool = isSchoolNode(selectedOrganization.value)
 
     let params: any
 
-    if (isSchoolNode) {
+    if (isSchool) {
       // 学校节点：直接按学校ID过滤
       params = {
-        school_id: selectedOrganization.value.id,
+        school_id: parseSchoolId(selectedOrganization.value),
         page: pagination.current_page,
         per_page: pagination.per_page,
         ...searchForm
@@ -561,14 +571,16 @@ const handleOrganizationSelect = async (organization: OrganizationNode) => {
   searchForm.status = undefined
 
   // 获取组织统计信息
-  await fetchOrganizationStats(organization.id, organization.type)
+  const orgId = isSchoolNode(organization) ? parseSchoolId(organization) : organization.id
+  const orgType = getOrganizationType(organization)
+  await fetchOrganizationStats(orgId, orgType)
 
   // 获取实验室列表
   await fetchLaboratoryList()
 }
 
 // 获取组织统计信息
-const fetchOrganizationStats = async (organizationId: number, organizationType?: string) => {
+const fetchOrganizationStats = async (organizationId: number | string, organizationType?: string) => {
   try {
     const response = await getOrganizationStatsApi(organizationId, organizationType)
     if (response.success) {
@@ -586,10 +598,44 @@ const refreshData = () => {
     organizationTreeRef.value.refreshTree()
   }
   if (selectedOrganization.value) {
-    fetchOrganizationStats(selectedOrganization.value.id, selectedOrganization.value.type)
+    const orgId = isSchoolNode(selectedOrganization.value) ? parseSchoolId(selectedOrganization.value) : selectedOrganization.value.id
+    const orgType = getOrganizationType(selectedOrganization.value)
+    fetchOrganizationStats(orgId, orgType)
     fetchLaboratoryList()
   }
   loadSchoolOptions()
+}
+
+// 侧边栏宽度调整方法
+const startResize = (e: MouseEvent) => {
+  isResizing.value = true
+  const startX = e.clientX
+  const startWidth = sidebarWidth.value
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing.value) return
+
+    const deltaX = e.clientX - startX
+    const newWidth = startWidth + deltaX
+
+    // 限制最小和最大宽度
+    if (newWidth >= 250 && newWidth <= 600) {
+      sidebarWidth.value = newWidth
+    }
+  }
+
+  const handleMouseUp = () => {
+    isResizing.value = false
+    document.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('mouseup', handleMouseUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }
+
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', handleMouseUp)
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
 }
 
 // 新增实验室
@@ -723,11 +769,12 @@ onMounted(() => {
 
 <style scoped>
 .laboratory-management-page {
-  height: 100vh;
   display: flex;
   flex-direction: column;
   padding: 20px;
   background: #f5f5f5;
+  min-height: 0;
+  flex: 1;
 }
 
 .page-header {
@@ -744,13 +791,43 @@ onMounted(() => {
 .main-content {
   flex: 1;
   display: flex;
-  gap: 20px;
   min-height: 0;
+  position: relative;
 }
 
 .left-panel {
-  width: 320px;
   flex-shrink: 0;
+  position: relative;
+}
+
+.resize-handle {
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+  flex-shrink: 0;
+  margin: 0 8px;
+}
+
+.resize-handle::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #e4e7ed;
+  transform: translateX(-50%);
+}
+
+.resize-handle:hover::before {
+  background: #409eff;
+  width: 2px;
+}
+
+.resize-handle:active::before {
+  background: #409eff;
+  width: 2px;
 }
 
 .right-panel {
@@ -767,6 +844,7 @@ onMounted(() => {
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 .org-info {
@@ -830,6 +908,7 @@ onMounted(() => {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 .table-section {
@@ -851,6 +930,7 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   margin-top: 20px;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 .empty-state {

@@ -370,6 +370,7 @@ import EquipmentDetail from './components/EquipmentDetail.vue'
 import QRCodeDialog from './components/QRCodeDialog.vue'
 import BatchImportDialog from './components/BatchImportDialog.vue'
 import OrganizationTree from '@/components/OrganizationTree.vue'
+import { parseSchoolId, isSchoolNode, getOrganizationType } from '@/utils/organization'
 
 // 权限检查
 const authStore = useAuthStore()
@@ -529,7 +530,7 @@ const loadData = async () => {
   loading.value = true
   try {
     const params = {
-      organization_id: selectedOrganization.value.id,
+      organization_id: isSchoolNode(selectedOrganization.value) ? parseSchoolId(selectedOrganization.value) : selectedOrganization.value.id,
       organization_level: selectedOrganization.value.level,
       page: pagination.current_page,
       per_page: pagination.per_page,
@@ -598,14 +599,16 @@ const handleOrganizationSelect = async (organization: OrganizationNode) => {
   })
 
   // 获取组织统计信息
-  await fetchOrganizationStats(organization.id, organization.type)
+  const orgId = isSchoolNode(organization) ? parseSchoolId(organization) : organization.id
+  const orgType = getOrganizationType(organization)
+  await fetchOrganizationStats(orgId, orgType)
 
   // 获取设备列表
   await loadData()
 }
 
 // 获取组织统计信息
-const fetchOrganizationStats = async (organizationId: number, organizationType?: string) => {
+const fetchOrganizationStats = async (organizationId: number | string, organizationType?: string) => {
   try {
     const response = await getOrganizationStatsApi(organizationId, organizationType)
     if (response.success) {

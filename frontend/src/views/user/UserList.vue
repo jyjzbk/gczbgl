@@ -236,6 +236,7 @@ import { useAuthStore } from '@/stores/auth'
 import SimpleUserDialog from './components/SimpleUserDialog.vue'
 import OrganizationTree from '@/components/OrganizationTree.vue'
 import PermissionTooltip from '@/components/PermissionTooltip.vue'
+import { parseSchoolId, isSchoolNode, getOrganizationType } from '@/utils/organization'
 
 const authStore = useAuthStore()
 
@@ -403,7 +404,7 @@ const fetchUserList = async () => {
     loading.value = true
 
     const params = {
-      organization_id: selectedOrganization.value.id,
+      organization_id: isSchoolNode(selectedOrganization.value) ? parseSchoolId(selectedOrganization.value) : selectedOrganization.value.id,
       organization_level: selectedOrganization.value.level,
       page: pagination.current_page,
       per_page: pagination.per_page,
@@ -482,14 +483,16 @@ const handleOrganizationSelect = async (organization: OrganizationNode) => {
   searchForm.status = ''
 
   // 获取组织统计信息
-  await fetchOrganizationStats(organization.id, organization.type)
+  const orgId = isSchoolNode(organization) ? parseSchoolId(organization) : organization.id
+  const orgType = getOrganizationType(organization)
+  await fetchOrganizationStats(orgId, orgType)
 
   // 获取用户列表
   await fetchUserList()
 }
 
 // 获取组织统计信息
-const fetchOrganizationStats = async (organizationId: number, organizationType?: string) => {
+const fetchOrganizationStats = async (organizationId: number | string, organizationType?: string) => {
   try {
     const response = await getOrganizationStatsApi(organizationId, organizationType)
     if (response.success) {
@@ -507,7 +510,9 @@ const refreshData = () => {
     organizationTreeRef.value.refreshTree()
   }
   if (selectedOrganization.value) {
-    fetchOrganizationStats(selectedOrganization.value.id, selectedOrganization.value.type)
+    const orgId = isSchoolNode(selectedOrganization.value) ? parseSchoolId(selectedOrganization.value) : selectedOrganization.value.id
+    const orgType = getOrganizationType(selectedOrganization.value)
+    fetchOrganizationStats(orgId, orgType)
     fetchUserList()
   }
 }
@@ -622,7 +627,7 @@ const handleExport = async () => {
 
     // 构建导出参数（不包含搜索条件，导出所有用户）
     const exportParams = {
-      organization_id: selectedOrganization.value.id,
+      organization_id: isSchoolNode(selectedOrganization.value) ? parseSchoolId(selectedOrganization.value) : selectedOrganization.value.id,
       organization_level: selectedOrganization.value.level,
       page: 1,
       per_page: 1000 // 获取大量数据

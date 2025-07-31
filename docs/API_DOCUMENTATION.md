@@ -239,6 +239,25 @@ interface OrganizationNode {
 
 ## 前端API调用示例
 
+### 组织工具函数使用（推荐方式）
+```typescript
+import { parseSchoolId, isSchoolNode, getOrganizationType } from '@/utils/organization'
+
+// 组织选择处理（标准模式）
+const handleOrganizationSelect = async (organization: OrganizationNode) => {
+  const orgId = isSchoolNode(organization) ? parseSchoolId(organization) : organization.id
+  const orgType = getOrganizationType(organization)
+  await fetchOrganizationStats(orgId, orgType)
+}
+
+// API调用参数构建（标准模式）
+const params = {
+  organization_id: isSchoolNode(selectedOrganization.value) ? parseSchoolId(selectedOrganization.value) : selectedOrganization.value.id,
+  organization_level: selectedOrganization.value.level,
+  // 其他参数...
+}
+```
+
 ### 统计API调用
 ```typescript
 // 区域统计
@@ -247,23 +266,82 @@ await getOrganizationStatsApi(regionId)
 // 学校统计（新方式）
 await getOrganizationStatsApi(schoolId, 'school')
 
-// 组织选择处理
+// 组织选择处理（旧方式，不推荐）
 const handleOrganizationSelect = async (organization: OrganizationNode) => {
   await fetchOrganizationStats(organization.id, organization.type)
 }
 ```
 
-### 设备列表API调用
+### 组织工具函数详细说明
+
+#### 函数列表
+```typescript
+// 从学校节点解析正确的数字ID
+export function parseSchoolId(node: OrganizationNode): number | string
+
+// 判断节点是否为学校节点
+export function isSchoolNode(node: OrganizationNode): boolean
+
+// 获取组织类型
+export function getOrganizationType(node: OrganizationNode): string
+
+// 获取组织的真实ID（推荐使用）
+export function getOrganizationRealId(node: OrganizationNode): number | string
+```
+
+#### 使用场景和最佳实践
+
+**1. 组织选择处理**
+```typescript
+const handleOrganizationSelect = async (organization: OrganizationNode) => {
+  // ✅ 推荐方式：使用工具函数
+  const orgId = isSchoolNode(organization) ? parseSchoolId(organization) : organization.id
+  const orgType = getOrganizationType(organization)
+
+  // ❌ 不推荐：直接使用organization.id（可能是'school_15'格式）
+  // await fetchOrganizationStats(organization.id, organization.type)
+
+  await fetchOrganizationStats(orgId, orgType)
+}
+```
+
+**2. API参数构建**
 ```typescript
 const loadData = async () => {
   const params = {
-    organization_id: selectedOrganization.value.id,
+    // ✅ 推荐方式：确保传递正确的数字ID
+    organization_id: isSchoolNode(selectedOrganization.value) ? parseSchoolId(selectedOrganization.value) : selectedOrganization.value.id,
     organization_level: selectedOrganization.value.level,
     page: pagination.current_page,
     per_page: pagination.per_page,
     ...searchForm
   }
-  
+
+  const response = await getOrganizationEquipmentsApi(params)
+  // 处理响应...
+}
+```
+
+**3. 函数类型定义**
+```typescript
+// ✅ 推荐：支持number | string类型
+const fetchOrganizationStats = async (organizationId: number | string, organizationType?: string) => {
+  const response = await getOrganizationStatsApi(organizationId, organizationType)
+  // 处理响应...
+}
+```
+
+### 设备列表API调用（已更新）
+```typescript
+const loadData = async () => {
+  const params = {
+    organization_id: isSchoolNode(selectedOrganization.value) ? parseSchoolId(selectedOrganization.value) : selectedOrganization.value.id,
+    organization_level: selectedOrganization.value.level,
+    page: pagination.current_page,
+    per_page: pagination.per_page,
+    ...searchForm
+  }
+
   const response = await getOrganizationEquipmentsApi(params)
   // 处理响应...
 }
