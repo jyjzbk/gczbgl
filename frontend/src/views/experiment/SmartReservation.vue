@@ -1121,6 +1121,10 @@ const searchEquipments = async () => {
       // 直接数组格式: []
       equipmentList = response.data
       totalCount = equipmentList.length
+    } else if (response.data.items && Array.isArray(response.data.items)) {
+      // 直接items格式: { items: [], pagination: { total: 0 } }
+      equipmentList = response.data.items
+      totalCount = response.data.pagination?.total || equipmentList.length
     } else {
       console.warn('未知的设备API响应格式:', response.data)
       equipmentList = []
