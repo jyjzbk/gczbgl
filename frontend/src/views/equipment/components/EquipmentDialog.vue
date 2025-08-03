@@ -492,10 +492,19 @@ const resetForm = () => {
 // 加载设备分类
 const loadCategories = async () => {
   try {
-    const response = await getEquipmentCategoriesApi()
-    categories.value = response.data
+    const response = await getEquipmentCategoriesApi({ all: true })
+    // 处理不同的响应格式
+    if (Array.isArray(response.data)) {
+      categories.value = response.data
+    } else if (response.data.items && Array.isArray(response.data.items)) {
+      categories.value = response.data.items
+    } else {
+      console.warn('未知的设备分类API响应格式:', response.data)
+      categories.value = []
+    }
   } catch (error) {
     console.error('加载设备分类失败:', error)
+    categories.value = []
   }
 }
 
@@ -541,11 +550,27 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     submitting.value = true
 
+    // 调试：打印表单数据
+    console.log('提交的表单数据:', JSON.stringify(form, null, 2))
+
+    // 确保数据类型正确
+    const submitData = {
+      ...form,
+      category_id: Number(form.category_id),
+      school_id: Number(form.school_id),
+      purchase_price: Number(form.purchase_price),
+      warranty_period: Number(form.warranty_period),
+      status: Number(form.status),
+      condition: Number(form.condition)
+    }
+
+    console.log('处理后的提交数据:', JSON.stringify(submitData, null, 2))
+
     if (props.mode === 'create') {
-      await createEquipmentApi(form)
+      await createEquipmentApi(submitData)
       ElMessage.success('设备创建成功')
     } else {
-      await updateEquipmentApi(props.equipment!.id, form)
+      await updateEquipmentApi(props.equipment!.id, submitData)
       ElMessage.success('设备更新成功')
     }
 
@@ -553,7 +578,12 @@ const handleSubmit = async () => {
     handleClose()
   } catch (error) {
     console.error('提交失败:', error)
-    ElMessage.error('提交失败')
+    if (error.response?.data?.errors) {
+      console.error('验证错误:', error.response.data.errors)
+      ElMessage.error(`提交失败: ${JSON.stringify(error.response.data.errors)}`)
+    } else {
+      ElMessage.error('提交失败')
+    }
   } finally {
     submitting.value = false
   }

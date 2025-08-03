@@ -554,10 +554,19 @@ const loadData = async () => {
 // 加载设备分类
 const loadCategories = async () => {
   try {
-    const response = await getEquipmentCategoriesApi()
-    categories.value = response.data
+    const response = await getEquipmentCategoriesApi({ all: true })
+    // 处理不同的响应格式
+    if (Array.isArray(response.data)) {
+      categories.value = response.data
+    } else if (response.data.items && Array.isArray(response.data.items)) {
+      categories.value = response.data.items
+    } else {
+      console.warn('未知的设备分类API响应格式:', response.data)
+      categories.value = []
+    }
   } catch (error) {
     console.error('加载设备分类失败:', error)
+    categories.value = []
   }
 }
 
@@ -793,7 +802,21 @@ const handleImportSuccess = () => {
 // 初始化
 onMounted(() => {
   loadCategories()
-  // 设备列表将在选择组织后加载
+
+  // 如果是学校级别用户（如任课教师），自动选择其所属学校
+  if (authStore.userInfo?.school_id && authStore.userInfo?.role_codes?.includes('school_teacher')) {
+    const schoolOrganization: OrganizationNode = {
+      id: `school_${authStore.userInfo.school_id}`,
+      name: authStore.userInfo.school_name || '我的学校',
+      level: 'school',
+      type: 'school',
+      children: []
+    }
+    selectedOrganization.value = schoolOrganization
+    loadData()
+    fetchOrganizationStats(authStore.userInfo.school_id, 'school')
+  }
+  // 其他用户需要手动选择组织后才能加载设备列表
 })
 </script>
 

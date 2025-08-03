@@ -322,8 +322,8 @@ export interface EquipmentCategory {
 }
 
 // 获取设备分类列表
-export const getEquipmentCategoriesApi = (params?: { search?: string; status?: number }) => {
-  return request.get<{ data: EquipmentCategory[] }>('/equipment-categories', { params })
+export const getEquipmentCategoriesApi = (params?: { search?: string; status?: number; all?: boolean }) => {
+  return request.get<{ data: EquipmentCategory[] | { items: EquipmentCategory[]; pagination: any } }>('/equipment-categories', { params })
 }
 
 // 创建设备分类
