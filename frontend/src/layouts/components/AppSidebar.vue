@@ -46,9 +46,10 @@
         <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list', 'user.create'])" index="/schools">学校管理</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['laboratory_type', 'laboratory_type.list'])" index="/laboratory-types">实验室类型管理</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['user', 'user.list', 'user.create'])" index="/subjects">学科管理</el-menu-item>
-        <el-menu-item v-if="authStore.hasAnyPermission(['equipment_standard', 'equipment_standard.list'])" index="/equipment-standards">教学仪器配备标准</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['basic.equipment_standard.view', 'equipment_standard', 'equipment_standard.list'])" index="/equipment-standards">教学仪器配备标准</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['textbook_versions', 'textbook_versions.list', 'user', 'user.list'])" index="/textbook-versions">📚 教材版本管理</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['textbook_chapters', 'textbook_chapters.list', 'user', 'user.list'])" index="/textbook-chapters">📖 章节结构管理</el-menu-item>
+        <el-menu-item v-if="authStore.hasAnyPermission(['textbook_version_assignment', 'user', 'user.list']) && authStore.userInfo?.organization_level <= 3" index="/textbook-version-assignment">🎯 教材版本指定管理</el-menu-item>
       </el-sub-menu>
       
       <!-- 实验管理 -->
@@ -69,8 +70,6 @@
         <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'user', 'role'])" index="/experiment-monitoring">🆕 实验监控预警</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'user', 'role'])" index="/experiment-alerts">🆕 预警管理</el-menu-item>
         <el-menu-item v-if="authStore.hasAnyPermission(['experiment', 'experiment.catalog', 'user'])" index="/school-experiment-catalog">🆕 学校目录管理</el-menu-item>
-        <!-- 调试权限信息 -->
-        <el-menu-item v-if="true" @click="debugPermissions" index="debug-permissions">🔍 调试权限</el-menu-item>
         <!-- 学校目录配置管理 -->
         <el-sub-menu v-if="authStore.hasAnyPermission(['school_experiment_catalog.view', 'school_experiment_catalog.config', 'school_experiment_catalog.assign'])" index="school-catalog-config">
           <template #title>
@@ -168,7 +167,7 @@ const hasBasicDataPermission = computed(() => {
   return authStore.hasAnyPermission([
     'user', 'user.list', 'user.create',
     'laboratory_type', 'laboratory_type.list',
-    'equipment_standard', 'equipment_standard.list',
+    'basic.equipment_standard.view', 'equipment_standard', 'equipment_standard.list',
     'textbook_versions', 'textbook_versions.list',
     'textbook_chapters', 'textbook_chapters.list'
   ])
@@ -190,37 +189,7 @@ const handleMenuSelect = (index: string) => {
   }
 }
 
-// 调试权限方法
-const debugPermissions = async () => {
-  console.log('=== 权限调试信息 ===')
-  console.log('当前用户信息:', authStore.user)
-  console.log('当前用户权限数量:', authStore.permissions.length)
-  console.log('当前用户权限列表:', authStore.permissions)
-  console.log('当前用户角色:', authStore.userRole)
 
-  console.log('=== 检查学校目录配置权限 ===')
-  console.log('- school_experiment_catalog.view:', authStore.hasPermission('school_experiment_catalog.view'))
-  console.log('- school_experiment_catalog.config:', authStore.hasPermission('school_experiment_catalog.config'))
-  console.log('- school_experiment_catalog.assign:', authStore.hasPermission('school_experiment_catalog.assign'))
-  console.log('- school_experiment_catalog.completion_stats:', authStore.hasPermission('school_experiment_catalog.completion_stats'))
-
-  console.log('=== 检查其他权限 ===')
-  console.log('- experiment:', authStore.hasPermission('experiment'))
-  console.log('- equipment:', authStore.hasPermission('equipment'))
-  console.log('- user:', authStore.hasPermission('user'))
-
-  // 尝试刷新权限
-  try {
-    console.log('=== 刷新权限 ===')
-    await authStore.fetchUserInfo()
-    console.log('权限刷新成功，新权限数量:', authStore.permissions.length)
-    console.log('刷新后的权限:', authStore.permissions)
-    ElMessage.success('权限已刷新，请查看控制台')
-  } catch (error) {
-    console.error('刷新权限失败:', error)
-    ElMessage.error('刷新权限失败')
-  }
-}
 
 
 

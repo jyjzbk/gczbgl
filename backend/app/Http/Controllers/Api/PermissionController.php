@@ -207,4 +207,25 @@ class PermissionController extends Controller
             'data' => $permissions
         ]);
     }
+
+    /**
+     * 清除权限缓存
+     */
+    public function clearCache(): JsonResponse
+    {
+        try {
+            $permissionService = app(\App\Services\PermissionService::class);
+            $permissionService->clearPermissionCache();
+
+            return response()->json([
+                'success' => true,
+                'message' => '权限缓存清除成功'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => '清除权限缓存失败：' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -30,7 +30,7 @@
             </el-select>
           </el-form-item>
         </el-col>
-        
+
         <el-col :span="12">
           <el-form-item label="实验编号" prop="code">
             <el-input
@@ -38,6 +38,44 @@
               placeholder="请输入实验编号"
               maxlength="50"
             />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="管理级别" prop="management_level">
+            <el-select
+              v-model="form.management_level"
+              placeholder="请选择管理级别"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="level in managementLevelOptions"
+                :key="level.value"
+                :label="level.label"
+                :value="level.value"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+
+        <el-col :span="12">
+          <el-form-item label="教材版本" prop="textbook_version_id">
+            <el-select
+              v-model="form.textbook_version_id"
+              placeholder="请选择教材版本"
+              filterable
+              clearable
+              style="width: 100%"
+            >
+              <el-option
+                v-for="version in textbookVersions"
+                :key="version.id"
+                :label="version.name"
+                :value="version.id"
+              />
+            </el-select>
           </el-form-item>
         </el-col>
       </el-row>
@@ -231,8 +269,10 @@ import {
   createExperimentCatalogApi,
   updateExperimentCatalogApi,
   getSubjectsApi,
+  getTextbookVersionOptionsApi,
   type ExperimentCatalog,
-  type Subject
+  type Subject,
+  type TextbookVersion
 } from '@/api/experiment'
 
 interface Props {
@@ -258,12 +298,17 @@ const loading = ref(false)
 // 学科列表
 const subjects = ref<Subject[]>([])
 
+// 教材版本列表
+const textbookVersions = ref<TextbookVersion[]>([])
+
 // 对话框显示状态
 const visible = ref(false)
 
 // 表单数据
 const form = reactive({
   subject_id: undefined as number | undefined,
+  textbook_version_id: undefined as number | undefined,
+  management_level: 5 as number, // 默认学校级
   name: '',
   code: '',
   type: undefined as number | undefined,
@@ -285,6 +330,15 @@ const form = reactive({
 const dialogTitle = computed(() => {
   return props.mode === 'create' ? '新增实验目录' : '编辑实验目录'
 })
+
+// 管理级别选项
+const managementLevelOptions = [
+  { label: '省级', value: 1 },
+  { label: '市级', value: 2 },
+  { label: '区县级', value: 3 },
+  { label: '学区级', value: 4 },
+  { label: '学校级', value: 5 }
+]
 
 // 年级选项
 const gradeOptions = [
@@ -325,6 +379,9 @@ const typeOptions = [
 const rules: FormRules = {
   subject_id: [
     { required: true, message: '请选择学科', trigger: 'change' }
+  ],
+  management_level: [
+    { required: true, message: '请选择管理级别', trigger: 'change' }
   ],
   name: [
     { required: true, message: '请输入实验名称', trigger: 'blur' },
@@ -377,6 +434,8 @@ const initForm = () => {
     // 编辑模式，填充数据
     Object.assign(form, {
       subject_id: props.catalog.subject_id,
+      textbook_version_id: props.catalog.textbook_version_id,
+      management_level: props.catalog.management_level || 5,
       name: props.catalog.name,
       code: props.catalog.code,
       type: props.catalog.type,
@@ -403,6 +462,8 @@ const initForm = () => {
 const resetForm = () => {
   Object.assign(form, {
     subject_id: undefined,
+    textbook_version_id: undefined,
+    management_level: 5, // 默认学校级
     name: '',
     code: '',
     type: undefined,
@@ -438,6 +499,25 @@ const loadSubjects = async () => {
   } catch (error) {
     console.error('加载学科列表失败:', error)
     subjects.value = []
+  }
+}
+
+// 加载教材版本列表
+const loadTextbookVersions = async () => {
+  try {
+    const response = await getTextbookVersionOptionsApi()
+    // 检查响应数据结构
+    if (response.data && Array.isArray(response.data.data)) {
+      textbookVersions.value = response.data.data
+    } else if (response.data && Array.isArray(response.data)) {
+      textbookVersions.value = response.data
+    } else {
+      console.warn('教材版本数据格式不正确:', response.data)
+      textbookVersions.value = []
+    }
+  } catch (error) {
+    console.error('加载教材版本列表失败:', error)
+    textbookVersions.value = []
   }
 }
 
@@ -481,6 +561,7 @@ const handleClose = () => {
 
 onMounted(() => {
   loadSubjects()
+  loadTextbookVersions()
 })
 </script>
 

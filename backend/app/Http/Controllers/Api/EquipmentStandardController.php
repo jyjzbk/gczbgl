@@ -76,11 +76,11 @@ class EquipmentStandardController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        // 权限检查：只有省级管理员可以创建
-        if (!$this->hasProvincePermission($request)) {
+        // 权限检查
+        if (!$request->user()->hasPermission('basic.equipment_standard.create')) {
             return response()->json([
                 'code' => 403,
-                'message' => '只有省级管理员可以管理配备标准'
+                'message' => '权限不足，无法创建配备标准'
             ], 403);
         }
 
@@ -121,15 +121,81 @@ class EquipmentStandardController extends Controller
     }
 
     /**
+     * 获取配备标准的详细设备信息
+     */
+    public function getDetailedEquipment(EquipmentStandard $equipmentStandard): JsonResponse
+    {
+        // 从teaching_equipment_standards表获取详细信息
+        $detailedEquipments = \App\Models\TeachingEquipmentStandard::where('standard_code', $equipmentStandard->code)
+            ->where('authority_type', $equipmentStandard->authority_type)
+            ->where('stage', $equipmentStandard->stage)
+            ->where('subject_code', $equipmentStandard->subject_code)
+            ->orderBy('category_level_1')
+            ->orderBy('category_level_2')
+            ->orderBy('category_level_3')
+            ->orderBy('item_code')
+            ->get();
+
+        // 按分类组织数据
+        $groupedEquipments = [];
+        foreach ($detailedEquipments as $equipment) {
+            $categoryKey = $equipment->category_level_1;
+            if ($equipment->category_level_2) {
+                $categoryKey .= ' - ' . $equipment->category_level_2;
+            }
+            if ($equipment->category_level_3) {
+                $categoryKey .= ' - ' . $equipment->category_level_3;
+            }
+
+            if (!isset($groupedEquipments[$categoryKey])) {
+                $groupedEquipments[$categoryKey] = [
+                    'category' => $categoryKey,
+                    'items' => []
+                ];
+            }
+
+            $groupedEquipments[$categoryKey]['items'][] = [
+                'item_code' => $equipment->item_code,
+                'name' => $equipment->item_name,
+                'specification' => $equipment->specs_requirements,
+                'unit' => $equipment->unit,
+                'quantity' => $equipment->quantity,
+                'unit_price' => $equipment->unit_price,
+                'total_amount' => $equipment->total_amount,
+                'is_basic' => $equipment->is_basic,
+                'is_optional' => $equipment->is_optional,
+                'activity_suggestion' => $equipment->activity_suggestion,
+                'remarks' => $equipment->remarks
+            ];
+        }
+
+        // 如果没有详细数据，返回原始的equipment_list
+        if (empty($groupedEquipments)) {
+            $groupedEquipments = $equipmentStandard->equipment_list ?: [];
+        } else {
+            $groupedEquipments = array_values($groupedEquipments);
+        }
+
+        return response()->json([
+            'code' => 200,
+            'message' => '获取成功',
+            'data' => [
+                'standard' => $equipmentStandard,
+                'equipment_list' => $groupedEquipments
+            ]
+        ]);
+    }
+
+    /**
      * 更新配备标准
      */
     public function update(Request $request, EquipmentStandard $equipmentStandard): JsonResponse
     {
-        // 权限检查：只有省级管理员可以更新
-        if (!$this->hasProvincePermission($request)) {
+        // 权限检查
+        if (!$request->user()->hasPermission('basic.equipment_standard.edit')) {
             return response()->json([
                 'code' => 403,
-                'message' => '只有省级管理员可以管理配备标准'
+                'message' => '权限不足，无法编辑配备标准'
             ], 403);
         }
 
@@ -162,11 +228,11 @@ class EquipmentStandardController extends Controller
      */
     public function destroy(Request $request, EquipmentStandard $equipmentStandard): JsonResponse
     {
-        // 权限检查：只有省级管理员可以删除
-        if (!$this->hasProvincePermission($request)) {
+        // 权限检查
+        if (!$request->user()->hasPermission('basic.equipment_standard.delete')) {
             return response()->json([
                 'code' => 403,
-                'message' => '只有省级管理员可以管理配备标准'
+                'message' => '权限不足，无法删除配备标准'
             ], 403);
         }
 
@@ -330,14 +396,5 @@ class EquipmentStandardController extends Controller
         }
     }
 
-    /**
-     * 检查是否有省级权限
-     */
-    private function hasProvincePermission(Request $request): bool
-    {
-        $user = $request->user();
-        
-        // 检查用户是否有省级管理员角色
-        return $user && $user->hasRole('province_admin');
-    }
+
 }

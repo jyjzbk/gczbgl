@@ -46,6 +46,12 @@ class EquipmentStandard extends Model
         'status' => 'integer'
     ];
 
+    protected $appends = [
+        'authority_type_text',
+        'stage_text',
+        'status_text'
+    ];
+
     // 制定机构常量
     const AUTHORITY_MOE = 1;        // 教育部
     const AUTHORITY_PROVINCIAL = 2; // 教育厅

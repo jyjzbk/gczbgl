@@ -172,8 +172,30 @@ class OrganizationController extends Controller
             // 超级管理员，从根节点开始构建完整树
             $regionsArray = $this->formatRegionsForTree($regions);
             $tree = $this->buildTree($regionsArray);
+        } elseif ($dataScope['type'] === 'school') {
+            // 学校级用户，只显示自己的学校，不显示区域信息
+            $schoolIds = $dataScope['school_ids'] ?? [];
+            if (!empty($schoolIds)) {
+                $schools = School::whereIn('id', $schoolIds)->where('status', 1)->get();
+                $tree = [];
+                foreach ($schools as $school) {
+                    $tree[] = [
+                        'id' => 'school_' . $school->id,
+                        'name' => $school->name,
+                        'type' => 'school',
+                        'level' => 5,
+                        'school_id' => $school->id,
+                        'children' => [],
+                        'user_count' => 0,
+                        'equipment_count' => 0,
+                        'laboratory_count' => 0
+                    ];
+                }
+            } else {
+                $tree = [];
+            }
         } else {
-            // 非超级管理员，从用户可管理的最高级别组织开始构建树
+            // 其他级别管理员，从用户可管理的最高级别组织开始构建树
             $regionsArray = $this->formatRegionsForTree($regions);
             $tree = $this->buildTreeForUser($regionsArray, $regionIds);
 
@@ -221,22 +243,9 @@ class OrganizationController extends Controller
                 break;
 
             case 'school':
-                // 学校管理员只能编辑自己的学校，但需要显示学校所在的区域路径
+                // 学校管理员只能编辑自己的学校，不显示区域信息
                 $schoolIds = $dataScope['school_ids'] ?? [];
-                $regionIds = [];
-
-                // 获取学校所在的区域路径
-                if (!empty($schoolIds)) {
-                    $schools = School::whereIn('id', $schoolIds)->get();
-                    foreach ($schools as $school) {
-                        if ($school->region_id) {
-                            // 获取从根到学校所在区域的完整路径
-                            $regionPath = $this->getRegionPath($school->region_id);
-                            $regionIds = array_merge($regionIds, $regionPath);
-                        }
-                    }
-                    $regionIds = array_unique($regionIds);
-                }
+                $regionIds = []; // 学校级用户不显示任何区域信息
                 break;
         }
 
@@ -1171,19 +1180,28 @@ class OrganizationController extends Controller
             // 区分区域节点和学校节点
             if (isset($node['type']) && $node['type'] === 'school') {
                 // 学校节点：只统计该学校的数据
-                $schoolId = $node['id'];
+                // 从节点中获取真实的学校ID
+                $schoolId = $node['school_id'] ?? null;
 
-                // 统计学校用户
-                $node['user_count'] = User::where('school_id', $schoolId)->count();
-                $node['school_count'] = 1; // 学校节点本身算作1个学校
+                if ($schoolId) {
+                    // 统计学校用户
+                    $node['user_count'] = User::where('school_id', $schoolId)->count();
+                    $node['school_count'] = 1; // 学校节点本身算作1个学校
 
-                // 统计学校设备和实验室
-                if (class_exists(Equipment::class)) {
-                    $node['equipment_count'] = Equipment::where('school_id', $schoolId)->count();
-                }
+                    // 统计学校设备和实验室
+                    if (class_exists(Equipment::class)) {
+                        $node['equipment_count'] = Equipment::where('school_id', $schoolId)->count();
+                    }
 
-                if (class_exists(Laboratory::class)) {
-                    $node['laboratory_count'] = Laboratory::where('school_id', $schoolId)->count();
+                    if (class_exists(Laboratory::class)) {
+                        $node['laboratory_count'] = Laboratory::where('school_id', $schoolId)->count();
+                    }
+                } else {
+                    // 如果没有school_id，设置默认值
+                    $node['user_count'] = 0;
+                    $node['school_count'] = 1;
+                    $node['equipment_count'] = 0;
+                    $node['laboratory_count'] = 0;
                 }
             } else {
                 // 区域节点：统计该区域及其下级区域的数据
@@ -1334,6 +1352,7 @@ class OrganizationController extends Controller
         foreach ($schools as $school) {
             $schoolNode = [
                 'id' => $school->id,
+                'school_id' => $school->id, // 添加school_id字段用于统计查询
                 'type' => 'school',
                 'name' => $school->name,
                 'code' => $school->code,

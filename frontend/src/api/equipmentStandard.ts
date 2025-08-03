@@ -86,6 +86,13 @@ export const getEquipmentStandardApi = (id: number) => {
 }
 
 /**
+ * 获取配备标准的详细设备信息
+ */
+export const getDetailedEquipmentApi = (id: number) => {
+  return request.get(`/equipment-standards/${id}/detailed-equipment`)
+}
+
+/**
  * 创建配备标准
  */
 export const createEquipmentStandardApi = (data: EquipmentStandardForm) => {

@@ -20,12 +20,12 @@ class TextbookVersionController extends Controller
             $isOptionsRequest = $request->boolean('options', false);
 
             if (!$isOptionsRequest) {
-                // 权限检查：只有省级和市级用户可以管理教材版本
+                // 权限检查：检查用户是否有查看教材版本的权限
                 $user = auth()->user();
-                if (!$this->canManageTextbookVersions($user)) {
+                if (!$user->hasPermission('basic.textbook_version.view')) {
                     return response()->json([
                         'success' => false,
-                        'message' => '权限不足：只有省级和市级管理员可以管理教材版本'
+                        'message' => '权限不足：无权查看教材版本'
                     ], 403);
                 }
             }
@@ -104,10 +104,10 @@ class TextbookVersionController extends Controller
     {
         // 权限检查
         $user = auth()->user();
-        if (!$this->canManageTextbookVersions($user)) {
+        if (!$user->hasPermission('basic.textbook_version.create')) {
             return response()->json([
                 'success' => false,
-                'message' => '权限不足：只有省级和市级管理员可以管理教材版本'
+                'message' => '权限不足：无权创建教材版本'
             ], 403);
         }
 
@@ -185,10 +185,10 @@ class TextbookVersionController extends Controller
     {
         // 权限检查
         $user = auth()->user();
-        if (!$this->canManageTextbookVersions($user)) {
+        if (!$user->hasPermission('basic.textbook_version.edit')) {
             return response()->json([
                 'success' => false,
-                'message' => '权限不足：只有省级和市级管理员可以管理教材版本'
+                'message' => '权限不足：无权编辑教材版本'
             ], 403);
         }
 
@@ -247,10 +247,10 @@ class TextbookVersionController extends Controller
     {
         // 权限检查
         $user = auth()->user();
-        if (!$this->canManageTextbookVersions($user)) {
+        if (!$user->hasPermission('basic.textbook_version.delete')) {
             return response()->json([
                 'success' => false,
-                'message' => '权限不足：只有省级和市级管理员可以管理教材版本'
+                'message' => '权限不足：无权删除教材版本'
             ], 403);
         }
 
@@ -288,6 +288,15 @@ class TextbookVersionController extends Controller
      */
     public function batchUpdateStatus(Request $request): JsonResponse
     {
+        // 权限检查
+        $user = auth()->user();
+        if (!$user->hasPermission('basic.textbook_version.batch_status')) {
+            return response()->json([
+                'success' => false,
+                'message' => '权限不足：无权批量更新教材版本状态'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'ids' => 'required|array|min:1',
             'ids.*' => 'integer|exists:textbook_versions,id',
@@ -324,6 +333,15 @@ class TextbookVersionController extends Controller
      */
     public function updateSortOrder(Request $request): JsonResponse
     {
+        // 权限检查
+        $user = auth()->user();
+        if (!$user->hasPermission('basic.textbook_version.sort')) {
+            return response()->json([
+                'success' => false,
+                'message' => '权限不足：无权更新教材版本排序'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'sort_data' => 'required|array|min:1',
             'sort_data.*.id' => 'required|integer|exists:textbook_versions,id',
@@ -378,19 +396,5 @@ class TextbookVersionController extends Controller
                 'message' => '获取教材版本选项失败：' . $e->getMessage()
             ], 500);
         }
-    }
-
-    /**
-     * 检查用户是否可以管理教材版本
-     */
-    private function canManageTextbookVersions($user): bool
-    {
-        if (!$user) {
-            return false;
-        }
-
-        // 省级和市级用户可以管理教材版本
-        $userLevel = $user->organization_level ?? 5;
-        return $userLevel <= 2;
     }
 }

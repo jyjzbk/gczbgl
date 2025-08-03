@@ -1,5 +1,35 @@
 # 更新日志
 
+## 2025-08-03 - 教学仪器配备标准权限修复
+
+### 🔧 修复问题
+
+#### 教学仪器配备标准权限系统修复
+- **问题描述**: 省级管理员登录后无法使用"新增标准"、"编辑"、"删除"功能，显示权限不足
+- **根本原因**: 前后端权限检查机制不一致，数据库权限记录混乱
+- **修复内容**:
+  - 前端权限名称统一：`equipment_standard.*` → `basic.equipment_standard.*`
+  - 后端权限检查改进：从基于角色检查改为基于权限检查
+  - 数据库权限重新分配：清理旧记录，按层级分配新权限
+  - 权限分级设计：省/市/县级完整CRUD权限，学区/学校级仅查看权限
+
+#### 修改的文件
+- `frontend/src/views/basic/EquipmentStandardManagement.vue`
+- `frontend/src/layouts/components/AppSidebar.vue`
+- `backend/app/Http/Controllers/Api/EquipmentStandardController.php`
+- 数据库 `role_permissions` 表记录
+
+#### 技术改进
+- 统一前后端权限检查机制
+- 简化权限检查逻辑，删除冗余方法
+- 完善权限分级管理体系
+
+### 📚 文档更新
+- 新增 `docs/EQUIPMENT_STANDARD_PERMISSION_FIX.md` 详细修复记录
+- 更新权限系统设计文档
+
+---
+
 ## 2025-07-31 - 前端组织ID解析问题修复
 
 ### 🔧 修复问题

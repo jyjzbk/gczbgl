@@ -54,6 +54,10 @@ Route::get('public/test', function() {
     ]);
 }); // 测试公开API
 
+
+
+
+
 // 认证相关路由
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
@@ -105,6 +109,7 @@ Route::middleware('auth:api')->group(function () {
     // 权限管理
     Route::get('permissions', [PermissionController::class, 'index']);
     Route::get('permissions/tree', [PermissionController::class, 'tree']);
+    Route::post('permissions/clear-cache', [PermissionController::class, 'clearCache']);
 
     // 行政区域管理
     Route::middleware(['data.scope'])->group(function () {
@@ -152,6 +157,7 @@ Route::middleware('auth:api')->group(function () {
 
     // 设备配备标准管理
     Route::apiResource('equipment-standards', EquipmentStandardController::class);
+    Route::get('equipment-standards/{equipmentStandard}/detailed-equipment', [EquipmentStandardController::class, 'getDetailedEquipment']);
     Route::get('equipment-standards-subjects', [EquipmentStandardController::class, 'getSubjects']);
     Route::post('equipment-standards/check-compliance', [EquipmentStandardController::class, 'checkCompliance']);
 
@@ -318,6 +324,28 @@ Route::middleware(['auth:api'])->group(function () {
         Route::delete('/{id}', [App\Http\Controllers\Api\TextbookVersionController::class, 'destroy']);
         Route::put('/batch/status', [App\Http\Controllers\Api\TextbookVersionController::class, 'batchUpdateStatus']);
         Route::put('/sort-order', [App\Http\Controllers\Api\TextbookVersionController::class, 'updateSortOrder']);
+    });
+
+    // 教材版本指定管理
+    Route::prefix('textbook-version-assignments')->group(function () {
+        Route::get('/manageable-schools', [App\Http\Controllers\Api\TextbookVersionAssignmentController::class, 'getManageableSchools']);
+        Route::get('/statistics', [App\Http\Controllers\Api\TextbookVersionAssignmentController::class, 'getStatistics']);
+        Route::get('/assigned-version', [App\Http\Controllers\Api\TextbookVersionAssignmentController::class, 'getAssignedVersion']);
+        Route::get('/', [App\Http\Controllers\Api\TextbookVersionAssignmentController::class, 'index']);
+        Route::post('/', [App\Http\Controllers\Api\TextbookVersionAssignmentController::class, 'store']);
+        Route::post('/batch', [App\Http\Controllers\Api\TextbookVersionAssignmentController::class, 'batchStore']);
+        Route::post('/assign-by-template', [App\Http\Controllers\Api\TextbookVersionAssignmentController::class, 'assignByTemplate']);
+        Route::put('/{id}/revoke', [App\Http\Controllers\Api\TextbookVersionAssignmentController::class, 'revoke']);
+    });
+
+    // 教材版本指定模板管理
+    Route::prefix('textbook-assignment-templates')->group(function () {
+        Route::get('/options', [App\Http\Controllers\Api\TextbookAssignmentTemplateController::class, 'options']);
+        Route::get('/', [App\Http\Controllers\Api\TextbookAssignmentTemplateController::class, 'index']);
+        Route::post('/', [App\Http\Controllers\Api\TextbookAssignmentTemplateController::class, 'store']);
+        Route::get('/{id}', [App\Http\Controllers\Api\TextbookAssignmentTemplateController::class, 'show']);
+        Route::put('/{id}', [App\Http\Controllers\Api\TextbookAssignmentTemplateController::class, 'update']);
+        Route::delete('/{id}', [App\Http\Controllers\Api\TextbookAssignmentTemplateController::class, 'destroy']);
     });
 
     // 章节结构管理

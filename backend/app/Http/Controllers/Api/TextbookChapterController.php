@@ -17,6 +17,15 @@ class TextbookChapterController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        // 权限检查
+        $user = auth()->user();
+        if (!$user->hasPermission('basic.textbook_chapter.view')) {
+            return response()->json([
+                'success' => false,
+                'message' => '权限不足：无权查看章节结构'
+            ], 403);
+        }
+
         try {
             $query = TextbookChapter::with(['subject', 'textbookVersion', 'parent']);
 
@@ -87,6 +96,15 @@ class TextbookChapterController extends Controller
      */
     public function tree(Request $request): JsonResponse
     {
+        // 权限检查
+        $user = auth()->user();
+        if (!$user->hasPermission('basic.textbook_chapter.tree')) {
+            return response()->json([
+                'success' => false,
+                'message' => '权限不足：无权查看章节树形结构'
+            ], 403);
+        }
+
         try {
             $query = TextbookChapter::with(['subject', 'textbookVersion', 'parent']);
 
@@ -167,6 +185,15 @@ class TextbookChapterController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        // 权限检查
+        $user = auth()->user();
+        if (!$user->hasPermission('basic.textbook_chapter.create')) {
+            return response()->json([
+                'success' => false,
+                'message' => '权限不足：无权创建章节'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'subject_id' => 'required|exists:subjects,id',
             'textbook_version_id' => 'required|exists:textbook_versions,id',
@@ -263,6 +290,15 @@ class TextbookChapterController extends Controller
      */
     public function update(Request $request, $id): JsonResponse
     {
+        // 权限检查
+        $user = auth()->user();
+        if (!$user->hasPermission('basic.textbook_chapter.edit')) {
+            return response()->json([
+                'success' => false,
+                'message' => '权限不足：无权编辑章节'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'subject_id' => 'required|exists:subjects,id',
             'textbook_version_id' => 'required|exists:textbook_versions,id',
@@ -375,6 +411,15 @@ class TextbookChapterController extends Controller
      */
     public function destroy($id): JsonResponse
     {
+        // 权限检查
+        $user = auth()->user();
+        if (!$user->hasPermission('basic.textbook_chapter.delete')) {
+            return response()->json([
+                'success' => false,
+                'message' => '权限不足：无权删除章节'
+            ], 403);
+        }
+
         try {
             $chapter = TextbookChapter::findOrFail($id);
 

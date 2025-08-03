@@ -237,6 +237,20 @@ const router = createRouter({
         }
       ]
     },
+    // 教材版本指定管理路由
+    {
+      path: '/textbook-version-assignment',
+      component: DefaultLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'TextbookVersionAssignmentManagement',
+          component: () => import('@/views/basic/TextbookVersionAssignmentManagement.vue'),
+          meta: { title: '教材版本指定管理' }
+        }
+      ]
+    },
     // 实验管理路由
     {
       path: '/experiment-catalogs',

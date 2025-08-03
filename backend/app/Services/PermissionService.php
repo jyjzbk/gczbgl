@@ -380,6 +380,10 @@ class PermissionService
                     'school_experiment_catalog.baseline_manage',
                     // 实验目录制定权限
                     'experiment_catalog.create_county',
+                    // 教材版本和章节查看权限
+                    'basic.textbook_version.view',
+                    'basic.textbook_chapter.view',
+                    'basic.textbook_chapter.tree',
                     'statistics.view',
                     'statistics.dashboard',
                     'statistics.experiment',
@@ -408,6 +412,10 @@ class PermissionService
                     'school_experiment_catalog.view',
                     'school_experiment_catalog.config',
                     'school_experiment_catalog.completion_stats',
+                    // 教材版本和章节查看权限
+                    'basic.textbook_version.view',
+                    'basic.textbook_chapter.view',
+                    'basic.textbook_chapter.tree',
                     'statistics.view',
                     'statistics.dashboard',
                     'statistics.experiment',
@@ -424,6 +432,10 @@ class PermissionService
                     'equipment.maintenance.view',
                     'equipment.maintenance.create',
                     'equipment.qrcode.view',
+                    // 教材版本和章节查看权限
+                    'basic.textbook_version.view',
+                    'basic.textbook_chapter.view',
+                    'basic.textbook_chapter.tree',
                     'statistics.view',
                     'statistics.dashboard',
                     'statistics.experiment',
@@ -448,6 +460,10 @@ class PermissionService
                     'equipment.qrcode.generate',
                     'equipment.qrcode.view',
                     'equipment.qrcode.delete',
+                    // 教材版本和章节查看权限
+                    'basic.textbook_version.view',
+                    'basic.textbook_chapter.view',
+                    'basic.textbook_chapter.tree',
                     'statistics.view',
                     'statistics.dashboard',
                     'statistics.experiment',

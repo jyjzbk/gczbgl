@@ -7,6 +7,7 @@ use App\Models\ExperimentCatalog;
 use App\Models\Subject;
 use App\Models\TextbookVersion;
 use App\Models\TextbookChapter;
+use App\Services\TextbookVersionAssignmentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
@@ -14,6 +15,13 @@ use Illuminate\Support\Facades\Auth;
 
 class ExperimentCatalogController extends Controller
 {
+    protected $assignmentService;
+
+    public function __construct(TextbookVersionAssignmentService $assignmentService)
+    {
+        $this->assignmentService = $assignmentService;
+    }
+
     /**
      * 获取实验目录列表
      */
@@ -35,6 +43,19 @@ class ExperimentCatalogController extends Controller
         // 按教材版本筛选
         if ($request->filled('textbook_version_id')) {
             $query->where('textbook_version_id', $request->textbook_version_id);
+        }
+
+        // 根据学校指定的教材版本筛选（用于实验预约等场景）
+        if ($request->filled('school_id') && $request->filled('subject_id') && $request->filled('grade_level')) {
+            $assignedVersionId = $this->assignmentService->getAssignedTextbookVersion(
+                $request->school_id,
+                $request->subject_id,
+                $request->grade_level
+            );
+
+            if ($assignedVersionId) {
+                $query->where('textbook_version_id', $assignedVersionId);
+            }
         }
 
         // 按章节筛选
@@ -132,6 +153,8 @@ class ExperimentCatalogController extends Controller
     {
         $validated = $request->validate([
             'subject_id' => 'required|exists:subjects,id',
+            'textbook_version_id' => 'nullable|exists:textbook_versions,id',
+            'management_level' => 'required|integer|min:1|max:5',
             'name' => 'required|string|max:200',
             'code' => 'required|string|max:50|unique:experiment_catalogs',
             'type' => ['required', 'integer', Rule::in([1, 2, 3, 4])],
@@ -148,6 +171,35 @@ class ExperimentCatalogController extends Controller
             'is_standard' => 'boolean',
             'status' => 'boolean'
         ]);
+
+        // 处理年级字段的兼容性
+        // 将 grade_level 转换为 grade 字段（数字类型）
+        if (isset($validated['grade_level'])) {
+            // 提取年级数字，例如："三年级" -> 3, "3年级" -> 3, "3" -> 3
+            $gradeLevel = $validated['grade_level'];
+            if (preg_match('/(\d+)/', $gradeLevel, $matches)) {
+                $validated['grade'] = (int)$matches[1];
+            } else {
+                // 如果无法提取数字，根据中文年级转换
+                $gradeMap = [
+                    '一年级' => 1, '二年级' => 2, '三年级' => 3, '四年级' => 4,
+                    '五年级' => 5, '六年级' => 6, '七年级' => 7, '八年级' => 8, '九年级' => 9
+                ];
+                $validated['grade'] = $gradeMap[$gradeLevel] ?? 1;
+            }
+        }
+
+        // 处理学期字段的兼容性
+        if (isset($validated['volume'])) {
+            $volume = $validated['volume'];
+            if (strpos($volume, '上') !== false) {
+                $validated['semester'] = 1;
+            } elseif (strpos($volume, '下') !== false) {
+                $validated['semester'] = 2;
+            } else {
+                $validated['semester'] = 1; // 默认上学期
+            }
+        }
 
         $catalog = ExperimentCatalog::create($validated);
         $catalog->load('subject');
@@ -180,6 +232,8 @@ class ExperimentCatalogController extends Controller
     {
         $validated = $request->validate([
             'subject_id' => 'required|exists:subjects,id',
+            'textbook_version_id' => 'nullable|exists:textbook_versions,id',
+            'management_level' => 'required|integer|min:1|max:5',
             'name' => 'required|string|max:200',
             'code' => [
                 'required',
@@ -201,6 +255,35 @@ class ExperimentCatalogController extends Controller
             'is_standard' => 'boolean',
             'status' => 'boolean'
         ]);
+
+        // 处理年级字段的兼容性
+        // 将 grade_level 转换为 grade 字段（数字类型）
+        if (isset($validated['grade_level'])) {
+            // 提取年级数字，例如："三年级" -> 3, "3年级" -> 3, "3" -> 3
+            $gradeLevel = $validated['grade_level'];
+            if (preg_match('/(\d+)/', $gradeLevel, $matches)) {
+                $validated['grade'] = (int)$matches[1];
+            } else {
+                // 如果无法提取数字，根据中文年级转换
+                $gradeMap = [
+                    '一年级' => 1, '二年级' => 2, '三年级' => 3, '四年级' => 4,
+                    '五年级' => 5, '六年级' => 6, '七年级' => 7, '八年级' => 8, '九年级' => 9
+                ];
+                $validated['grade'] = $gradeMap[$gradeLevel] ?? 1;
+            }
+        }
+
+        // 处理学期字段的兼容性
+        if (isset($validated['volume'])) {
+            $volume = $validated['volume'];
+            if (strpos($volume, '上') !== false) {
+                $validated['semester'] = 1;
+            } elseif (strpos($volume, '下') !== false) {
+                $validated['semester'] = 2;
+            } else {
+                $validated['semester'] = 1; // 默认上学期
+            }
+        }
 
         $experimentCatalog->update($validated);
         $experimentCatalog->load('subject');

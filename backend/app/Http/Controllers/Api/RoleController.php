@@ -373,6 +373,11 @@ class RoleController extends Controller
                 \Log::info('没有权限需要插入');
             }
 
+            // 清除权限缓存，确保新权限立即生效
+            $permissionService = app(\App\Services\PermissionService::class);
+            $permissionService->clearPermissionCache();
+            \Log::info('权限缓存已清除');
+
             return response()->json([
                 'success' => true,
                 'message' => '权限分配成功'
