@@ -1103,21 +1103,44 @@ const searchEquipments = async () => {
     }
 
     const response = await getEquipmentsApi(params)
-    const data = response.data.data || response.data
+    console.log('设备API响应:', response.data) // 调试日志
+
+    // 处理不同的响应数据结构
+    let equipmentList = []
+    let totalCount = 0
+
+    if (response.data.data && response.data.data.items) {
+      // 标准分页响应格式: { data: { items: [], pagination: { total: 0 } } }
+      equipmentList = response.data.data.items
+      totalCount = response.data.data.pagination?.total || 0
+    } else if (response.data.data && Array.isArray(response.data.data)) {
+      // 简单数组格式: { data: [] }
+      equipmentList = response.data.data
+      totalCount = response.data.total || equipmentList.length
+    } else if (Array.isArray(response.data)) {
+      // 直接数组格式: []
+      equipmentList = response.data
+      totalCount = equipmentList.length
+    } else {
+      console.warn('未知的设备API响应格式:', response.data)
+      equipmentList = []
+      totalCount = 0
+    }
 
     // 为每个器材添加默认需要数量
-    availableEquipments.value = (data.data || data).map(equipment => ({
+    availableEquipments.value = equipmentList.map(equipment => ({
       ...equipment,
       required_quantity: 1
     }))
 
     // 更新分页信息
-    if (data.total !== undefined) {
-      equipmentPagination.total = data.total
-    }
+    equipmentPagination.total = totalCount
+
   } catch (error) {
     console.error('搜索器材失败:', error)
     ElMessage.error('搜索器材失败')
+    availableEquipments.value = []
+    equipmentPagination.total = 0
   }
 }
 
