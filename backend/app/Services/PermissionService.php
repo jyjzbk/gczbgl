@@ -30,7 +30,7 @@ class PermissionService
         $permissions = [];
 
         // 获取用户角色
-        $roles = $user->roles()->with('permissions')->get();
+        $roles = $user->roles()->get();
 
         foreach ($roles as $role) {
             // 超级管理员拥有所有权限
@@ -38,10 +38,13 @@ class PermissionService
                 return $this->getAllPermissions();
             }
 
-            // 收集角色权限
-            foreach ($role->permissions as $permission) {
-                $permissions[] = $permission->permission_code;
-            }
+            // 收集角色权限 - 直接从role_permissions表获取
+            $rolePermissions = \DB::table('role_permissions')
+                ->where('role_id', $role->id)
+                ->pluck('permission_code')
+                ->toArray();
+
+            $permissions = array_merge($permissions, $rolePermissions);
         }
 
         return array_unique($permissions);
