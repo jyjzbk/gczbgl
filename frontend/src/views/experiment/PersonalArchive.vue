@@ -167,7 +167,7 @@
           <el-table-column label="作品数" width="100" align="center">
             <template #default="{ row }">
               <div class="work-count-cell">
-                <el-badge :value="row.record?.work_count || 0" type="primary">
+                <el-badge :value="getWorkCount(row)" type="primary">
                   <el-icon size="18"><Picture /></el-icon>
                 </el-badge>
               </div>
@@ -185,7 +185,7 @@
               </el-button>
               
               <el-button
-                v-if="row.record"
+                v-if="hasWorks(row)"
                 type="success"
                 size="small"
                 @click.stop="showExperimentWorks(row)"
@@ -236,11 +236,33 @@
       title="实验作品"
       width="1000px"
     >
-      <ExperimentWorks
-        v-if="selectedRecord"
-        :record-id="selectedRecord.id"
-        :readonly="true"
-      />
+      <div v-if="selectedRecord" class="experiment-photos">
+        <div v-if="selectedRecord.photos && selectedRecord.photos.length > 0" class="photos-grid">
+          <div
+            v-for="(photo, index) in selectedRecord.photos"
+            :key="index"
+            class="photo-item"
+            @click="previewPhoto(photo)"
+          >
+            <img :src="photo" :alt="`实验照片 ${index + 1}`" class="photo-thumbnail" />
+          </div>
+        </div>
+        <div v-else class="no-photos">
+          <el-empty description="暂无实验作品" />
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 照片预览对话框 -->
+    <el-dialog
+      v-model="showPhotoPreview"
+      title="照片预览"
+      width="800px"
+      :show-close="true"
+    >
+      <div class="photo-preview">
+        <img :src="previewPhotoUrl" alt="照片预览" class="preview-image" />
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -253,7 +275,7 @@ import { experimentReservationApi } from '@/api/experimentReservation'
 import { statisticsApi } from '@/api/statistics'
 import { useAuthStore } from '@/stores/auth'
 import ReservationDetail from './components/ReservationDetail.vue'
-import ExperimentWorks from './components/ExperimentWorks.vue'
+
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
 
@@ -269,6 +291,8 @@ const selectedReservation = ref(null)
 const selectedRecord = ref(null)
 const showDetailDialog = ref(false)
 const showWorksDialog = ref(false)
+const showPhotoPreview = ref(false)
+const previewPhotoUrl = ref('')
 const loading = ref(false)
 const chartContainer = ref(null)
 let chart = null
@@ -400,6 +424,31 @@ const showReservationDetail = (reservation) => {
 const showExperimentWorks = (reservation) => {
   selectedRecord.value = reservation.record
   showWorksDialog.value = true
+}
+
+// 获取作品数量
+const getWorkCount = (reservation) => {
+  if (!reservation.record) return 0
+
+  // 优先使用 work_count，如果没有则计算 photos 数量
+  if (reservation.record.work_count > 0) {
+    return reservation.record.work_count
+  }
+
+  // 计算照片数量
+  const photos = reservation.record.photos || []
+  return Array.isArray(photos) ? photos.length : 0
+}
+
+// 检查是否有作品
+const hasWorks = (reservation) => {
+  return getWorkCount(reservation) > 0
+}
+
+// 预览照片
+const previewPhoto = (photoUrl) => {
+  previewPhotoUrl.value = photoUrl
+  showPhotoPreview.value = true
 }
 
 const resetFilter = () => {
@@ -579,5 +628,50 @@ onMounted(() => {
 .chart-container {
   height: 300px;
   width: 100%;
+}
+
+/* 实验作品样式 */
+.experiment-photos {
+  .photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    padding: 16px 0;
+  }
+
+  .photo-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  .photo-thumbnail {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  .no-photos {
+    text-align: center;
+    padding: 40px 0;
+  }
+}
+
+.photo-preview {
+  text-align: center;
+
+  .preview-image {
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+    border-radius: 8px;
+  }
 }
 </style>
