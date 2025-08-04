@@ -291,24 +291,37 @@ const resetDialog = () => {
 const downloadTemplate = async () => {
   downloadingTemplate.value = true
   try {
-    // 创建模板数据
+    // 创建模板数据 - 匹配您现有的Excel格式
     const templateData = [
       {
-        '设备名称*': '示例设备',
-        '设备编号*': 'EQ001',
-        '设备型号*': 'Model-001',
-        '设备品牌*': '示例品牌',
-        '序列号*': 'SN001',
-        '设备分类*': '实验仪器',
-        '存放位置*': '实验室101',
-        '采购日期*': '2024-01-01',
-        '采购价格*': 10000,
-        '供应商*': '示例供应商',
-        '保修期(月)*': 12,
-        '设备状态*': 1,
-        '设备状况*': 1,
-        '设备描述': '设备描述信息',
-        '技术规格': '技术规格参数'
+        '设备编号': 'Model-001',
+        '设备名称': '示例设备1',
+        '序列号': 'SN001',
+        '设备分类': '实验仪器',
+        '存储位置': '实验室1',
+        '采购日期': '2024-01-01',
+        '采购价格': 10000,
+        '供应商': '示例供应商1',
+        '保修期(月)': 12,
+        '设备状态': 1,
+        '设备状况': 1,
+        '设备描述': '设备描述信息1',
+        '技术规格': '技术规格参数1'
+      },
+      {
+        '设备编号': 'Model-002',
+        '设备名称': '示例设备2',
+        '序列号': 'SN002',
+        '设备分类': '实验仪器',
+        '存储位置': '实验室2',
+        '采购日期': '2024-01-02',
+        '采购价格': 15000,
+        '供应商': '示例供应商2',
+        '保修期(月)': 12,
+        '设备状态': 1,
+        '设备状况': 1,
+        '设备描述': '设备描述信息2',
+        '技术规格': '技术规格参数2'
       }
     ]
     
@@ -402,12 +415,9 @@ const validateData = (data: any[]): ImportData[] => {
   return data.map((row, index) => {
     const errors: string[] = []
 
-    // 必填字段验证
-    if (!row['设备名称*']) errors.push('设备名称不能为空')
-    if (!row['设备分类*']) errors.push('设备分类不能为空')
-    if (!row['数量*']) errors.push('数量不能为空')
-    if (!row['单位*']) errors.push('单位不能为空')
-    if (!row['设备状态*']) errors.push('设备状态不能为空')
+    // 必填字段验证 - 使用实际的Excel列名
+    if (!row['设备名称']) errors.push('设备名称不能为空')
+    if (!row['设备分类']) errors.push('设备分类不能为空')
 
     // 数据格式验证
     if (row['采购价格'] && isNaN(Number(row['采购价格']))) {
@@ -416,30 +426,27 @@ const validateData = (data: any[]): ImportData[] => {
     if (row['保修期(月)'] && isNaN(Number(row['保修期(月)']))) {
       errors.push('保修期必须是数字')
     }
-    if (row['数量*'] && isNaN(Number(row['数量*']))) {
-      errors.push('数量必须是数字')
-    }
-    if (row['设备状态*'] && ![1, 2, 3, 4].includes(Number(row['设备状态*']))) {
+    if (row['设备状态'] && ![1, 2, 3, 4].includes(Number(row['设备状态']))) {
       errors.push('设备状态必须是1-4之间的数字')
     }
 
     return {
-      name: row['设备名称*'] || '',
+      name: row['设备名称'] || '',
       code: row['设备编号'] || '',
-      model: row['设备型号'] || '',
+      model: row['序列号'] || '', // 使用序列号作为型号
       brand: row['设备品牌'] || '',
       supplier: row['供应商'] || '',
       supplier_phone: row['供应商电话'] || '',
-      category_name: row['设备分类*'] || '',
-      storage_location: row['存放位置'] || '',
+      category_name: row['设备分类'] || '',
+      storage_location: row['存储位置'] || '',
       purchase_date: row['采购日期'] || '',
       purchase_price: Number(row['采购价格']) || 0,
-      quantity: Number(row['数量*']) || 1,
-      unit: row['单位*'] || '',
+      quantity: 1, // 默认数量为1
+      unit: '台', // 默认单位为台
       warranty_period: Number(row['保修期(月)']) || 0,
       service_life: Number(row['使用年限']) || 0,
       funding_source: row['资金来源'] || '',
-      status: Number(row['设备状态*']) || 1,
+      status: Number(row['设备状态']) || 1,
       remark: row['设备描述'] || '',
       errors: errors.length > 0 ? errors : undefined
     }
@@ -516,7 +523,14 @@ const startImport = async () => {
 const loadCategories = async () => {
   try {
     const response = await getEquipmentCategoriesApi({ all: true, status: 1 })
-    categories.value = response.data.data || response.data
+    // 处理不同的响应格式
+    if (Array.isArray(response.data)) {
+      categories.value = response.data
+    } else if (response.data.data) {
+      categories.value = Array.isArray(response.data.data) ? response.data.data : []
+    } else {
+      categories.value = []
+    }
   } catch (error) {
     console.error('加载设备分类失败:', error)
     categories.value = []
