@@ -4,23 +4,26 @@ import request from './request'
 export interface Equipment {
   id: number
   school_id: number
+  laboratory_id?: number
   category_id: number
   name: string
-  code: string
-  model: string
-  brand: string
-  serial_number: string
-  purchase_date: string
-  purchase_price: number
-  supplier: string
-  warranty_period: number
-  location: string
+  code?: string
+  model?: string
+  brand?: string
+  supplier?: string
+  supplier_phone?: string
+  purchase_date?: string
+  purchase_price?: number
+  quantity: number
+  unit: string
+  warranty_period?: number
+  service_life?: number
+  funding_source?: string
+  storage_location?: string
+  manager_id?: number
   status: number // 1:正常 2:借出 3:维修 4:报废
-  condition_status: number // 1:优 2:良 3:中 4:差
-  description?: string
-  specifications?: string
-  photos?: string[]
   qr_code?: string
+  remark?: string
   created_at: string
   updated_at: string
   category?: {
@@ -49,22 +52,25 @@ export interface EquipmentListParams {
 
 export interface CreateEquipmentParams {
   school_id: number
+  laboratory_id?: number
   category_id: number
   name: string
-  code: string
-  model: string
-  brand: string
-  serial_number: string
-  purchase_date: string
-  purchase_price: number
-  supplier: string
-  warranty_period: number
-  location: string
+  code?: string
+  model?: string
+  brand?: string
+  supplier?: string
+  supplier_phone?: string
+  purchase_date?: string
+  purchase_price?: number
+  quantity: number
+  unit: string
+  warranty_period?: number
+  service_life?: number
+  funding_source?: string
+  storage_location?: string
+  manager_id?: number
   status: number
-  condition_status: number
-  description?: string
-  specifications?: string
-  photos?: string[]
+  remark?: string
 }
 
 // 获取设备列表

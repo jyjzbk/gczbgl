@@ -318,22 +318,25 @@ const canSelectSchool = computed(() => {
 // 表单数据
 const form = reactive<CreateEquipmentParams>({
   school_id: authStore.userInfo?.school_id || 0,
+  laboratory_id: undefined,
   category_id: 0,
   name: '',
   code: '',
   model: '',
   brand: '',
-  serial_number: '',
+  supplier: '',
+  supplier_phone: '',
   purchase_date: '',
   purchase_price: 0,
-  supplier: '',
+  quantity: 1,
+  unit: '台',
   warranty_period: 12,
-  location: '',
+  service_life: 10,
+  funding_source: '',
+  storage_location: '',
+  manager_id: undefined,
   status: 1,
-  condition_status: 1,
-  description: '',
-  specifications: '',
-  photos: []
+  remark: ''
 })
 
 // 选项数据

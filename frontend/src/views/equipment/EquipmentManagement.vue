@@ -305,7 +305,7 @@
     </div>
     
     <!-- 设备信息对话框 -->
-    <EquipmentDialog
+    <SimpleEquipmentDialog
       v-model="dialogVisible"
       :equipment="currentEquipment"
       :mode="dialogMode"
@@ -365,7 +365,7 @@ import {
   type OrganizationStats
 } from '@/api/organization'
 import { useAuthStore } from '@/stores/auth'
-import EquipmentDialog from './components/EquipmentDialog.vue'
+import SimpleEquipmentDialog from './components/SimpleEquipmentDialog.vue'
 import EquipmentDetail from './components/EquipmentDetail.vue'
 import QRCodeDialog from './components/QRCodeDialog.vue'
 import BatchImportDialog from './components/BatchImportDialog.vue'
