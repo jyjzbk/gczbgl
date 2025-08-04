@@ -378,9 +378,11 @@ const prevStep = () => {
 // 解析Excel文件
 const parseExcelFile = async () => {
   if (!selectedFile.value) return
-  
+
   try {
     const data = await readExcelFile(selectedFile.value)
+    console.log('Excel原始数据:', data)
+    console.log('第一行数据的键名:', data.length > 0 ? Object.keys(data[0]) : [])
     previewData.value = validateData(data)
     currentStep.value = 2
   } catch (error) {
@@ -415,41 +417,67 @@ const validateData = (data: any[]): ImportData[] => {
   return data.map((row, index) => {
     const errors: string[] = []
 
-    // 必填字段验证 - 使用实际的Excel列名
-    if (!row['设备名称']) errors.push('设备名称不能为空')
-    if (!row['设备分类']) errors.push('设备分类不能为空')
+    // 调试信息：打印每行的键名
+    if (index === 0) {
+      console.log('Excel行数据键名:', Object.keys(row))
+      console.log('Excel第一行数据:', row)
+    }
+
+    // 尝试多种可能的列名格式
+    const deviceName = row['设备名称'] || row['设备名称*'] || row['名称'] || ''
+    const deviceCategory = row['设备分类'] || row['设备分类*'] || row['分类'] || ''
+    const deviceCode = row['设备编号'] || row['设备编号*'] || row['编号'] || ''
+    const serialNumber = row['序列号'] || row['序列号*'] || row['型号'] || ''
+    const supplier = row['供应商'] || row['供应商*'] || ''
+    const storageLocation = row['存储位置'] || row['存放位置'] || row['位置'] || ''
+    const purchaseDate = row['采购日期'] || row['采购日期*'] || ''
+    const purchasePrice = row['采购价格'] || row['采购价格*'] || 0
+    const warrantyPeriod = row['保修期(月)'] || row['保修期'] || 0
+    const deviceStatus = row['设备状态'] || row['设备状态*'] || row['状态'] || 1
+    const deviceDescription = row['设备描述'] || row['描述'] || row['备注'] || ''
+
+    // 必填字段验证
+    if (!deviceName) errors.push('设备名称不能为空')
+    if (!deviceCategory) errors.push('设备分类不能为空')
 
     // 数据格式验证
-    if (row['采购价格'] && isNaN(Number(row['采购价格']))) {
+    if (purchasePrice && isNaN(Number(purchasePrice))) {
       errors.push('采购价格必须是数字')
     }
-    if (row['保修期(月)'] && isNaN(Number(row['保修期(月)']))) {
+    if (warrantyPeriod && isNaN(Number(warrantyPeriod))) {
       errors.push('保修期必须是数字')
     }
-    if (row['设备状态'] && ![1, 2, 3, 4].includes(Number(row['设备状态']))) {
+    if (deviceStatus && ![1, 2, 3, 4].includes(Number(deviceStatus))) {
       errors.push('设备状态必须是1-4之间的数字')
     }
 
-    return {
-      name: row['设备名称'] || '',
-      code: row['设备编号'] || '',
-      model: row['序列号'] || '', // 使用序列号作为型号
-      brand: row['设备品牌'] || '',
-      supplier: row['供应商'] || '',
-      supplier_phone: row['供应商电话'] || '',
-      category_name: row['设备分类'] || '',
-      storage_location: row['存储位置'] || '',
-      purchase_date: row['采购日期'] || '',
-      purchase_price: Number(row['采购价格']) || 0,
+    const result = {
+      name: deviceName,
+      code: deviceCode,
+      model: serialNumber, // 使用序列号作为型号
+      brand: row['设备品牌'] || row['品牌'] || '',
+      supplier: supplier,
+      supplier_phone: row['供应商电话'] || row['电话'] || '',
+      category_name: deviceCategory,
+      storage_location: storageLocation,
+      purchase_date: purchaseDate,
+      purchase_price: Number(purchasePrice) || 0,
       quantity: 1, // 默认数量为1
       unit: '台', // 默认单位为台
-      warranty_period: Number(row['保修期(月)']) || 0,
-      service_life: Number(row['使用年限']) || 0,
+      warranty_period: Number(warrantyPeriod) || 0,
+      service_life: Number(row['使用年限'] || row['年限'] || 0),
       funding_source: row['资金来源'] || '',
-      status: Number(row['设备状态']) || 1,
-      remark: row['设备描述'] || '',
+      status: Number(deviceStatus) || 1,
+      remark: deviceDescription,
       errors: errors.length > 0 ? errors : undefined
     }
+
+    // 调试信息：打印转换结果
+    if (index === 0) {
+      console.log('转换后的数据:', result)
+    }
+
+    return result
   })
 }
 
