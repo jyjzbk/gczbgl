@@ -46,7 +46,7 @@ class EquipmentRequest extends FormRequest
             'warranty_period' => 'required|integer|min:0|max:120', // 最大10年保修
             'location' => 'required|string|max:255',
             'status' => 'required|integer|in:1,2,3,4', // 1:正常 2:借出 3:维修 4:报废
-            'condition' => 'required|integer|in:1,2,3,4', // 1:优 2:良 3:中 4:差
+            'condition_status' => 'required|integer|in:1,2,3,4', // 1:优 2:良 3:中 4:差
             'description' => 'nullable|string|max:2000',
             'specifications' => 'nullable|string|max:2000',
             'photos' => 'nullable|array|max:10',
@@ -95,8 +95,8 @@ class EquipmentRequest extends FormRequest
             'location.max' => '存放位置不能超过255个字符',
             'status.required' => '设备状态不能为空',
             'status.in' => '设备状态值无效',
-            'condition.required' => '设备状况不能为空',
-            'condition.in' => '设备状况值无效',
+            'condition_status.required' => '设备状况不能为空',
+            'condition_status.in' => '设备状况值无效',
             'description.max' => '设备描述不能超过2000个字符',
             'specifications.max' => '技术规格不能超过2000个字符',
             'photos.array' => '照片必须是数组格式',
@@ -127,7 +127,7 @@ class EquipmentRequest extends FormRequest
             'warranty_period' => '保修期',
             'location' => '存放位置',
             'status' => '设备状态',
-            'condition' => '设备状况',
+            'condition_status' => '设备状况',
             'description' => '设备描述',
             'specifications' => '技术规格',
             'photos' => '设备照片',

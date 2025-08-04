@@ -136,9 +136,9 @@
             </el-col>
             
             <el-col :span="12">
-              <el-form-item label="设备状况" prop="condition">
+              <el-form-item label="设备状况" prop="condition_status">
                 <el-select
-                  v-model="form.condition"
+                  v-model="form.condition_status"
                   placeholder="请选择设备状况"
                   style="width: 100%"
                 >
@@ -330,7 +330,7 @@ const form = reactive<CreateEquipmentParams>({
   warranty_period: 12,
   location: '',
   status: 1,
-  condition: 1,
+  condition_status: 1,
   description: '',
   specifications: '',
   photos: []
@@ -396,7 +396,7 @@ const rules: FormRules = {
   status: [
     { required: true, message: '请选择设备状态', trigger: 'change' }
   ],
-  condition: [
+  condition_status: [
     { required: true, message: '请选择设备状况', trigger: 'change' }
   ]
 }
@@ -438,7 +438,7 @@ watch(() => props.equipment, (newVal) => {
       warranty_period: newVal.warranty_period,
       location: newVal.location,
       status: newVal.status,
-      condition: newVal.condition,
+      condition_status: newVal.condition_status,
       description: newVal.description || '',
       specifications: newVal.specifications || '',
       photos: newVal.photos || []
@@ -480,7 +480,7 @@ const resetForm = () => {
     warranty_period: 12,
     location: '',
     status: 1,
-    condition: 1,
+    condition_status: 1,
     description: '',
     specifications: '',
     photos: []
@@ -561,7 +561,7 @@ const handleSubmit = async () => {
       purchase_price: Number(form.purchase_price),
       warranty_period: Number(form.warranty_period),
       status: Number(form.status),
-      condition: Number(form.condition)
+      condition_status: Number(form.condition_status)
     }
 
     console.log('处理后的提交数据:', JSON.stringify(submitData, null, 2))

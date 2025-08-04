@@ -16,7 +16,7 @@ export interface Equipment {
   warranty_period: number
   location: string
   status: number // 1:正常 2:借出 3:维修 4:报废
-  condition: number // 1:优 2:良 3:中 4:差
+  condition_status: number // 1:优 2:良 3:中 4:差
   description?: string
   specifications?: string
   photos?: string[]
@@ -61,7 +61,7 @@ export interface CreateEquipmentParams {
   warranty_period: number
   location: string
   status: number
-  condition: number
+  condition_status: number
   description?: string
   specifications?: string
   photos?: string[]
