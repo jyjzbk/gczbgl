@@ -416,16 +416,14 @@ class EquipmentController extends Controller
             $import = new EquipmentImport();
             Excel::import($import, $request->file('file'));
 
-            // 记录操作日志
-            EquipmentOperationLog::logOperation(
-                0, // 批量导入没有特定设备ID
-                auth()->id(),
-                'import',
-                'equipment',
-                '批量导入设备数据',
-                null,
-                ['imported_count' => $import->getImportedCount()]
-            );
+            // 批量导入不记录到设备操作日志，因为没有特定的设备ID
+            \Log::info('设备文件批量导入完成', [
+                'user_id' => auth()->id(),
+                'imported_count' => $import->getImportedCount(),
+                'failed_count' => $import->getFailedCount(),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
 
             DB::commit();
 
@@ -503,20 +501,16 @@ class EquipmentController extends Controller
                 }
             }
 
-            // 记录操作日志
-            EquipmentOperationLog::logOperation(
-                0, // 批量导入没有特定设备ID
-                auth()->id(),
-                'import',
-                'equipment',
-                'JSON批量导入设备数据',
-                null,
-                [
-                    'success_count' => $successCount,
-                    'failure_count' => $failureCount,
-                    'total_count' => count($equipments)
-                ]
-            );
+            // 批量导入不记录到设备操作日志，因为没有特定的设备ID
+            // 可以考虑记录到系统操作日志或单独的批量操作日志表
+            \Log::info('设备批量导入完成', [
+                'user_id' => auth()->id(),
+                'success_count' => $successCount,
+                'failure_count' => $failureCount,
+                'total_count' => count($equipments),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
 
             DB::commit();
 

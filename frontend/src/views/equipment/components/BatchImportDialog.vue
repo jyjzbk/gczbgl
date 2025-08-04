@@ -423,18 +423,22 @@ const validateData = (data: any[]): ImportData[] => {
       console.log('Excel第一行数据:', row)
     }
 
-    // 尝试多种可能的列名格式
-    const deviceName = row['设备名称'] || row['设备名称*'] || row['名称'] || ''
-    const deviceCategory = row['设备分类'] || row['设备分类*'] || row['分类'] || ''
-    const deviceCode = row['设备编号'] || row['设备编号*'] || row['编号'] || ''
-    const serialNumber = row['序列号'] || row['序列号*'] || row['型号'] || ''
-    const supplier = row['供应商'] || row['供应商*'] || ''
-    const storageLocation = row['存储位置'] || row['存放位置'] || row['位置'] || ''
-    const purchaseDate = row['采购日期'] || row['采购日期*'] || ''
-    const purchasePrice = row['采购价格'] || row['采购价格*'] || 0
-    const warrantyPeriod = row['保修期(月)'] || row['保修期'] || 0
-    const deviceStatus = row['设备状态'] || row['设备状态*'] || row['状态'] || 1
-    const deviceDescription = row['设备描述'] || row['描述'] || row['备注'] || ''
+    // 使用实际的Excel列名（带星号）
+    const deviceName = row['设备名称*'] || ''
+    const deviceCategory = row['设备分类*'] || ''
+    const deviceCode = row['设备编号*'] || ''
+    const deviceModel = row['设备型号*'] || ''
+    const deviceBrand = row['设备品牌*'] || ''
+    const serialNumber = row['序列号*'] || ''
+    const supplier = row['供应商*'] || ''
+    const storageLocation = row['存放位置*'] || ''
+    const purchaseDate = row['采购日期*'] || ''
+    const purchasePrice = row['采购价格*'] || 0
+    const warrantyPeriod = row['保修期(月)*'] || 0
+    const deviceStatus = row['设备状态*'] || 1
+    const deviceCondition = row['设备状况*'] || 1
+    const deviceDescription = row['设备描述'] || ''
+    const technicalSpecs = row['技术规格'] || ''
 
     // 必填字段验证
     if (!deviceName) errors.push('设备名称不能为空')
@@ -454,10 +458,10 @@ const validateData = (data: any[]): ImportData[] => {
     const result = {
       name: deviceName,
       code: deviceCode,
-      model: serialNumber, // 使用序列号作为型号
-      brand: row['设备品牌'] || row['品牌'] || '',
+      model: deviceModel, // 使用设备型号
+      brand: deviceBrand,
       supplier: supplier,
-      supplier_phone: row['供应商电话'] || row['电话'] || '',
+      supplier_phone: '', // Excel中没有供应商电话字段
       category_name: deviceCategory,
       storage_location: storageLocation,
       purchase_date: purchaseDate,
@@ -465,8 +469,8 @@ const validateData = (data: any[]): ImportData[] => {
       quantity: 1, // 默认数量为1
       unit: '台', // 默认单位为台
       warranty_period: Number(warrantyPeriod) || 0,
-      service_life: Number(row['使用年限'] || row['年限'] || 0),
-      funding_source: row['资金来源'] || '',
+      service_life: 0, // Excel中没有使用年限字段
+      funding_source: '', // Excel中没有资金来源字段
       status: Number(deviceStatus) || 1,
       remark: deviceDescription,
       errors: errors.length > 0 ? errors : undefined
