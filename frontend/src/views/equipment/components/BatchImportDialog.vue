@@ -183,10 +183,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, UploadFilled } from '@element-plus/icons-vue'
-import { batchImportEquipmentsApi } from '@/api/equipment'
+import { batchImportEquipmentsApi, getEquipmentCategoriesApi } from '@/api/equipment'
+import { useAuthStore } from '@/stores/auth'
 import * as XLSX from 'xlsx'
 
 interface Props {
@@ -231,6 +232,9 @@ interface ImportResult {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
+// Store
+const authStore = useAuthStore()
+
 // 响应式数据
 const currentStep = ref(0)
 const uploadRef = ref()
@@ -238,6 +242,7 @@ const downloadingTemplate = ref(false)
 const importing = ref(false)
 const selectedFile = ref<File | null>(null)
 const previewData = ref<ImportData[]>([])
+const categories = ref<any[]>([])
 const importResult = ref<ImportResult>({
   success: false,
   message: '',
@@ -396,58 +401,46 @@ const readExcelFile = (file: File): Promise<any[]> => {
 const validateData = (data: any[]): ImportData[] => {
   return data.map((row, index) => {
     const errors: string[] = []
-    
+
     // 必填字段验证
     if (!row['设备名称*']) errors.push('设备名称不能为空')
-    if (!row['设备编号*']) errors.push('设备编号不能为空')
-    if (!row['设备型号*']) errors.push('设备型号不能为空')
-    if (!row['设备品牌*']) errors.push('设备品牌不能为空')
-    if (!row['序列号*']) errors.push('序列号不能为空')
     if (!row['设备分类*']) errors.push('设备分类不能为空')
-    if (!row['存放位置*']) errors.push('存放位置不能为空')
-    if (!row['采购日期*']) errors.push('采购日期不能为空')
-    if (!row['采购价格*']) errors.push('采购价格不能为空')
-    if (!row['供应商*']) errors.push('供应商不能为空')
-    if (!row['保修期(月)*']) errors.push('保修期不能为空')
+    if (!row['数量*']) errors.push('数量不能为空')
+    if (!row['单位*']) errors.push('单位不能为空')
     if (!row['设备状态*']) errors.push('设备状态不能为空')
-    if (!row['设备状况*']) errors.push('设备状况不能为空')
-    
+
     // 数据格式验证
-    if (row['采购价格*'] && isNaN(Number(row['采购价格*']))) {
+    if (row['采购价格'] && isNaN(Number(row['采购价格']))) {
       errors.push('采购价格必须是数字')
     }
-    if (row['保修期(月)*'] && isNaN(Number(row['保修期(月)*']))) {
+    if (row['保修期(月)'] && isNaN(Number(row['保修期(月)']))) {
       errors.push('保修期必须是数字')
+    }
+    if (row['数量*'] && isNaN(Number(row['数量*']))) {
+      errors.push('数量必须是数字')
     }
     if (row['设备状态*'] && ![1, 2, 3, 4].includes(Number(row['设备状态*']))) {
       errors.push('设备状态必须是1-4之间的数字')
     }
-    if (row['设备状况*'] && ![1, 2, 3, 4].includes(Number(row['设备状况*']))) {
-      errors.push('设备状况必须是1-4之间的数字')
-    }
-    
+
     return {
       name: row['设备名称*'] || '',
-      code: row['设备编号*'] || '',
-      model: row['设备型号*'] || '',
-      brand: row['设备品牌*'] || '',
-      serial_number: row['序列号*'] || '',
-      category_name: row['设备分类*'] || '',
-      location: row['存放位置*'] || '',
-      purchase_date: row['采购日期*'] || '',
-      purchase_price: Number(row['采购价格*']) || 0,
-      supplier: row['供应商*'] || '',
+      code: row['设备编号'] || '',
+      model: row['设备型号'] || '',
+      brand: row['设备品牌'] || '',
+      supplier: row['供应商'] || '',
       supplier_phone: row['供应商电话'] || '',
-      storage_location: row['存放位置*'] || '',
-      quantity: Number(row['数量']) || 1,
-      unit: row['单位'] || '',
-      warranty_period: Number(row['保修期(月)*']) || 0,
+      category_name: row['设备分类*'] || '',
+      storage_location: row['存放位置'] || '',
+      purchase_date: row['采购日期'] || '',
+      purchase_price: Number(row['采购价格']) || 0,
+      quantity: Number(row['数量*']) || 1,
+      unit: row['单位*'] || '',
+      warranty_period: Number(row['保修期(月)']) || 0,
       service_life: Number(row['使用年限']) || 0,
       funding_source: row['资金来源'] || '',
       status: Number(row['设备状态*']) || 1,
       remark: row['设备描述'] || '',
-      description: row['设备描述'] || '',
-      specifications: row['技术规格'] || '',
       errors: errors.length > 0 ? errors : undefined
     }
   })
@@ -459,11 +452,40 @@ const startImport = async () => {
     ElMessage.error('请先修复数据错误')
     return
   }
-  
+
   importing.value = true
   try {
     const validData = previewData.value.filter(item => !item.errors)
-    const response = await batchImportEquipmentsApi({ equipments: validData as any })
+
+    // 转换数据格式，添加必需字段
+    const equipmentsData = validData.map(item => {
+      // 根据分类名称查找分类ID
+      const category = categories.value.find(cat => cat.name === item.category_name)
+      const categoryId = category ? category.id : 1 // 默认使用第一个分类
+
+      return {
+        school_id: authStore.userInfo?.school_id || 1,
+        category_id: categoryId,
+        name: item.name,
+        code: item.code || undefined,
+        model: item.model || undefined,
+        brand: item.brand || undefined,
+        supplier: item.supplier || undefined,
+        supplier_phone: item.supplier_phone || undefined,
+        purchase_date: item.purchase_date || undefined,
+        purchase_price: item.purchase_price || undefined,
+        quantity: item.quantity,
+        unit: item.unit,
+        warranty_period: item.warranty_period || undefined,
+        service_life: item.service_life || undefined,
+        funding_source: item.funding_source || undefined,
+        storage_location: item.storage_location || undefined,
+        status: item.status,
+        remark: item.remark || undefined
+      }
+    })
+
+    const response = await batchImportEquipmentsApi({ equipments: equipmentsData })
     
     importResult.value = {
       success: true,
@@ -490,10 +512,28 @@ const startImport = async () => {
   }
 }
 
+// 加载设备分类
+const loadCategories = async () => {
+  try {
+    const response = await getEquipmentCategoriesApi({ all: true, status: 1 })
+    categories.value = response.data.data || response.data
+  } catch (error) {
+    console.error('加载设备分类失败:', error)
+    categories.value = []
+  }
+}
+
 // 关闭对话框
 const handleClose = () => {
   emit('update:modelValue', false)
 }
+
+// 监听对话框显示状态
+watch(() => props.modelValue, (newVal) => {
+  if (newVal) {
+    loadCategories()
+  }
+})
 </script>
 
 <style scoped>
