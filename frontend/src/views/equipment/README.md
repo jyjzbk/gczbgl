@@ -17,7 +17,7 @@
 - 二维码生成和打印
 
 **主要组件：**
-- `EquipmentDialog.vue` - 设备信息编辑对话框
+- `SimpleEquipmentDialog.vue` - 设备信息编辑对话框
 - `EquipmentDetail.vue` - 设备详情查看
 - `QRCodeDialog.vue` - 二维码管理
 - `BatchImportDialog.vue` - 批量导入

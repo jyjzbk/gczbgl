@@ -204,17 +204,19 @@ interface ImportData {
   code: string
   model: string
   brand: string
-  serial_number: string
+  supplier: string
+  supplier_phone: string
   category_name: string
-  location: string
+  storage_location: string
   purchase_date: string
   purchase_price: number
-  supplier: string
+  quantity: number
+  unit: string
   warranty_period: number
+  service_life: number
+  funding_source: string
   status: number
-  condition: number
-  description?: string
-  specifications?: string
+  remark?: string
   errors?: string[]
 }
 

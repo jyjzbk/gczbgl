@@ -12,7 +12,7 @@
           <h4>{{ equipment.name }}</h4>
           <p>设备编号: {{ equipment.code }}</p>
           <p>设备型号: {{ equipment.model }}</p>
-          <p>存放位置: {{ equipment.location }}</p>
+          <p>存放位置: {{ equipment.storage_location }}</p>
         </div>
         
         <div class="qrcode-display">
