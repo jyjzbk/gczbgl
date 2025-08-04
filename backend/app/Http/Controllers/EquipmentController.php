@@ -402,7 +402,7 @@ class EquipmentController extends Controller
     }
 
     /**
-     * 批量导入设备
+     * 批量导入设备（文件上传方式）
      */
     public function batchImport(Request $request): JsonResponse
     {
@@ -436,6 +436,98 @@ class EquipmentController extends Controller
                     'imported_count' => $import->getImportedCount(),
                     'failed_count' => $import->getFailedCount(),
                     'errors' => $import->getErrors()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'code' => 500,
+                'message' => '导入失败：' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * 批量导入设备（JSON数据方式）
+     */
+    public function batchImportJson(Request $request): JsonResponse
+    {
+        $request->validate([
+            'equipments' => 'required|array|min:1',
+            'equipments.*.school_id' => 'required|integer|exists:schools,id',
+            'equipments.*.category_id' => 'required|integer|exists:equipment_categories,id',
+            'equipments.*.name' => 'required|string|max:200',
+            'equipments.*.code' => 'nullable|string|max:100',
+            'equipments.*.model' => 'nullable|string|max:100',
+            'equipments.*.brand' => 'nullable|string|max:100',
+            'equipments.*.supplier' => 'nullable|string|max:200',
+            'equipments.*.supplier_phone' => 'nullable|string|max:20',
+            'equipments.*.purchase_date' => 'nullable|date|before_or_equal:today',
+            'equipments.*.purchase_price' => 'nullable|numeric|min:0|max:999999999.99',
+            'equipments.*.quantity' => 'required|integer|min:1',
+            'equipments.*.unit' => 'required|string|max:20',
+            'equipments.*.warranty_period' => 'nullable|integer|min:0|max:120',
+            'equipments.*.service_life' => 'nullable|integer|min:0|max:50',
+            'equipments.*.funding_source' => 'nullable|string|max:100',
+            'equipments.*.storage_location' => 'nullable|string|max:200',
+            'equipments.*.manager_id' => 'nullable|integer|exists:users,id',
+            'equipments.*.status' => 'required|integer|in:1,2,3,4',
+            'equipments.*.remark' => 'nullable|string|max:2000',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $equipments = $request->equipments;
+            $successCount = 0;
+            $failureCount = 0;
+            $errors = [];
+
+            foreach ($equipments as $index => $equipmentData) {
+                try {
+                    // 检查设备编号是否重复
+                    if (!empty($equipmentData['code'])) {
+                        $exists = Equipment::where('code', $equipmentData['code'])->exists();
+                        if ($exists) {
+                            $errors[] = "第" . ($index + 1) . "行：设备编号 {$equipmentData['code']} 已存在";
+                            $failureCount++;
+                            continue;
+                        }
+                    }
+
+                    Equipment::create($equipmentData);
+                    $successCount++;
+                } catch (\Exception $e) {
+                    $errors[] = "第" . ($index + 1) . "行：" . $e->getMessage();
+                    $failureCount++;
+                }
+            }
+
+            // 记录操作日志
+            EquipmentOperationLog::logOperation(
+                0, // 批量导入没有特定设备ID
+                auth()->id(),
+                'import',
+                'equipment',
+                'JSON批量导入设备数据',
+                null,
+                [
+                    'success_count' => $successCount,
+                    'failure_count' => $failureCount,
+                    'total_count' => count($equipments)
+                ]
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'code' => 200,
+                'message' => $successCount > 0 ? '导入完成' : '导入失败',
+                'data' => [
+                    'success_count' => $successCount,
+                    'failure_count' => $failureCount,
+                    'total_count' => count($equipments),
+                    'errors' => $errors
                 ]
             ]);
         } catch (\Exception $e) {

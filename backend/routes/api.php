@@ -193,7 +193,8 @@ Route::middleware('auth:api')->group(function () {
     // 设备档案管理
     Route::middleware(['data.scope'])->group(function () {
         Route::apiResource('equipments', EquipmentController::class);
-        Route::post('equipments/batch-import', [EquipmentController::class, 'batchImport']);
+        Route::post('equipments/batch-import', [EquipmentController::class, 'batchImportJson']);
+        Route::post('equipments/batch-import-file', [EquipmentController::class, 'batchImport']);
         Route::get('equipments/export', [EquipmentController::class, 'export']);
         Route::post('equipments/{equipment}/photos', [EquipmentController::class, 'uploadPhoto']);
         Route::delete('equipments/{equipment}/photos/{photo}', [EquipmentController::class, 'deletePhoto']);
