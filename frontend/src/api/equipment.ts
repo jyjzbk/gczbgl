@@ -188,6 +188,17 @@ export interface CreateEquipmentBorrowParams {
   remark?: string
 }
 
+// 批量设备借用参数
+export interface CreateBatchEquipmentBorrowParams {
+  equipment_ids: number[]
+  quantities: number[]
+  borrower_id: number
+  borrow_date: string
+  expected_return_date: string
+  purpose: string
+  remark?: string
+}
+
 // 获取设备借用列表
 export const getEquipmentBorrowsApi = (params: EquipmentBorrowListParams) => {
   return request.get('/equipment-borrows', { params })
@@ -195,6 +206,11 @@ export const getEquipmentBorrowsApi = (params: EquipmentBorrowListParams) => {
 
 // 创建设备借用申请
 export const createEquipmentBorrowApi = (data: CreateEquipmentBorrowParams) => {
+  return request.post('/equipment-borrows', data)
+}
+
+// 批量创建设备借用申请
+export const createBatchEquipmentBorrowApi = (data: CreateBatchEquipmentBorrowParams) => {
   return request.post('/equipment-borrows', data)
 }
 

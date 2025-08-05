@@ -25,7 +25,7 @@
     <!-- 主要内容区域 -->
     <div class="main-content">
       <!-- 左侧组织树 -->
-      <div class="left-panel">
+      <div class="left-panel" :style="{ width: leftPanelWidth + 'px' }">
         <OrganizationTree
           ref="organizationTreeRef"
           :show-stats="true"
@@ -35,8 +35,14 @@
         />
       </div>
 
+      <!-- 分隔条 -->
+      <div
+        class="panel-divider"
+        @mousedown="startResize"
+      ></div>
+
       <!-- 右侧设备列表 -->
-      <div class="right-panel">
+      <div class="right-panel" :style="{ width: 'calc(100% - ' + (leftPanelWidth + 8) + 'px)' }">
         <!-- 当前组织信息 -->
         <div class="current-organization" v-if="selectedOrganization">
           <div class="org-info">
@@ -193,7 +199,21 @@
             width="120"
             show-overflow-tooltip
           />
-          
+
+          <el-table-column
+            prop="quantity"
+            label="数量"
+            width="80"
+            align="center"
+          />
+
+          <el-table-column
+            prop="unit"
+            label="单位"
+            width="80"
+            align="center"
+          />
+
           <el-table-column
             prop="status"
             label="设备状态"
@@ -258,7 +278,7 @@
                 size="small"
                 text
                 @click="handleEdit(row)"
-                :disabled="!hasPermission('equipment:edit')"
+                :disabled="!hasPermission('equipment.edit')"
               >
                 编辑
               </el-button>
@@ -275,7 +295,7 @@
                 size="small"
                 text
                 @click="handleDelete(row)"
-                :disabled="!hasPermission('equipment:delete')"
+                :disabled="!hasPermission('equipment.delete')"
               >
                 删除
               </el-button>
@@ -384,6 +404,10 @@ const tableData = ref<Equipment[]>([])
 const selectedRows = ref<Equipment[]>([])
 const categories = ref<EquipmentCategory[]>([])
 const organizationTreeRef = ref()
+
+// 面板宽度控制
+const leftPanelWidth = ref(300)
+const isResizing = ref(false)
 
 // 组织相关数据
 const selectedOrganization = ref<OrganizationNode | null>(null)
@@ -799,6 +823,34 @@ const handleImportSuccess = () => {
   }
 }
 
+// 面板宽度调整
+const startResize = (e: MouseEvent) => {
+  isResizing.value = true
+  const startX = e.clientX
+  const startWidth = leftPanelWidth.value
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing.value) return
+
+    const deltaX = e.clientX - startX
+    const newWidth = startWidth + deltaX
+
+    // 限制最小和最大宽度
+    if (newWidth >= 200 && newWidth <= 600) {
+      leftPanelWidth.value = newWidth
+    }
+  }
+
+  const handleMouseUp = () => {
+    isResizing.value = false
+    document.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('mouseup', handleMouseUp)
+  }
+
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', handleMouseUp)
+}
+
 // 初始化
 onMounted(() => {
   loadCategories()
@@ -866,8 +918,20 @@ onMounted(() => {
 }
 
 .left-panel {
-  width: 320px;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.panel-divider {
+  width: 4px;
+  background: #e4e7ed;
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+.panel-divider:hover {
+  background: #409eff;
 }
 
 .right-panel {

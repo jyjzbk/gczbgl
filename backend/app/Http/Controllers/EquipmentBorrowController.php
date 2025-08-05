@@ -110,34 +110,82 @@ class EquipmentBorrowController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'equipment_ids' => 'required|array|min:1',
-            'equipment_ids.*' => 'exists:equipments,id',
-            'quantities' => 'required|array|min:1',
-            'quantities.*' => 'integer|min:1',
-            'reservation_id' => 'nullable|exists:experiment_reservations,id',
-            'borrow_date' => 'required|date|after_or_equal:today',
-            'expected_return_date' => 'required|date|after_or_equal:borrow_date',
-            'purpose' => 'required|string|max:500',
-            'remark' => 'nullable|string|max:1000'
-        ]);
+        // 支持两种数据格式：单个设备借用和批量设备借用
+        if ($request->has('equipment_id')) {
+            // 单个设备借用格式
+            $request->validate([
+                'equipment_id' => 'required|integer|exists:equipments,id',
+                'borrower_id' => 'required|integer|exists:users,id',
+                'borrower_name' => 'required|string|max:100',
+                'borrower_phone' => 'required|string|max:20',
+                'quantity' => 'nullable|integer|min:1',
+                'reservation_id' => 'nullable|exists:experiment_reservations,id',
+                'borrow_date' => 'required|date|after_or_equal:today',
+                'expected_return_date' => 'required|date|after_or_equal:borrow_date',
+                'purpose' => 'required|string|max:500',
+                'remark' => 'nullable|string|max:1000'
+            ]);
 
-        // 验证设备数量和数量数组长度一致
-        if (count($request->equipment_ids) !== count($request->quantities)) {
-            return response()->json([
-                'code' => 422,
-                'message' => '设备ID和数量数组长度不一致'
-            ], 422);
+            // 转换为批量格式进行处理
+            $equipmentIds = [$request->equipment_id];
+            $quantities = [$request->get('quantity', 1)];
+            $borrowerId = $request->borrower_id;
+            $borrowerName = $request->borrower_name;
+            $borrowerPhone = $request->borrower_phone;
+        } else {
+            // 批量设备借用格式
+            $request->validate([
+                'equipment_ids' => 'required|array|min:1',
+                'equipment_ids.*' => 'exists:equipments,id',
+                'quantities' => 'required|array|min:1',
+                'quantities.*' => 'integer|min:1',
+                'borrower_id' => 'required|integer|exists:users,id',
+                'reservation_id' => 'nullable|exists:experiment_reservations,id',
+                'borrow_date' => 'required|date|after_or_equal:today',
+                'expected_return_date' => 'required|date|after_or_equal:borrow_date',
+                'purpose' => 'required|string|max:500',
+                'remark' => 'nullable|string|max:1000'
+            ], [
+                'equipment_ids.required' => '请选择要借用的设备',
+                'equipment_ids.min' => '至少需要选择一个设备',
+                'equipment_ids.*.exists' => '选择的设备不存在',
+                'quantities.required' => '请输入借用数量',
+                'quantities.*.min' => '借用数量必须大于0',
+                'borrower_id.required' => '请选择借用人',
+                'borrower_id.exists' => '借用人不存在',
+                'borrow_date.required' => '请选择借用日期',
+                'borrow_date.date' => '借用日期格式不正确',
+                'borrow_date.after_or_equal' => '借用日期不能早于今天',
+                'expected_return_date.required' => '请选择预计归还日期',
+                'expected_return_date.date' => '预计归还日期格式不正确',
+                'expected_return_date.after_or_equal' => '预计归还日期不能早于借用日期',
+                'purpose.required' => '请输入借用用途',
+                'purpose.max' => '借用用途不能超过500个字符',
+                'remark.max' => '备注不能超过1000个字符'
+            ]);
+
+            // 验证设备数量和数量数组长度一致
+            if (count($request->equipment_ids) !== count($request->quantities)) {
+                return response()->json([
+                    'code' => 422,
+                    'message' => '设备ID和数量数组长度不一致'
+                ], 422);
+            }
+
+            $equipmentIds = $request->equipment_ids;
+            $quantities = $request->quantities;
+            $borrowerId = $request->borrower_id;
+            $borrowerName = $request->borrower_name;
+            $borrowerPhone = $request->borrower_phone;
         }
 
         DB::beginTransaction();
         try {
             $borrowRecords = [];
-            $borrowerId = auth()->id();
 
-            foreach ($request->equipment_ids as $index => $equipmentId) {
+            foreach ($equipmentIds as $index => $equipmentId) {
                 $equipment = Equipment::find($equipmentId);
-                $quantity = $request->quantities[$index];
+                $quantity = $quantities[$index];
 
                 // 检查设备是否可借用
                 if (!$equipment->canBorrow($quantity)) {
@@ -292,10 +340,22 @@ class EquipmentBorrowController extends Controller
      */
     public function approve(Request $request, EquipmentBorrow $equipmentBorrow): JsonResponse
     {
-        $request->validate([
-            'action' => 'required|in:approve,reject',
-            'remark' => 'nullable|string|max:1000'
-        ]);
+        // 支持两种参数格式：action 和 status
+        if ($request->has('status')) {
+            $request->validate([
+                'status' => 'required|in:1,2,6', // 1=借用中, 2=已归还, 6=已拒绝
+                'remark' => 'nullable|string|max:1000'
+            ]);
+
+            // 将status转换为action
+            $action = $request->status == 6 ? 'reject' : 'approve';
+        } else {
+            $request->validate([
+                'action' => 'required|in:approve,reject',
+                'remark' => 'nullable|string|max:1000'
+            ]);
+            $action = $request->action;
+        }
 
         if (!$equipmentBorrow->canApprove()) {
             return response()->json([
@@ -307,7 +367,7 @@ class EquipmentBorrowController extends Controller
         $approverId = auth()->id();
 
         try {
-            if ($request->action === 'approve') {
+            if ($action === 'approve') {
                 // 再次检查设备可借用数量
                 if (!$equipmentBorrow->equipment->canBorrow($equipmentBorrow->quantity)) {
                     return response()->json([

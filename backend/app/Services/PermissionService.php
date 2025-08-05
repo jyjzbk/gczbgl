@@ -399,6 +399,7 @@ class PermissionService
                     'equipment.view',
                     'equipment.create',
                     'equipment.edit',
+                    'equipment.delete',
                     'equipment.borrow.view',
                     'equipment.borrow.approve',
                     'equipment.maintenance.view',

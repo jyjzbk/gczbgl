@@ -76,24 +76,24 @@ const visible = computed({
 
 const getStatusTagType = (status: number) => {
   const typeMap: Record<number, string> = {
-    1: 'warning',
-    2: 'success',
-    3: 'primary',
-    4: 'success',
-    5: 'danger',
-    6: 'danger'
+    1: 'primary',    // 借用中 - 蓝色
+    2: 'success',    // 已归还 - 绿色
+    3: 'danger',     // 逾期 - 红色
+    4: 'warning',    // 损坏 - 橙色
+    5: 'info',       // 待审批 - 灰色
+    6: 'danger'      // 已拒绝 - 红色
   }
   return typeMap[status] || 'info'
 }
 
 const getStatusText = (status: number) => {
   const textMap: Record<number, string> = {
-    1: '申请中',
-    2: '已批准',
-    3: '已借出',
-    4: '已归还',
-    5: '已拒绝',
-    6: '逾期'
+    1: '借用中',
+    2: '已归还',
+    3: '逾期',
+    4: '损坏',
+    5: '待审批',
+    6: '已拒绝'
   }
   return textMap[status] || '未知'
 }

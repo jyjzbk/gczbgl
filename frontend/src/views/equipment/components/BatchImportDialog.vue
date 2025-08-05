@@ -291,16 +291,20 @@ const resetDialog = () => {
 const downloadTemplate = async () => {
   downloadingTemplate.value = true
   try {
-    // 创建模板数据 - 匹配您现有的Excel格式
+    // 创建模板数据 - 匹配您现有的Excel格式，添加数量和单位列
     const templateData = [
       {
         '设备编号': 'Model-001',
         '设备名称': '示例设备1',
+        '设备型号': 'Model-001',
+        '设备品牌': '示例品牌1',
         '序列号': 'SN001',
         '设备分类': '实验仪器',
         '存储位置': '实验室1',
         '采购日期': '2024-01-01',
         '采购价格': 10000,
+        '数量': 1,
+        '单位': '台',
         '供应商': '示例供应商1',
         '保修期(月)': 12,
         '设备状态': 1,
@@ -311,11 +315,15 @@ const downloadTemplate = async () => {
       {
         '设备编号': 'Model-002',
         '设备名称': '示例设备2',
+        '设备型号': 'Model-002',
+        '设备品牌': '示例品牌2',
         '序列号': 'SN002',
         '设备分类': '实验仪器',
         '存储位置': '实验室2',
         '采购日期': '2024-01-02',
         '采购价格': 15000,
+        '数量': 2,
+        '单位': '套',
         '供应商': '示例供应商2',
         '保修期(月)': 12,
         '设备状态': 1,
@@ -329,12 +337,12 @@ const downloadTemplate = async () => {
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.json_to_sheet(templateData)
     
-    // 设置列宽
+    // 设置列宽（增加了设备型号、设备品牌、数量和单位列）
     ws['!cols'] = [
+      { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
       { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 12 },
-      { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 12 },
-      { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 8 },
-      { wch: 8 }, { wch: 20 }, { wch: 20 }
+      { wch: 15 }, { wch: 8 }, { wch: 8 }, { wch: 12 },
+      { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 20 }, { wch: 20 }
     ]
     
     XLSX.utils.book_append_sheet(wb, ws, '设备导入模板')
@@ -421,24 +429,40 @@ const validateData = (data: any[]): ImportData[] => {
     if (index === 0) {
       console.log('Excel行数据键名:', Object.keys(row))
       console.log('Excel第一行数据:', row)
+
+    // 调试：检查每个字段的值
+    console.log('字段值检查:', {
+      deviceName: row['设备名称'],
+      deviceCode: row['设备编号'],
+      deviceCategory: row['设备分类'],
+      serialNumber: row['序列号'],
+      storageLocation: row['存储位置']
+    })
     }
 
-    // 使用实际的Excel列名（带星号）
-    const deviceName = row['设备名称*'] || ''
-    const deviceCategory = row['设备分类*'] || ''
-    const deviceCode = row['设备编号*'] || ''
-    const deviceModel = row['设备型号*'] || ''
-    const deviceBrand = row['设备品牌*'] || ''
-    const serialNumber = row['序列号*'] || ''
-    const supplier = row['供应商*'] || ''
-    const storageLocation = row['存放位置*'] || ''
-    const purchaseDate = row['采购日期*'] || ''
-    const purchasePrice = row['采购价格*'] || 0
-    const warrantyPeriod = row['保修期(月)*'] || 0
-    const deviceStatus = row['设备状态*'] || 1
-    const deviceCondition = row['设备状况*'] || 1
+    // 使用实际的Excel列名（支持带星号和不带星号）
+    const deviceName = row['设备名称'] || row['设备名称*'] || ''
+    const deviceCategory = row['设备分类'] || row['设备分类*'] || ''
+    const deviceCode = row['设备编号'] || row['设备编号*'] || ''
+    const deviceModel = row['设备型号'] || row['设备型号*'] || ''
+    const deviceBrand = row['设备品牌'] || row['设备品牌*'] || ''
+    const serialNumber = row['序列号'] || row['序列号*'] || ''
+    const supplier = row['供应商'] || row['供应商*'] || ''
+    const storageLocation = row['存储位置'] || row['存放位置'] || row['存放位置*'] || ''
+    const purchaseDate = row['采购日期'] || row['采购日期*'] || ''
+    const purchasePrice = row['采购价格'] || row['采购价格*'] || 0
+    const quantity = row['数量'] || row['数量*'] || 1  // 支持带星号和不带星号的列名
+    const unit = row['单位'] || row['单位*'] || '台'   // 支持带星号和不带星号的列名
+    const warrantyPeriod = row['保修期(月)'] || row['保修期(月)*'] || 0
+    const deviceStatus = row['设备状态'] || row['设备状态*'] || 1
+    const deviceCondition = row['设备状况'] || row['设备状况*'] || 1
     const deviceDescription = row['设备描述'] || ''
     const technicalSpecs = row['技术规格'] || ''
+
+    console.log('提取的字段值:', {
+      deviceName, deviceCode, deviceCategory, serialNumber,
+      storageLocation, purchaseDate, purchasePrice, quantity, unit
+    })
 
     // 必填字段验证
     if (!deviceName) errors.push('设备名称不能为空')
@@ -447,6 +471,12 @@ const validateData = (data: any[]): ImportData[] => {
     // 数据格式验证
     if (purchasePrice && isNaN(Number(purchasePrice))) {
       errors.push('采购价格必须是数字')
+    }
+    if (quantity && isNaN(Number(quantity))) {
+      errors.push('数量必须是数字')
+    }
+    if (quantity && Number(quantity) <= 0) {
+      errors.push('数量必须大于0')
     }
     if (warrantyPeriod && isNaN(Number(warrantyPeriod))) {
       errors.push('保修期必须是数字')
@@ -466,8 +496,8 @@ const validateData = (data: any[]): ImportData[] => {
       storage_location: storageLocation,
       purchase_date: purchaseDate,
       purchase_price: Number(purchasePrice) || 0,
-      quantity: 1, // 默认数量为1
-      unit: '台', // 默认单位为台
+      quantity: Number(quantity) || 1, // 从Excel读取数量，默认为1
+      unit: unit || '台', // 从Excel读取单位，默认为台
       warranty_period: Number(warrantyPeriod) || 0,
       service_life: 0, // Excel中没有使用年限字段
       funding_source: '', // Excel中没有资金来源字段
@@ -565,7 +595,14 @@ const loadCategories = async () => {
     }
   } catch (error) {
     console.error('加载设备分类失败:', error)
-    categories.value = []
+    // 临时解决方案：提供默认的设备分类
+    categories.value = [
+      { id: 1, name: '实验仪器', code: 'SYQX' },
+      { id: 2, name: '教学设备', code: 'JXSB' },
+      { id: 3, name: '办公设备', code: 'BGSB' },
+      { id: 4, name: '其他设备', code: 'QTSB' }
+    ]
+    ElMessage.warning('设备分类加载失败，使用默认分类')
   }
 }
 

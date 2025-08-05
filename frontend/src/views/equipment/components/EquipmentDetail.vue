@@ -26,7 +26,13 @@
           {{ equipment.serial_number }}
         </el-descriptions-item>
         <el-descriptions-item label="存放位置">
-          {{ equipment.location }}
+          {{ equipment.storage_location || equipment.location }}
+        </el-descriptions-item>
+        <el-descriptions-item label="数量">
+          {{ equipment.quantity }}
+        </el-descriptions-item>
+        <el-descriptions-item label="单位">
+          {{ equipment.unit }}
         </el-descriptions-item>
         <el-descriptions-item label="设备状态">
           <el-tag :type="getStatusTagType(equipment.status)">

@@ -54,7 +54,9 @@ class Equipment extends Model
         'status_text',
         'condition_text',
         'warranty_status',
-        'is_available'
+        'is_available',
+        'borrowed_quantity',
+        'available_quantity'
     ];
 
     // 设备状态常量
@@ -246,7 +248,7 @@ class Equipment extends Model
 
         // 检查是否有冲突的借用记录
         $conflictBorrows = $this->borrows()
-            ->whereIn('status', [EquipmentBorrow::STATUS_APPROVED, EquipmentBorrow::STATUS_BORROWED])
+            ->whereIn('status', [EquipmentBorrow::STATUS_PENDING, EquipmentBorrow::STATUS_BORROWED])
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('borrow_date', [$startDate, $endDate])
                     ->orWhereBetween('expected_return_date', [$startDate, $endDate])
@@ -276,8 +278,16 @@ class Equipment extends Model
     public function getBorrowedQuantityAttribute()
     {
         return $this->borrows()
-            ->where('status', EquipmentBorrow::STATUS_BORROWED)
+            ->whereIn('status', [EquipmentBorrow::STATUS_PENDING, EquipmentBorrow::STATUS_BORROWED])
             ->sum('quantity');
+    }
+
+    /**
+     * 获取可借用数量
+     */
+    public function getAvailableQuantityAttribute()
+    {
+        return max(0, $this->quantity - $this->borrowed_quantity);
     }
 
     /**

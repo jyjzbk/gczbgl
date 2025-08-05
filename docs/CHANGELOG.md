@@ -1,5 +1,45 @@
 # 更新日志
 
+## 2025-08-05 - 设备借用状态显示与审批功能修复
+
+### 🔧 修复问题
+
+#### 设备借用状态显示错误修复
+- **问题描述**: 借用详情对话框中状态显示错误，列表显示"待审批"但详情显示"已拒绝"
+- **根本原因**: BorrowDetail.vue组件中使用了错误的状态映射
+- **修复内容**: 更新状态文本和标签颜色映射，确保与后端状态定义一致
+
+#### 学校管理员审批权限问题修复
+- **问题描述**: 学校管理员无法使用审批和取消按钮，点击审批时出现500错误
+- **根本原因**:
+  1. 前端权限格式不匹配（`equipment:borrow:approve` vs `equipment.borrow`）
+  2. 后端缺少review方法（路由指向不存在的方法）
+  3. 前后端数据格式不匹配（status vs action）
+  4. 前端审批状态值错误
+- **修复内容**:
+  - 统一权限检查格式为点号分隔
+  - 修复路由配置，将review端点指向approve方法
+  - 后端支持两种参数格式（status和action）
+  - 修正前端审批状态值（批准=1，拒绝=6）
+
+#### 修改的文件
+- `frontend/src/views/equipment/components/BorrowDetail.vue`
+- `frontend/src/views/equipment/EquipmentBorrow.vue`
+- `frontend/src/views/equipment/components/ApprovalDialog.vue`
+- `backend/routes/api.php`
+- `backend/app/Http/Controllers/EquipmentBorrowController.php`
+
+#### 技术改进
+- 增强权限检查逻辑，支持管理员角色自动权限
+- 后端API兼容多种数据格式
+- 统一状态定义和显示逻辑
+
+### 📚 文档更新
+- 新增 `docs/EQUIPMENT_BORROW_STATUS_FIX.md` 详细修复记录
+- 更新设备管理相关文档
+
+---
+
 ## 2025-08-03 - 教学仪器配备标准权限修复
 
 ### 🔧 修复问题

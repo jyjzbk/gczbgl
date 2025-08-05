@@ -686,4 +686,41 @@ class EquipmentController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * 检查设备可用性
+     */
+    public function checkAvailability(Request $request, Equipment $equipment): JsonResponse
+    {
+        // 验证访问权限
+        if (!DataScopeMiddleware::canAccess($request, 'school', $equipment->school_id)) {
+            return response()->json([
+                'code' => 403,
+                'message' => '无权访问该设备信息'
+            ], 403);
+        }
+
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date'
+        ]);
+
+        try {
+            $availability = $equipment->isAvailableForPeriod(
+                $request->start_date,
+                $request->end_date
+            );
+
+            return response()->json([
+                'code' => 200,
+                'message' => '检查完成',
+                'data' => $availability
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'code' => 500,
+                'message' => '检查设备可用性失败：' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

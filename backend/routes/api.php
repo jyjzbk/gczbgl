@@ -206,7 +206,7 @@ Route::middleware('auth:api')->group(function () {
     // 设备借用管理
     Route::middleware(['data.scope'])->group(function () {
         Route::apiResource('equipment-borrows', EquipmentBorrowController::class);
-        Route::post('equipment-borrows/{equipmentBorrow}/review', [EquipmentBorrowController::class, 'review']);
+        Route::post('equipment-borrows/{equipmentBorrow}/review', [EquipmentBorrowController::class, 'approve']);
         Route::post('equipment-borrows/{equipmentBorrow}/return', [EquipmentBorrowController::class, 'returnEquipment']);
         Route::post('equipment-borrows/batch-action', [EquipmentBorrowController::class, 'batchAction']);
         Route::post('equipment-borrows/update-overdue-status', [EquipmentBorrowController::class, 'updateOverdueStatus']);

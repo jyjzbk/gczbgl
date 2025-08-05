@@ -42,7 +42,11 @@ class EquipmentBorrow extends Model
 
     protected $appends = [
         'status_text',
-        'status_color'
+        'status_color',
+        'overdue_days',
+        'borrow_days',
+        'borrower_name',
+        'borrower_phone'
     ];
 
     // 状态常量
@@ -283,6 +287,22 @@ class EquipmentBorrow extends Model
     public function scopeByDateRange($query, $startDate, $endDate)
     {
         return $query->whereBetween('borrow_date', [$startDate, $endDate]);
+    }
+
+    /**
+     * 获取借用人姓名
+     */
+    public function getBorrowerNameAttribute()
+    {
+        return $this->borrower ? $this->borrower->real_name : '';
+    }
+
+    /**
+     * 获取借用人电话
+     */
+    public function getBorrowerPhoneAttribute()
+    {
+        return $this->borrower ? $this->borrower->phone : '';
     }
 
     /**

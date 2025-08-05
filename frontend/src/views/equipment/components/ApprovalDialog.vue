@@ -44,8 +44,8 @@
       >
         <el-form-item label="审批结果" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio :label="2">批准</el-radio>
-            <el-radio :label="5">拒绝</el-radio>
+            <el-radio :label="1">批准</el-radio>
+            <el-radio :label="6">拒绝</el-radio>
           </el-radio-group>
         </el-form-item>
         
@@ -109,7 +109,7 @@ const formRef = ref<FormInstance>()
 const submitting = ref(false)
 
 const form = reactive({
-  status: 2,
+  status: 1,
   remark: ''
 })
 

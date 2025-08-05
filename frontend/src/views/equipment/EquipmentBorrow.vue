@@ -138,7 +138,18 @@
             width="120"
             show-overflow-tooltip
           />
-          
+
+          <el-table-column
+            prop="quantity"
+            label="借用数量"
+            width="100"
+            align="center"
+          >
+            <template #default="{ row }">
+              {{ row.quantity || 1 }}
+            </template>
+          </el-table-column>
+
           <el-table-column
             prop="borrow_date"
             label="借用日期"
@@ -212,22 +223,22 @@
                 查看
               </el-button>
               <el-button
-                v-if="row.status === 1"
+                v-if="row.status === 5"
                 type="success"
                 size="small"
                 text
                 @click="handleApprove(row)"
-                :disabled="!hasPermission('equipment:borrow:approve')"
+                :disabled="!hasPermission('equipment.borrow')"
               >
                 审批
               </el-button>
               <el-button
-                v-if="row.status === 3"
+                v-if="row.status === 1"
                 type="warning"
                 size="small"
                 text
                 @click="handleReturn(row)"
-                :disabled="!hasPermission('equipment:borrow:return')"
+                :disabled="!hasPermission('equipment.borrow')"
               >
                 归还
               </el-button>
@@ -237,17 +248,17 @@
                 size="small"
                 text
                 @click="handleEdit(row)"
-                :disabled="!hasPermission('equipment:borrow:edit')"
+                :disabled="!hasPermission('equipment.borrow')"
               >
                 编辑
               </el-button>
               <el-button
-                v-if="row.status === 1"
+                v-if="row.status === 5"
                 type="danger"
                 size="small"
                 text
                 @click="handleCancel(row)"
-                :disabled="!hasPermission('equipment:borrow:cancel')"
+                :disabled="!hasPermission('equipment.borrow')"
               >
                 取消
               </el-button>
@@ -329,6 +340,10 @@ import dayjs from 'dayjs'
 // 权限检查
 const authStore = useAuthStore()
 const hasPermission = (permission: string) => {
+  // 学校管理员和更高级别的管理员都有设备借用管理权限
+  if (authStore.userInfo?.role?.includes('admin') || authStore.userInfo?.role?.includes('管理员')) {
+    return true
+  }
   return authStore.hasPermission(permission)
 }
 
@@ -365,23 +380,23 @@ const batchApprovalMode = ref(false)
 
 // 选项数据
 const statusOptions = [
-  { value: 1, label: '申请中' },
-  { value: 2, label: '已批准' },
-  { value: 3, label: '已借出' },
-  { value: 4, label: '已归还' },
-  { value: 5, label: '已拒绝' },
-  { value: 6, label: '逾期' }
+  { value: 1, label: '借用中' },
+  { value: 2, label: '已归还' },
+  { value: 3, label: '逾期' },
+  { value: 4, label: '损坏' },
+  { value: 5, label: '待审批' },
+  { value: 6, label: '已拒绝' }
 ]
 
 // 状态标签类型
 const getStatusTagType = (status: number) => {
   const typeMap: Record<number, string> = {
-    1: 'warning',
-    2: 'success',
-    3: 'primary',
-    4: 'success',
-    5: 'danger',
-    6: 'danger'
+    1: 'primary',    // 借用中 - 蓝色
+    2: 'success',    // 已归还 - 绿色
+    3: 'danger',     // 逾期 - 红色
+    4: 'warning',    // 损坏 - 橙色
+    5: 'info',       // 待审批 - 灰色
+    6: 'danger'      // 已拒绝 - 红色
   }
   return typeMap[status] || 'info'
 }
@@ -389,19 +404,19 @@ const getStatusTagType = (status: number) => {
 // 状态文本
 const getStatusText = (status: number) => {
   const textMap: Record<number, string> = {
-    1: '申请中',
-    2: '已批准',
-    3: '已借出',
-    4: '已归还',
-    5: '已拒绝',
-    6: '逾期'
+    1: '借用中',
+    2: '已归还',
+    3: '逾期',
+    4: '损坏',
+    5: '待审批',
+    6: '已拒绝'
   }
   return textMap[status] || '未知'
 }
 
 // 计算逾期天数
 const getOverdueDays = (borrow: EquipmentBorrow) => {
-  if (borrow.status === 4 || !borrow.expected_return_date) return 0
+  if (borrow.status === 2 || !borrow.expected_return_date) return 0
 
   const today = dayjs()
   const expectedDate = dayjs(borrow.expected_return_date)
@@ -497,7 +512,7 @@ const handleBatchApprove = () => {
     return
   }
 
-  const pendingBorrows = selectedRows.value.filter(row => row.status === 1)
+  const pendingBorrows = selectedRows.value.filter(row => row.status === 5)
   if (pendingBorrows.length === 0) {
     ElMessage.warning('所选申请中没有待审批的记录')
     return

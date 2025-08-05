@@ -82,13 +82,8 @@ request.interceptors.response.use(
           ElMessage.error('请求的资源不存在')
           break
         case 422:
-          // 表单验证错误
-          if (data.errors) {
-            const firstError = Object.values(data.errors)[0] as string[]
-            ElMessage.error(firstError[0])
-          } else {
-            ElMessage.error(data.message || '请求参数错误')
-          }
+          // 表单验证错误，不在拦截器中显示错误信息，让组件自己处理
+          // 这样可以让组件有更好的错误处理控制
           break
         case 500:
           ElMessage.error('服务器内部错误')
