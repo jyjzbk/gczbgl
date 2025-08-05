@@ -225,7 +225,20 @@ const STATUS_REJECTED = 6;   // 已拒绝
 5. 测试批量审批功能
 6. 验证权限控制正确性
 
+## 文件清理
+已删除以下临时和测试文件：
+- `EQUIPMENT_FIXES_SUMMARY.md` - 临时修复总结文件
+- `frontend/src/views/equipment/components/BorrowDialog_backup.vue` - 备份文件
+
+## Git提交记录
+- **提交哈希**: 0d2351d
+- **提交信息**: "修复设备借用状态显示与审批功能"
+- **修改文件**: 28个文件，5900行新增，435行删除
+- **推送状态**: 已成功推送到GitHub远程仓库
+
 ## 相关文档
 - [设备管理API文档](./04-API接口设计文档.md)
 - [权限管理指南](./PERMISSION_QUICK_REFERENCE.md)
 - [前端组件设计](./05-前端组件设计文档.md)
+- [项目状态总览](./PROJECT_STATUS.md)
+- [更新日志](./CHANGELOG.md)
